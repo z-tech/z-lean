@@ -445,12 +445,40 @@ theorem encode_injective [DecidableEq F] (cfg : ReedSolomonConfig F)
 
 /-! ### List-decoding radius (Johnson bound) -/
 
-/-- **Johnson list-decoding radius for Reed-Solomon.** For any received
-word `y ∈ 𝔽^n` and radius `t` strictly below the Johnson bound — i.e.
-`(n − t)² > n · k` (equivalently `t < n − √(n·k)`) — the set of length-`k`
-messages whose encoding is within Hamming distance `t` of `y` is finite.
-RS achieves the Johnson bound algorithmically (Guruswami-Sudan); the
-explicit polynomial bound on list size is left as TODO. -/
+def johnsonAgreementPositions [DecidableEq F] (cfg : ReedSolomonConfig F) (y m : Array F) : Finset (Fin cfg.domain.size) :=
+  Finset.univ.filter fun i =>
+    y.getD i.val 0 = (reedSolomonEncode cfg m).getD i.val 0
+
+theorem johnsonAgreementPositions_card_ge [DecidableEq F] (cfg : ReedSolomonConfig F)
+    (h_dom_size : cfg.domain.size = cfg.codeLength)
+    (y m : Array F) (h_y_size : y.size = cfg.codeLength)
+    (t : ℕ)
+    (h_close : hammingDist y (reedSolomonEncode cfg m) ≤ t) :
+    cfg.codeLength - t ≤ (johnsonAgreementPositions cfg y m).card := by
+  have hy : y.size = cfg.domain.size := by
+    simpa [h_dom_size] using h_y_size
+  have henc : (reedSolomonEncode cfg m).size = cfg.domain.size := by
+    rw [h_dom_size]
+    exact encode_size cfg h_dom_size m
+  rw [johnsonAgreementPositions]
+  rw [hammingDist_eq_codeLength_sub_agreements y (reedSolomonEncode cfg m) cfg.domain.size hy henc] at h_close
+  rw [Fintype.card_subtype] at h_close
+  omega
+
+theorem johnson_threshold_gt_messageLength (cfg : ReedSolomonConfig F) (t : ℕ)
+    (h_johnson :
+      (cfg.codeLength - t) * (cfg.codeLength - t) >
+        cfg.codeLength * cfg.messageLength) :
+    cfg.messageLength < cfg.codeLength - t := by
+  let a := cfg.codeLength - t
+  have ha1 : a ≤ cfg.codeLength := by
+    dsimp [a]
+    exact Nat.sub_le _ _
+  by_contra hlt
+  have ha2 : a ≤ cfg.messageLength := Nat.not_lt.mp hlt
+  have hmul : a * a ≤ cfg.codeLength * cfg.messageLength := Nat.mul_le_mul ha1 ha2
+  exact (not_le_of_gt h_johnson) hmul
+
 theorem johnson_list_decoding_radius [DecidableEq F]
     (cfg : ReedSolomonConfig F)
     (h_dom_size : cfg.domain.size = cfg.codeLength)
@@ -463,7 +491,60 @@ theorem johnson_list_decoding_radius [DecidableEq F]
         cfg.codeLength * cfg.messageLength) :
     Set.Finite {m : Array F | m.size = cfg.messageLength ∧
                    hammingDist y (reedSolomonEncode cfg m) ≤ t} := by
-  sorry
+  classical
+  let S : Set (Array F) := {m : Array F | m.size = cfg.messageLength ∧
+    hammingDist y (reedSolomonEncode cfg m) ≤ t}
+  refine Set.Finite.of_injOn
+    (f := fun m : Array F => johnsonAgreementPositions cfg y m)
+    (s := S) (t := (Set.univ : Set (Finset (Fin cfg.domain.size))))
+    ?_ ?_ ?_
+  · intro m hm
+    simp
+  · intro m1 hm1 m2 hm2 hEq
+    change johnsonAgreementPositions cfg y m1 = johnsonAgreementPositions cfg y m2 at hEq
+    have hm1' : m1.size = cfg.messageLength ∧ hammingDist y (reedSolomonEncode cfg m1) ≤ t := by
+      simpa [S] using hm1
+    have hm2' : m2.size = cfg.messageLength ∧ hammingDist y (reedSolomonEncode cfg m2) ≤ t := by
+      simpa [S] using hm2
+    rcases hm1' with ⟨hsize1, hclose1⟩
+    rcases hm2' with ⟨hsize2, hclose2⟩
+    by_contra hneq
+    have hcard_ge : cfg.codeLength - t ≤ (johnsonAgreementPositions cfg y m1).card := by
+      exact johnsonAgreementPositions_card_ge cfg h_dom_size y m1 h_y_size t hclose1
+    have hmsg_lt : cfg.messageLength < cfg.codeLength - t := by
+      exact johnson_threshold_gt_messageLength cfg t h_johnson
+    let common : Finset (Fin cfg.domain.size) :=
+      Finset.univ.filter fun i : Fin cfg.domain.size =>
+        (reedSolomonEncode cfg m1).getD i.val 0 = (reedSolomonEncode cfg m2).getD i.val 0
+    have hsubset : johnsonAgreementPositions cfg y m1 ⊆ common := by
+      intro i hi
+      have hi1 : y.getD i.val 0 = (reedSolomonEncode cfg m1).getD i.val 0 := by
+        exact (Finset.mem_filter.mp hi).2
+      have hi2 : i ∈ johnsonAgreementPositions cfg y m2 := by
+        have hi' := hi
+        rwa [hEq] at hi'
+      have hi2' : y.getD i.val 0 = (reedSolomonEncode cfg m2).getD i.val 0 := by
+        exact (Finset.mem_filter.mp hi2).2
+      have henc : (reedSolomonEncode cfg m1).getD i.val 0 = (reedSolomonEncode cfg m2).getD i.val 0 := by
+        rw [← hi1]
+        exact hi2'
+      exact Finset.mem_filter.mpr ⟨Finset.mem_univ i, henc⟩
+    have hcommon_lt : common.card < cfg.messageLength := by
+      have hagree : Fintype.card {i : Fin cfg.domain.size //
+          (reedSolomonEncode cfg m1).getD i.val 0 =
+            (reedSolomonEncode cfg m2).getD i.val 0} < cfg.messageLength := by
+        exact agreement_card_lt_messageLength cfg h_distinct m1 m2 hsize1 hsize2 hneq
+      rw [Fintype.card_subtype] at hagree
+      simpa [common] using hagree
+    have hcard_le : (johnsonAgreementPositions cfg y m1).card ≤ common.card :=
+      Finset.card_le_card hsubset
+    have hlarge : cfg.messageLength < (johnsonAgreementPositions cfg y m1).card :=
+      lt_of_lt_of_le hmsg_lt hcard_ge
+    have hsmall : (johnsonAgreementPositions cfg y m1).card < cfg.messageLength :=
+      lt_of_le_of_lt hcard_le hcommon_lt
+    omega
+  · simpa using (finite_univ : (Set.univ : Set (Finset (Fin cfg.domain.size))).Finite)
+
 
 /-! ### Maximum Correlated Agreement (proximity gap) -/
 
