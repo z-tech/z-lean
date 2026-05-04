@@ -1,6 +1,7 @@
 import LinearCodes.ReedSolomon
 import Mathlib.Data.Set.Finite.Basic
 import Mathlib.Data.Fintype.Basic
+import Mathlib.Tactic.Ring
 
 /-!
 # Reed-Solomon: formal properties (stubbed)
@@ -52,14 +53,48 @@ def hammingDist [DecidableEq F] (a b : Array F) : Nat :=
 /-! ### Encoding length -/
 
 /-- The encoded codeword has length `codeLength`, given a domain of the
-right size. Provable from `Array.size_map`; left as `sorry` here for
-parity with the rest of the API contract. -/
+right size. -/
 theorem encode_size (cfg : ReedSolomonConfig F)
     (h_dom : cfg.domain.size = cfg.codeLength) (msg : Array F) :
     (reedSolomonEncode cfg msg).size = cfg.codeLength := by
-  sorry
+  unfold reedSolomonEncode
+  rw [Array.size_map]
+  exact h_dom
 
 /-! ### Linearity -/
+
+/-- Pointwise addition on coefficients distributes through `evalPoly` (List
+form). Helper for the Array version. -/
+private lemma list_evalPoly_add_zip (l1 l2 : List F)
+    (h : l1.length = l2.length) (x : F) :
+    (List.zipWith (· + ·) l1 l2).foldr (fun a acc => a + x * acc) 0
+      = l1.foldr (fun a acc => a + x * acc) 0
+        + l2.foldr (fun a acc => a + x * acc) 0 := by
+  induction l1 generalizing l2 with
+  | nil =>
+    cases l2 with
+    | nil => simp
+    | cons _ _ => simp at h
+  | cons hd1 tl1 ih =>
+    cases l2 with
+    | nil => simp at h
+    | cons hd2 tl2 =>
+      simp only [List.zipWith_cons_cons, List.foldr_cons]
+      have h' : tl1.length = tl2.length := by simpa using h
+      rw [ih tl2 h']
+      ring
+
+/-- Pointwise addition on coefficients distributes through `evalPoly`. -/
+private lemma evalPoly_add_zip (m1 m2 : Array F)
+    (h : m1.size = m2.size) (x : F) :
+    evalPoly (Array.zipWith (· + ·) m1 m2) x
+      = evalPoly m1 x + evalPoly m2 x := by
+  unfold evalPoly
+  rw [← Array.foldr_toList, ← Array.foldr_toList, ← Array.foldr_toList]
+  rw [Array.toList_zipWith]
+  apply list_evalPoly_add_zip
+  rw [← Array.size_eq_length_toList, ← Array.size_eq_length_toList]
+  exact h
 
 /-- **Additive linearity.** Encoding the pointwise sum of two messages
 equals the pointwise sum of their encodings. -/
@@ -69,14 +104,36 @@ theorem encode_add (cfg : ReedSolomonConfig F)
     reedSolomonEncode cfg (Array.zipWith (· + ·) m1 m2) =
       Array.zipWith (· + ·)
         (reedSolomonEncode cfg m1) (reedSolomonEncode cfg m2) := by
-  sorry
+  unfold reedSolomonEncode
+  have hsize : m1.size = m2.size := h1.trans h2.symm
+  rw [Array.zipWith_map, Array.zipWith_self]
+  congr 1
+  funext x
+  exact evalPoly_add_zip m1 m2 hsize x
+
+/-- Scalar multiplication on coefficients distributes through `evalPoly`. -/
+private lemma evalPoly_smul (c : F) (coeffs : Array F) (x : F) :
+    evalPoly (coeffs.map (c * ·)) x = c * evalPoly coeffs x := by
+  unfold evalPoly
+  rw [Array.foldr_map]
+  rw [← Array.foldr_toList, ← Array.foldr_toList]
+  induction coeffs.toList with
+  | nil => simp
+  | cons hd tl ih =>
+    simp only [List.foldr_cons]
+    rw [ih]
+    ring
 
 /-- **Scalar multiplicativity.** Encoding a scalar multiple of a message
 equals the scalar multiple of its encoding. -/
 theorem encode_smul (cfg : ReedSolomonConfig F) (c : F) (msg : Array F) :
     reedSolomonEncode cfg (msg.map (c * ·)) =
       (reedSolomonEncode cfg msg).map (c * ·) := by
-  sorry
+  unfold reedSolomonEncode
+  rw [Array.map_map]
+  congr 1
+  funext x
+  exact evalPoly_smul c msg x
 
 /-! ### Minimum distance -/
 

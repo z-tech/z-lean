@@ -14,7 +14,8 @@ attached).
 | `reedSolomonEncode` (Horner-loop polynomial evaluation on a domain) | **Computable** ✅ |
 | `LinearCode` typeclass methods (`messageLen`, `codeLen`, `minimumDistance`, `johnsonRadius`, `mcaProximityGapError`) | **Computable** ✅ |
 | Derived helpers (`rate`, `uniqueDecodingRadius`) | **Computable** ✅ |
-| All seven property theorems in `ReedSolomonProperties.lean` | **Stubbed (`sorry`)** ❌ |
+| `encode_size`, `encode_add`, `encode_smul` (encoder linearity) | **Proved** ✅ |
+| `encode_min_distance`, `encode_injective`, `johnson_list_decoding_radius`, `mca_correlated_agreement` | **Stubbed (`sorry`)** ❌ |
 | Bridge to Mathlib's `Polynomial.eval` | **Not written** ❌ |
 
 **Plain reading:** this is runnable Lean code that you can fuzz against
@@ -41,13 +42,13 @@ categories with very different stakes for a correctness-oracle claim:
 Properties that say "this implementation correctly computes RS
 encoding." These are what a correctness-oracle claim actually rests on.
 
-| # | Theorem | Effort | Notes |
-|---|---|---|---|
-| — | **Bridge: `reedSolomonEncode = Polynomial.eval ∘ ofCoeffs`** (not yet stubbed) | 1–2 days | Single rewrite-chain through Mathlib's polynomial library |
-| 1 | `encode_size` | ~30 min | Trivial after bridge |
-| 2 | `encode_add` | ~half day | Cheap after bridge via `Polynomial.eval_add` |
-| 3 | `encode_smul` | ~half day | Cheap after bridge via `Polynomial.eval_smul` |
-| 5 | `encode_injective` | ~few hours | Corollary of (4) |
+| # | Theorem | Status | Effort | Notes |
+|---|---|---|---|---|
+| — | **Bridge: `reedSolomonEncode = Polynomial.eval ∘ ofCoeffs`** | Not written | 1–2 days | Optional now that 1–3 are proved without it |
+| 1 | `encode_size` | ✅ Proved | — | `Array.size_map` |
+| 2 | `encode_add` | ✅ Proved | — | List-foldr induction + `Array.zipWith_map` + `Array.zipWith_self` |
+| 3 | `encode_smul` | ✅ Proved | — | List-foldr induction + `Array.map_map` |
+| 5 | `encode_injective` | Stubbed | ~few hours | Corollary of (4) |
 
 **Cumulative effort to close Tier 1: ~3–5 days.** Closing this tier
 turns the encoder into a verified correctness oracle in the same sense
