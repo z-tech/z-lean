@@ -407,7 +407,27 @@ theorem encode_min_distance [DecidableEq F] (cfg : ReedSolomonConfig F)
 
 /-! ### Injectivity (corollary of `encode_min_distance`) -/
 
-/-- Encoding is injective on length-`k` messages. -/
+/-- Hamming distance from an array to itself is zero. -/
+private lemma hammingDist_self [DecidableEq F] (a : Array F) :
+    hammingDist a a = 0 := by
+  unfold hammingDist
+  rw [if_pos rfl]
+  have h : ∀ (l : List ℕ) (acc : ℕ),
+      l.foldl (fun ac i => ac + if a.getD i 0 = a.getD i 0 then 0 else 1) acc
+        = acc := by
+    intro l
+    induction l with
+    | nil => intro acc; rfl
+    | cons hd tl ih =>
+      intro acc
+      rw [List.foldl_cons, if_pos rfl, Nat.add_zero]
+      exact ih acc
+  exact h (List.range a.size) 0
+
+/-- Encoding is injective on length-`k` messages. Direct corollary of
+`encode_min_distance`: distinct messages would yield codewords at Hamming
+distance `≥ n − k + 1 > 0` when `k < n`, but equal codewords have
+Hamming distance `0`. -/
 theorem encode_injective [DecidableEq F] (cfg : ReedSolomonConfig F)
     (h_dom_size : cfg.domain.size = cfg.codeLength)
     (h_distinct : ∀ i j : Fin cfg.domain.size, i ≠ j →
@@ -417,7 +437,11 @@ theorem encode_injective [DecidableEq F] (cfg : ReedSolomonConfig F)
     (h1 : m1.size = cfg.messageLength) (h2 : m2.size = cfg.messageLength)
     (h_eq : reedSolomonEncode cfg m1 = reedSolomonEncode cfg m2) :
     m1 = m2 := by
-  sorry
+  by_contra h_neq
+  have hd := encode_min_distance cfg h_dom_size h_distinct m1 m2 h1 h2 h_neq
+    (Nat.le_of_lt h_lt)
+  rw [h_eq, hammingDist_self] at hd
+  omega
 
 /-! ### List-decoding radius (Johnson bound) -/
 
