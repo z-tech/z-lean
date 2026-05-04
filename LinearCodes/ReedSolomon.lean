@@ -65,10 +65,17 @@ Security bounds:
 * **Johnson radius**: `n − ⌈√(n·k)⌉`. Computed via `Nat.sqrt`, which gives
   `⌊√x⌋`; we adjust to `⌈·⌉` by the standard `n − Nat.sqrt(n*k) − 1` form
   (sound but slightly conservative when `n·k` is a perfect square).
-* **MCA proximity-gap error**: BCIKS18 unique-decoding-regime bound,
-  approximately `(l − 1) · d / q` where `d = n − k + 1` is the minimum
-  distance. The `δ` parameter is unused in this regime; refine to a
-  `δ`-aware Johnson-regime bound when a downstream protocol needs it. -/
+* **MCA proximity-gap error**: two modes —
+  * `proven` (Johnson regime, BCIKS18-style): roughly `(l − 1) · d / q`,
+    where `d = n − k + 1` is the minimum distance. Holds unconditionally
+    modulo paper-level proofs.
+  * `conjectured` (capacity regime): a tighter `(l − 1) · n / q`, valid up
+    to `δ → 1 − ρ`. Relies on the capacity-achieving proximity-gap
+    conjecture. Yields higher bit-security but inherits the conjecture's
+    risk.
+
+  The `δ` parameter is unused at this level of abstraction; it's part of
+  the API for richer per-protocol bounds that *do* depend on `δ`. -/
 instance : LinearCode (ReedSolomonCode F) F where
   Config := ReedSolomonConfig F
   new cfg := { config := cfg }
@@ -81,11 +88,14 @@ instance : LinearCode (ReedSolomonCode F) F where
     rs.config.codeLength
       - isqrt (rs.config.codeLength * rs.config.messageLength)
       - 1
-  mcaProximityGapError rs l _δ q :=
+  mcaProximityGapError rs regime l _δ q :=
     if q = 0 then (1 : ℚ)
     else
-      let d : ℚ := (rs.config.codeLength - rs.config.messageLength + 1 : ℕ)
       let lq : ℚ := if l = 0 then 0 else ((l - 1 : ℕ) : ℚ)
-      lq * d / (q : ℚ)
+      let bound : ℚ := match regime with
+        | .proven =>
+          ((rs.config.codeLength - rs.config.messageLength + 1 : ℕ) : ℚ)
+        | .conjectured => (rs.config.codeLength : ℚ)
+      lq * bound / (q : ℚ)
 
 end LinearCodes

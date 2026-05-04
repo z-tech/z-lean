@@ -98,14 +98,42 @@ For STIR/WHIR/(future)WARP security analyses, the key inputs are:
 
 * `LinearCode.minimumDistance c` — `ℕ`
 * `LinearCode.johnsonRadius c` — `ℕ`
-* `LinearCode.mcaProximityGapError c l δ q` — `ℚ`
+* `LinearCode.mcaProximityGapError c regime l δ q` — `ℚ`
 * `LinearCodes.rate c` — `ℚ` (derived: `k/n`)
 * `LinearCodes.uniqueDecodingRadius c` — `ℕ` (derived: `⌊(d−1)/2⌋`)
 
 All five are **runnable**. A profiler calls them on a concrete config
 and chains the results through whatever per-protocol soundness formula
-it needs. The values they return are *placeholders* in the sense that
-the formal theorems backing them (Tier 2 above) are stubbed — closing
-those proofs would turn these from "asserted bounds" into "proved
-bounds." Until then, profiler outputs should be read as
-"*conjectured* security level under the stated bound formulas."
+it needs.
+
+### The `regime` parameter on `mcaProximityGapError`
+
+WHIR and STIR both report soundness in two modes:
+
+* **`ProximityRegime.proven`** — uses the Johnson-regime bound (`δ < 1 − √ρ`).
+  Backed by BCIKS18 et al. Solid pen-and-paper math; trusted under peer
+  review.
+* **`ProximityRegime.conjectured`** — uses the capacity-regime bound
+  (`δ → 1 − ρ`). Tighter — so higher bit-security at the same protocol
+  parameters — but relies on the **capacity-achieving proximity-gap
+  conjecture**, which is unproved even at the paper level. Standard
+  practice in the field; protocol authors report both numbers and
+  practitioners pick based on risk tolerance.
+
+The `mcaProximityGapError` typeclass method takes a `regime` argument so
+profilers can compute either or both. Closing `sorry` #7
+(`mca_correlated_agreement`) would formalise the *proven* mode; the
+*conjectured* mode requires resolving the underlying conjecture, not
+just formalisation.
+
+### Epistemic chain
+
+| Number | Backing today |
+|---|---|
+| Proven mode bit-security | Trust BCIKS18-class papers (peer-reviewed) |
+| Conjectured mode bit-security | Trust the capacity-achieving proximity-gap conjecture (unproved) |
+
+Closing the four sorries would *not* affect conjectured-mode security
+(which is downstream of an open math conjecture, not formalisation
+work). It would upgrade proven-mode security from "trust the paper" to
+"machine-checked."

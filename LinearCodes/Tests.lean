@@ -76,8 +76,17 @@ def rs82 : ReedSolomonCode 𝔽 := ⟨cfg82⟩
 example : LinearCode.minimumDistance (F := 𝔽) rs82 = 7 := by native_decide
 example : LinearCodes.uniqueDecodingRadius (F := 𝔽) rs82 = 3 := by native_decide
 example : LinearCode.johnsonRadius (F := 𝔽) rs82 = 3 := by native_decide
+/-- Proven (Johnson-regime) bound: `(l − 1) · d / q = 2 · 7 / 17 = 14/17`. -/
 example :
-    LinearCode.mcaProximityGapError (F := 𝔽) rs82 3 0 17 = 14 / 17 := by
+    LinearCode.mcaProximityGapError (F := 𝔽) rs82 .proven 3 0 17 = 14 / 17 := by
+  native_decide
+
+/-- Conjectured (capacity-regime) bound: `(l − 1) · n / q = 2 · 8 / 17 = 16/17`.
+Tighter would be smaller; here `16/17 > 14/17` because the placeholder
+formula is loose — refine when pinning to a specific paper. -/
+example :
+    LinearCode.mcaProximityGapError (F := 𝔽) rs82 .conjectured 3 0 17
+      = 16 / 17 := by
   native_decide
 
 /-- Rate of the (8, 2) code is 2/8 = 1/4. -/

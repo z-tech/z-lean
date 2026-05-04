@@ -27,6 +27,24 @@ are derived once at the interface level.
 
 namespace LinearCodes
 
+/-- Security regime for proximity-gap analysis. The two modes correspond to
+the two ways soundness is reported in the FRI / STIR / WHIR family of
+protocols:
+
+* `proven` — uses the **Johnson-regime** proximity gap (`δ < 1 − √ρ`).
+  Proved in BCIKS18 and follow-up papers. Solid pen-and-paper math
+  modulo formalisation.
+* `conjectured` — uses the **capacity-regime** proximity gap
+  (`δ → 1 − ρ`). Believed but not proved, even at the paper level
+  ("capacity-achieving proximity gap conjecture"). Yields tighter bounds
+  and therefore higher bit-security; used by protocols when stronger
+  numbers are desired and the risk of relying on a conjecture is
+  acceptable. -/
+inductive ProximityRegime where
+  | proven
+  | conjectured
+  deriving DecidableEq, Repr
+
 /-- A linear-code instance over the field `F`. -/
 class LinearCode (Code : Type) (F : Type) [Field F] where
   /-- Configuration type (parameters: message length, code length, domain, …). -/
@@ -47,12 +65,16 @@ class LinearCode (Code : Type) (F : Type) [Field F] where
   `y` is polynomially bounded. For RS: roughly `n − √(n·k)`. -/
   johnsonRadius : Code → Nat
   /-- BCIKS18-style **Maximum Correlated Agreement** proximity-gap error
-  bound. Given a batch of `l` received words, a distance bound `δ`, and a
-  field size `q`, returns the per-test soundness-error contribution: the
-  probability that a random α-linear combination is δ-close to the code
-  while no single codeword is δ-close to all `l` words simultaneously.
-  Returned as a rational for exact chaining in security profilers. -/
-  mcaProximityGapError : Code → (l : Nat) → (δ : Nat) → (q : Nat) → ℚ
+  bound. Given a batch of `l` received words, a distance bound `δ`, a
+  field size `q`, and a security `regime`, returns the per-test
+  soundness-error contribution: the probability that a random α-linear
+  combination is δ-close to the code while no single codeword is δ-close
+  to all `l` words simultaneously. Returned as a rational for exact
+  chaining in security profilers. The `regime` selects between
+  Johnson-bound (`proven`) and capacity-bound (`conjectured`) formulas;
+  see `ProximityRegime`. -/
+  mcaProximityGapError : Code → ProximityRegime → (l : Nat) → (δ : Nat)
+    → (q : Nat) → ℚ
 
 /-! ### Derived quantities
 
