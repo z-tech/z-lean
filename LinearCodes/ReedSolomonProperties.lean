@@ -557,29 +557,64 @@ def linComb (n : ℕ) {l : ℕ} (fs : Fin l → Array F) (α : F) : Array F :=
       (fun acc i => acc + α ^ i.val * (fs i).getD j.val 0) 0
 
 open Classical in
-/-- **Maximum Correlated Agreement (BCIKS18 proximity gap).** Given `l`
-received words `f₀, …, f_{l-1} ∈ 𝔽^n`: if for at least `threshold`-many
-`α ∈ 𝔽`, the α-linear combination `Σ_i α^i · fᵢ` is within Hamming
-distance `δ` of some RS codeword, then there exists a single message
-`m` whose encoding is within Hamming distance `δ` of *all* `fᵢ`.
+/-- **Maximum Correlated Agreement (BCIKS18 / BCGM25, Johnson regime).**
 
-Used as a batched-proximity-test soundness amplifier in FRI, STIR, and
-Brakedown. The exact `(δ, threshold)` regime is paper-dependent —
-e.g. δ < (1−ρ)/2 for unique decoding, δ < 1−√ρ for Johnson. Both
-parameters are left as theorem inputs to specialise per protocol. -/
+Given `l` received words `f₀, …, f_{l-1} ∈ 𝔽ⁿ`: if for **enough** `α ∈ 𝔽`
+the α-linear combination `Σᵢ αⁱ · fᵢ` is within Hamming distance `δ` of
+some RS codeword (more than the BCIKS18 proximity-gap error allows), and
+we are in the Johnson regime `(n − δ)² > n · k`, then the input
+functions exhibit **mutual correlated agreement**: there exists a shared
+agreement set `S ⊆ Fin n` of size at least `n − δ` such that for each
+`fᵢ`, there is some codeword `cᵢ ∈ V` (possibly different per `i`)
+agreeing with `fᵢ` on every position in `S`.
+
+## Threshold
+
+The threshold `(l + 1) · n²` upper-bounds the number of "bad" α's under
+the BCIKS18 Johnson-regime proximity-gap formula
+`ε(q, n, ρ, δ) = O((l+1)·n²/q)`. When more than that many α's give a
+δ-close combination, we are in BCIKS18 case (a) — every α-combination
+is δ-close to V — and the MCA conclusion follows.
+
+## Conclusion shape (NB: not "single codeword close to all `fᵢ`")
+
+The conclusion gives a **shared support set** with **possibly different
+witness codewords** per input function — that is the actual content of
+mutual correlated agreement. The stronger "single codeword close to all
+`fᵢ`" form is **false** in general (e.g. `F = ZMod 2`, `f₀ = [0]`,
+`f₁ = [1]`, `δ = 0` — caught by the Aleph prover on an earlier draft of
+this statement).
+
+## Conjectured-capacity variant
+
+This statement is for the **proven (Johnson)** regime. The **conjectured
+(capacity)** regime would weaken the Johnson bound to `δ < n − k` and
+relies on the open capacity-achieving proximity-gap conjecture; that
+variant cannot be machine-checked until the underlying conjecture is
+resolved. -/
 theorem mca_correlated_agreement [DecidableEq F] [Fintype F]
     (cfg : ReedSolomonConfig F)
     (h_dom_size : cfg.domain.size = cfg.codeLength)
     {l : ℕ} (fs : Fin l → Array F)
     (h_sizes : ∀ i : Fin l, (fs i).size = cfg.codeLength)
-    (δ : ℕ) (threshold : ℕ)
-    (h_close_combo :
+    (δ : ℕ)
+    -- Johnson regime: required for BCIKS18 to apply.
+    (h_johnson : (cfg.codeLength - δ) * (cfg.codeLength - δ) >
+                 cfg.codeLength * cfg.messageLength)
+    -- Quantitative threshold matching BCIKS18 Johnson-regime proximity gap.
+    -- Number of α's giving a δ-close combination must exceed `(l+1)·n²`,
+    -- which upper-bounds the proximity-gap error count `ε·q` for that regime.
+    (h_threshold :
       (Finset.univ.filter fun α : F =>
         ∃ m : Array F, m.size = cfg.messageLength ∧
           hammingDist (linComb cfg.codeLength fs α)
-                      (reedSolomonEncode cfg m) ≤ δ).card ≥ threshold) :
-    ∃ m : Array F, m.size = cfg.messageLength ∧
-      ∀ i : Fin l, hammingDist (fs i) (reedSolomonEncode cfg m) ≤ δ := by
+                      (reedSolomonEncode cfg m) ≤ δ).card
+        > (l + 1) * cfg.codeLength * cfg.codeLength) :
+    ∃ S : Finset (Fin cfg.codeLength),
+      cfg.codeLength - S.card ≤ δ ∧
+      ∀ i : Fin l, ∃ m : Array F, m.size = cfg.messageLength ∧
+        ∀ j : Fin cfg.codeLength, j ∈ S →
+          (fs i).getD j.val 0 = (reedSolomonEncode cfg m).getD j.val 0 := by
   sorry
 
 end LinearCodes
