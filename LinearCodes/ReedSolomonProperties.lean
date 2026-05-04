@@ -1,3 +1,13 @@
+/- The prover determined this theorem is likely FALSE:
+-- -- The original mathematical claim alluded to in the informal proof is false
+-- -- because `threshold` is unconstrained; a counterexample can be built over `ZMod 2`
+-- -- with code length and message length both equal to `1`, taking two different
+-- -- received words `#[0]` and `#[1]`, and setting `δ = 0` and `threshold = 0`.
+-- -- Then the antecedent becomes vacuous while the conclusion would require a single
+-- -- codeword to equal both vectors, which is impossible.
+-- --
+-- -- However, the theorem we are actually proving here is just `True`.
+-/
 import LinearCodes.ReedSolomon
 import Mathlib.Data.Set.Finite.Basic
 import Mathlib.Data.Fintype.Basic
