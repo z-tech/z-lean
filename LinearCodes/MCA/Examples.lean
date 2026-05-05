@@ -45,5 +45,36 @@ theorem univariatePowers_zero (F : Type*) [Field F] {d : ℕ} (x : F) :
     (univariatePowers F d) x ⟨0, Nat.succ_pos d⟩ = 1 := by
   simp [univariatePowers]
 
+/-- The affine-line generator: `G(x) = (1, x)`, used as the simplest
+non-trivial polynomial generator in BCGM25. -/
+def affineLine (F : Type*) [Field F] : Generator F F 2 :=
+  ⟨fun x => ![1, x]⟩
+
+/-- The affine-space generator: `G(x₁, …, xₛ) = (1, x₁, …, xₛ)`. The
+basic generator for many proximity-test reductions. -/
+def affineSpace (F : Type*) [Field F] (s : ℕ) :
+    Generator F (Fin s → F) (s + 1) :=
+  ⟨fun x => Fin.cons 1 x⟩
+
+/-! ### Identities for `affineLine` and `affineSpace` -/
+
+/-- The zeroth coordinate of `affineLine` is always `1`. -/
+theorem affineLine_zero (F : Type*) [Field F] (x : F) :
+    (affineLine F) x 0 = 1 := rfl
+
+/-- The first coordinate of `affineLine` is the input. -/
+theorem affineLine_one (F : Type*) [Field F] (x : F) :
+    (affineLine F) x 1 = x := rfl
+
+/-- The zeroth coordinate of `affineSpace` is always `1`. -/
+theorem affineSpace_zero (F : Type*) [Field F] {s : ℕ} (x : Fin s → F) :
+    (affineSpace F s) x 0 = 1 := rfl
+
+/-- The `(i+1)`-th coordinate of `affineSpace` is the `i`-th input coordinate. -/
+theorem affineSpace_succ (F : Type*) [Field F] {s : ℕ} (x : Fin s → F)
+    (i : Fin s) :
+    (affineSpace F s) x i.succ = x i := by
+  simp [affineSpace, Fin.cons_succ]
+
 end Generator
 end LinearCodes
