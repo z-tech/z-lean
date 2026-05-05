@@ -64,16 +64,7 @@ theorem MCA_implies_CA {F : Type*} [Field F] [DecidableEq F]
     CorrelatedAgreement G c (fun e _ => εMCA ((e - 1 : ℚ) / n)) := by
   sorry
 
-/-- **MCA-at-zero simplification.** At `γ = 0`, the MCA bad event reduces:
-`T.card ≥ n` forces `T = univ`, and restriction-to-univ collapses to plain
-code membership. Hence the bad event becomes simply
-`G.combine x us ∈ c ∧ ∃ j, us j ∉ c`.
-
-This is a useful corollary of `MutualCorrelatedAgreement` that makes
-many `γ = 0` arguments easier (e.g., the forward direction of
-Lemma 3.18 can route through this). -/
-theorem MutualCorrelatedAgreement_zero_simplify
-    {F : Type*} [Field F] [DecidableEq F]
+theorem MutualCorrelatedAgreement_zero_simplify {F : Type*} [Field F] [DecidableEq F]
     {S : Type*} [Fintype S] {n ℓ : ℕ}
     (G : Generator F S ℓ) {c : Submodule F (Fin n → F)}
     {εMCA : ℚ → ℚ}
@@ -81,6 +72,29 @@ theorem MutualCorrelatedAgreement_zero_simplify
     (us : Fin ℓ → (Fin n → F)) :
     seedProb (S := S) (fun x => G.combine x us ∈ c ∧ ∃ j : Fin ℓ, us j ∉ c)
       ≤ εMCA 0 := by
-  sorry
+  have hmono :
+      seedProb (S := S) (fun x => G.combine x us ∈ c ∧ ∃ j : Fin ℓ, us j ∉ c) ≤
+        seedProb (S := S) (fun x =>
+          ∃ T : Finset (Fin n),
+            (T.card : ℚ) ≥ n * (1 - 0) ∧
+            InRestrictedCode c T (G.combine x us) ∧
+            ∃ j : Fin ℓ, ¬ InRestrictedCode c T (us j)) := by
+    apply seedProb_mono
+    intro x hx
+    rcases hx with ⟨hcomb, j, hj⟩
+    refine ⟨Finset.univ, ?_, ?_, j, ?_⟩
+    · norm_num
+    · exact (inRestrictedCode_univ_iff c).2 hcomb
+    · intro hu
+      exact hj ((inRestrictedCode_univ_iff c).1 hu)
+  calc
+    seedProb (S := S) (fun x => G.combine x us ∈ c ∧ ∃ j : Fin ℓ, us j ∉ c) ≤
+        seedProb (S := S) (fun x =>
+          ∃ T : Finset (Fin n),
+            (T.card : ℚ) ≥ n * (1 - 0) ∧
+            InRestrictedCode c T (G.combine x us) ∧
+            ∃ j : Fin ℓ, ¬ InRestrictedCode c T (us j)) := hmono
+    _ ≤ εMCA 0 := hMCA us 0 (by norm_num) (by norm_num)
+
 
 end LinearCodes
