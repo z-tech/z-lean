@@ -1,3 +1,39 @@
+/- The prover determined this theorem is likely FALSE:
+-- -- Counterexample to the false statement `MCA_implies_CA`.
+-- --
+-- -- Take:
+-- -- * `F = ℚ`
+-- -- * `S = PUnit` (one seed)
+-- -- * `n = 2`
+-- -- * `ℓ = 0`
+-- -- * `c = ⊥ : Submodule ℚ (Fin 2 → ℚ)`
+-- -- * `εMCA := fun _ => 0`
+-- -- * `G : Generator ℚ PUnit 0` the unique generator
+-- --
+-- -- Why MCA holds:
+-- -- * For any `us : Fin 0 → (Fin 2 → ℚ)` and any `γ`, the MCA bad event is
+-- --   `∃ T : Finset (Fin 2), ... ∧ ∃ j : Fin 0, ¬ InRestrictedCode c T (us j)`.
+-- -- * But `Fin 0` has no elements, so `∃ j : Fin 0, ...` is impossible.
+-- -- * Hence the bad event is false for every seed `x`, so its seed-probability is `0`.
+-- -- * Therefore `MutualCorrelatedAgreement G c εMCA` holds, since `0 ≤ εMCA γ = 0`.
+-- --
+-- -- Why CA fails:
+-- -- * Choose `e = 2` and `t = 1`. Then `1 ≤ t`, `t < e`, and `e ≤ n` all hold.
+-- -- * The CA premise
+-- --   `∀ i : Fin 0, ∀ codeword ∈ c, e ≤ hammingDistance (us i) codeword`
+-- --   is vacuous because there is no `i : Fin 0`.
+-- -- * For any seed `x`, `G.combine x us = 0`, because the defining sum is over `Fin 0`.
+-- -- * Since `0 ∈ c`, taking `codeword = 0` shows
+-- --   `hammingDistance (G.combine x us) codeword = hammingDistance 0 0 = 0 ≤ e - t = 1`.
+-- -- * So the CA event is true for every seed, hence its seed-probability is `1`.
+-- -- * But the claimed bound is
+-- --   `εMCA ((e - 1 : ℚ) / n) = εMCA (1 / 2) = 0`.
+-- -- * Thus the conclusion
+-- --   `CorrelatedAgreement G c (fun e _ => εMCA ((e - 1 : ℚ) / n))` fails.
+-- --
+-- -- Conclusion: the theorem needs an extra assumption such as `0 < ℓ`;
+-- -- without it, the statement is false.
+-/
 /-
 # MCA implies CA (BCGM25 Lemma 3.22)
 
