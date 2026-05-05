@@ -1,4 +1,29 @@
 /- The prover determined this theorem is likely FALSE:
+-- -- Counterexample to `MCA_implies_CA`.
+-- -- Take `F = ℚ`, `S = PUnit`, `n = 2`, `ℓ = 0`.
+-- -- Let `c = ⊥ : Submodule ℚ (Fin 2 → ℚ)`.
+-- -- Let `εMCA : ℚ → ℚ := fun _ => 0`.
+-- -- Let `G : Generator ℚ PUnit 0` be the unique generator.
+-- --
+-- -- Why MCA holds:
+-- -- * For any `us : Fin 0 → (Fin 2 → ℚ)` and any `γ`, the MCA bad event asks for
+-- --   `∃ j : Fin 0, ¬ InRestrictedCode c T (us j)`, impossible since `Fin 0` is empty.
+-- -- * Hence the bad event is false for every seed, so its seed-probability is `0`.
+-- -- * Therefore `MutualCorrelatedAgreement G c εMCA` holds.
+-- --
+-- -- Why CA fails:
+-- -- * Choose `e = 2` and `t = 1`; then `1 ≤ t`, `t < e`, and `e ≤ n`.
+-- -- * The CA hypothesis on all rows is vacuous because there is no `i : Fin 0`.
+-- -- * For every seed `x`, `G.combine x us = 0` because the sum is over `Fin 0`.
+-- -- * Since `0 ∈ c`, take `codeword = 0`; then
+-- --   `hammingDistance (G.combine x us) codeword = 0 ≤ e - t = 1`.
+-- -- * So the CA event holds for every seed, hence has seed-probability `1`.
+-- -- * But the claimed upper bound is `εMCA ((e - 1 : ℚ) / n) = εMCA (1 / 2) = 0`.
+-- -- * Therefore the conclusion of `CorrelatedAgreement` fails.
+-- --
+-- -- Conclusion: the theorem needs an extra assumption such as `0 < ℓ`; without it, it is false.
+-/
+/- The prover determined this theorem is likely FALSE:
 -- -- Counterexample to the false statement `MCA_implies_CA`.
 -- --
 -- -- Take:
