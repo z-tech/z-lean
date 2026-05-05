@@ -100,19 +100,58 @@ end Generator
 
 /-! ### BCGM25 Lemma 3.13: zero-evading from induced-code distance -/
 
-/-- **BCGM25 Lemma 3.13 (special case).** If the generator-induced code
-`C_G` has minimum distance at least `d` and `dotMap` is injective, then
-`G` is zero-evading with error `(|S| − d) / |S|`.
+theorem fnHammingWeight_le_card {F : Type*} [Field F] [DecidableEq F] {α : Type*} [Fintype α] (w : α → F) : Generator.fnHammingWeight w ≤ Fintype.card α := by
+  unfold Generator.fnHammingWeight
+  calc
+    (Finset.univ.filter (fun x : α => w x ≠ 0)).card ≤ Finset.univ.card := Finset.card_filter_le _ _
+    _ = Fintype.card α := by rw [Finset.card_univ]
 
-Equivalently in BCGM25 notation: `ε_ZE ≤ 1 − δ_{C_G}` where
-`δ_{C_G} = d / |S|` is the relative distance. -/
-theorem ZeroEvading_from_inducedCode_min_dist
-    {F : Type*} [Field F] [DecidableEq F]
+theorem fnZeroCount_eq_card_sub_fnHammingWeight {F : Type*} [Field F] [DecidableEq F] {α : Type*} [Fintype α] (w : α → F) : (Finset.univ.filter (fun x : α => w x = 0)).card = Fintype.card α - Generator.fnHammingWeight w := by
+  unfold Generator.fnHammingWeight
+  have h :
+      (Finset.univ.filter (fun x : α => w x ≠ 0)).card +
+        (Finset.univ.filter (fun x : α => w x = 0)).card = Fintype.card α := by
+    simpa only [not_not, Finset.card_univ] using
+      (Finset.card_filter_add_card_filter_not (s := (Finset.univ : Finset α)) (p := fun x : α => w x ≠ 0))
+  omega
+
+theorem seedProb_eq_zero_le_of_fnHammingWeight_ge {F : Type*} [Field F] [DecidableEq F] {α : Type*} [Fintype α] [Nonempty α] (w : α → F) (d : ℕ) (hw : d ≤ Generator.fnHammingWeight w) : seedProb (S := α) (fun x => w x = 0) ≤ ((Fintype.card α - d : ℚ) / Fintype.card α) := by
+  classical
+  unfold seedProb
+  have hw_le_card : Generator.fnHammingWeight w ≤ Fintype.card α := fnHammingWeight_le_card w
+  have hdcard : d ≤ Fintype.card α := le_trans hw hw_le_card
+  have hcount : (Finset.univ.filter (fun x : α => w x = 0)).card ≤ Fintype.card α - d := by
+    rw [fnZeroCount_eq_card_sub_fnHammingWeight]
+    omega
+  have hpos_nat : 0 < Fintype.card α := Fintype.card_pos_iff.mpr ‹Nonempty α›
+  have hpos : (0 : ℚ) < Fintype.card α := by
+    exact_mod_cast hpos_nat
+  rw [← Nat.cast_sub hdcard]
+  apply (div_le_div_iff_of_pos_right hpos).2
+  exact_mod_cast hcount
+
+theorem ZeroEvading_from_inducedCode_min_dist {F : Type*} [Field F] [DecidableEq F]
     {S : Type*} [Fintype S] [Nonempty S] {ℓ : ℕ}
     (G : Generator F S ℓ) (d : ℕ)
     (h_dist : Generator.fnMinDistAtLeast G.inducedCode d)
     (h_inj : Function.Injective G.dotMap) :
     ZeroEvading G ((Fintype.card S - d : ℚ) / Fintype.card S) := by
-  sorry
+  intro v hv
+  let w : S → F := G.dotMap v
+  have hw_mem : w ∈ G.inducedCode := by
+    rw [Generator.mem_inducedCode_iff]
+    refine ⟨v, ?_⟩
+    intro x
+    rfl
+  have hw_nonzero : w ≠ 0 := by
+    intro hzero
+    apply hv
+    apply h_inj
+    simpa [w, Generator.dotMap_zero] using hzero
+  have hweight : d ≤ Generator.fnHammingWeight w := by
+    exact h_dist w hw_mem hw_nonzero
+  have hbound := seedProb_eq_zero_le_of_fnHammingWeight_ge (w := w) (d := d) hweight
+  simpa [w, Generator.dotMap_apply] using hbound
+
 
 end LinearCodes
