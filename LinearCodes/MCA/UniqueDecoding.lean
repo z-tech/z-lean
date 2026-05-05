@@ -335,20 +335,35 @@ theorem strict_superset_count_bound {α : Type*} [Fintype α] [DecidableEq α]
 
 /-! ### §6.1 Case 1 (γ < 1/n): bound the bad set by ℓ − 1 -/
 
-/-- **Algebraic core of §6.1 Case 1.** If we have `ℓ` distinct seeds whose
-linear combinations all lie in the code `c`, then *every* row of `us`
-must already be in `c`. The proof uses MDS-induced matrix invertibility
-to express each `us j` as an `F`-linear combination of the in-code
-`G.combine (xs i) us` values. -/
-theorem all_us_mem_of_combine_at_distinct_seeds
-    [Fintype S] [DecidableEq S]
+theorem linearMap_apply_combine_eq_dotMap (f : (Fin n → F) →ₗ[F] F) (G : Generator F S ℓ) (x : S) (us : Fin ℓ → (Fin n → F)) :
+    f (G.combine x us) = G.dotMap (fun j => f (us j)) x := by
+  have hsum : G.combine x us = ∑ j : Fin ℓ, G x j • us j := by
+    ext i
+    rw [Generator.combine, Finset.sum_apply]
+    simp only [Pi.smul_apply, smul_eq_mul]
+  rw [hsum, map_sum]
+  simp only [LinearMap.map_smul, Generator.dotMap_apply, smul_eq_mul]
+
+theorem all_us_mem_of_combine_at_distinct_seeds [Fintype S] [DecidableEq S]
     (G : Generator F S ℓ) (hG_MDS : G.IsMDS)
     (c : Submodule F (Fin n → F))
     (us : Fin ℓ → (Fin n → F))
     (xs : Fin ℓ → S) (h_distinct : Function.Injective xs)
     (h_combines : ∀ i, G.combine (xs i) us ∈ c) :
     ∀ j, us j ∈ c := by
-  sorry
+  intro j₀
+  by_contra hu0
+  obtain ⟨f, hf_nonzero, hc_ker⟩ := Submodule.exists_le_ker_of_notMem hu0
+  let v : Fin ℓ → F := fun j => f (us j)
+  have h_zero : ∀ i, G.dotMap v (xs i) = 0 := by
+    intro i
+    have hmem : G.combine (xs i) us ∈ LinearMap.ker f := hc_ker (h_combines i)
+    have hf_zero : f (G.combine (xs i) us) = 0 := by
+      exact (LinearMap.mem_ker).1 hmem
+    simpa [v] using (linearMap_apply_combine_eq_dotMap f G (xs i) us).symm.trans hf_zero
+  have hv : v = 0 := hG_MDS.dotMap_zero_at_distinct_seeds_implies_zero xs h_distinct h_zero
+  exact hf_nonzero (by simpa [v] using congrFun hv j₀)
+
 
 /-- **§6.1 Case 1 bound.** In the unique-decoding regime where `γ < 1/n`,
 the MCA bad set has at most `ℓ − 1` elements (when at least one row
