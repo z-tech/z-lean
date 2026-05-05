@@ -88,4 +88,23 @@ theorem MCA_bad_event_mono_in_γ {F : Type*} [Field F] [DecidableEq F]
     mul_le_mul_of_nonneg_left h1 hn
   linarith
 
+/-- If a predicate's set has finite cardinality `≤ N`, the seed-probability is
+bounded by `N / |S|`. The standard bridge from counting bounds to
+probability bounds. -/
+theorem seedProb_le_ncard_div {S : Type*} [Fintype S] [Nonempty S]
+    (P : S → Prop) (N : ℕ)
+    (h : {x : S | P x}.ncard ≤ N) :
+    seedProb P ≤ (N : ℚ) / Fintype.card S := by
+  classical
+  unfold seedProb
+  have hcard_eq : ((Finset.univ : Finset S).filter P).card = {x : S | P x}.ncard := by
+    rw [Set.ncard_eq_toFinset_card']
+    congr 1
+    ext x
+    simp
+  have hcard_le : ((Finset.univ : Finset S).filter P).card ≤ N := hcard_eq ▸ h
+  have hN_pos : (0 : ℚ) < Fintype.card S := by exact_mod_cast Fintype.card_pos
+  rw [div_le_div_iff_of_pos_right hN_pos]
+  exact_mod_cast hcard_le
+
 end LinearCodes

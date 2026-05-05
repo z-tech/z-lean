@@ -184,5 +184,4 @@ theorem dotMap_injective_iff {F : Type*} [Field F] {S : Type*} {ℓ : ℕ}
       simpa only [Generator.dotMap_apply, Pi.zero_apply] using hx
     exact sub_eq_zero.mp huv0
 
-
 end LinearCodes

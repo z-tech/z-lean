@@ -8,6 +8,7 @@ import LinearCodes.MCA.Examples
 import LinearCodes.MCA.InducedCode
 import LinearCodes.MCA.CAImplications
 import LinearCodes.MCA.UniqueDecoding
+import LinearCodes.MCA.MaximalDomain
 import LinearCodes.LinearCode
 import LinearCodes.ReedSolomon
 import LinearCodes.ReedSolomonProperties

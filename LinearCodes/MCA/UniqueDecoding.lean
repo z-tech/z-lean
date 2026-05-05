@@ -453,4 +453,75 @@ theorem MCA_bad_event_at_small_gamma_eq_zero_event
       rw [inRestrictedCode_univ_iff] at h
       exact hj h
 
+/-! ### §6.1 Case 1 capstone: MCA bound for γ < 1/n -/
+
+/-- **§6.1 Case 1 MCA bound.** When the generator is MDS and `γ ∈ [0, 1/n)`,
+the MCA bad-event probability is bounded by `(ℓ - 1) / |S|`. This is the
+small-γ branch of BCGM25 Theorem 6.1's MCA error formula
+(`max{n·γ, 1} · (ℓ-1)/|S|` simplifies to `(ℓ-1)/|S|` when `n·γ < 1`).
+Requires `0 < ℓ` since otherwise the right-hand side is negative. -/
+theorem MCA_unique_decoding_small_gamma_bound
+    [Fintype S] [DecidableEq S] [Nonempty S]
+    (G : Generator F S ℓ) (hG_MDS : G.IsMDS) (hℓ : 0 < ℓ)
+    (c : Submodule F (Fin n → F)) (hn : 0 < n)
+    (us : Fin ℓ → (Fin n → F))
+    {γ : ℚ} (hγ_pos : 0 ≤ γ) (hγ_lt : (n : ℚ) * γ < 1) :
+    seedProb (S := S) (fun x =>
+      ∃ T : Finset (Fin n), (T.card : ℚ) ≥ n * (1 - γ) ∧
+        InRestrictedCode c T (G.combine x us) ∧
+        ∃ j : Fin ℓ, ¬ InRestrictedCode c T (us j))
+    ≤ (ℓ - 1 : ℚ) / Fintype.card S := by
+  by_cases h_us : ∃ j, us j ∉ c
+  · have hequiv : ∀ x,
+      (∃ T : Finset (Fin n), (T.card : ℚ) ≥ n * (1 - γ) ∧
+        InRestrictedCode c T (G.combine x us) ∧
+        ∃ j : Fin ℓ, ¬ InRestrictedCode c T (us j))
+      ↔ (G.combine x us ∈ c ∧ ∃ j : Fin ℓ, us j ∉ c) :=
+      fun x => MCA_bad_event_at_small_gamma_eq_zero_event hγ_lt hγ_pos hn G c us x
+    rw [seedProb_congr hequiv]
+    have hequiv2 : ∀ x,
+      (G.combine x us ∈ c ∧ ∃ j : Fin ℓ, us j ∉ c) ↔ G.combine x us ∈ c :=
+      fun x => ⟨fun h => h.1, fun h => ⟨h, h_us⟩⟩
+    rw [seedProb_congr hequiv2]
+    have h_ncard : {x : S | G.combine x us ∈ c}.ncard ≤ ℓ - 1 :=
+      MCA_zero_bad_set_card_le_ell_minus_one G hG_MDS c us h_us
+    have h_le := seedProb_le_ncard_div (fun x => G.combine x us ∈ c) (ℓ - 1) h_ncard
+    have hcast : ((ℓ - 1 : ℕ) : ℚ) = (ℓ : ℚ) - 1 := by
+      rw [Nat.cast_sub hℓ, Nat.cast_one]
+    rw [hcast] at h_le
+    exact h_le
+  · push_neg at h_us
+    have hequiv_false : ∀ x,
+      (∃ T : Finset (Fin n), (T.card : ℚ) ≥ n * (1 - γ) ∧
+        InRestrictedCode c T (G.combine x us) ∧
+        ∃ j : Fin ℓ, ¬ InRestrictedCode c T (us j))
+      ↔ False := by
+      intro x
+      constructor
+      · rintro ⟨T, _, _, j, hnj⟩
+        exact hnj (inRestrictedCode_of_mem c T (h_us j))
+      · intro h; exact h.elim
+    rw [seedProb_congr hequiv_false]
+    rw [seedProb_const_false]
+    apply div_nonneg
+    · have h1 : (1 : ℚ) ≤ ℓ := by exact_mod_cast hℓ
+      linarith
+    · exact_mod_cast Nat.zero_le _
+
+/-! ### MDS dimension exactness -/
+
+/-- For an MDS generator, the induced code has dimension exactly `ℓ`. -/
+theorem Generator.IsMDS.inducedCode_finrank_eq
+    [Fintype S] {G : Generator F S ℓ} (h : G.IsMDS) :
+    Module.finrank F G.inducedCode = ℓ := by
+  simpa [Generator.inducedCode, Module.finrank_fin_fun] using
+    LinearMap.finrank_range_of_inj (f := G.dotMap) h.dotMap_injective
+
+/-- An MDS generator's `dotMap` is a linear equivalence onto its image
+(the induced code), with the source domain `Fin ℓ → F` having full
+dimension `ℓ`. -/
+theorem Generator.IsMDS.dotMap_range_eq_inducedCode
+    [Fintype S] {G : Generator F S ℓ} (h : G.IsMDS) :
+    LinearMap.range G.dotMap = G.inducedCode := rfl
+
 end LinearCodes
