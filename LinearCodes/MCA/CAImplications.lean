@@ -55,9 +55,12 @@ set_option linter.unusedSectionVars false
 namespace LinearCodes
 
 /-- **BCGM25 Lemma 3.22 (MCA implies CA).** If `G` has MCA for `c` with
-error `εMCA`, then `G` has CA for `c` with error `εCA(e, t) = εMCA((e−1)/n)`. -/
+error `εMCA`, then `G` has CA for `c` with error `εCA(e, t) = εMCA((e−1)/n)`.
+Requires `0 < ℓ` (otherwise CA's vacuous premise + non-vacuous conclusion
+breaks the implication — see Aleph's counterexample comment at the top
+of this file). -/
 theorem MCA_implies_CA {F : Type*} [Field F] [DecidableEq F]
-    {S : Type*} [Fintype S] {n ℓ : ℕ}
+    {S : Type*} [Fintype S] {n ℓ : ℕ} (hℓ : 0 < ℓ)
     (G : Generator F S ℓ) (c : Submodule F (Fin n → F))
     {εMCA : ℚ → ℚ}
     (hMCA : MutualCorrelatedAgreement G c εMCA) :

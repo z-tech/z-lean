@@ -2,11 +2,16 @@
 
 The target is `MCA_implies_CA` in `LinearCodes/MCA/CAImplications.lean`.
 
+**Note (2026-05-05):** Aleph correctly identified that the original
+statement is false at `ℓ = 0` (vacuous CA premise but non-vacuous bad
+event). The statement now has `(hℓ : 0 < ℓ)` as a hypothesis. Use it
+where needed (extracting `j₀ : Fin ℓ` for the `∃ j` branch).
+
 ## What you're proving
 
 ```lean
 theorem MCA_implies_CA {F : Type*} [Field F] [DecidableEq F]
-    {S : Type*} [Fintype S] {n ℓ : ℕ}
+    {S : Type*} [Fintype S] {n ℓ : ℕ} (hℓ : 0 < ℓ)
     (G : Generator F S ℓ) (c : Submodule F (Fin n → F))
     {εMCA : ℚ → ℚ}
     (hMCA : MutualCorrelatedAgreement G c εMCA) :

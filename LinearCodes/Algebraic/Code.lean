@@ -236,4 +236,48 @@ theorem hammingWeight_eq_n_iff [DecidableEq F] {v : Fin n → F} :
     hammingDistance u v = 0 ↔ u = v :=
   hammingDistance_eq_zero_iff
 
+/-! ### Hamming distance bounded by complement of agreement -/
+
+/-- If `u` and `v` agree on every coordinate of `T`, the Hamming distance is
+bounded by the number of coordinates outside `T`. -/
+theorem hammingDistance_le_of_agree_on [DecidableEq F]
+    {u v : Fin n → F} {T : Finset (Fin n)}
+    (h_agree : ∀ i ∈ T, u i = v i) :
+    hammingDistance u v ≤ n - T.card := by
+  unfold hammingDistance
+  calc (Finset.univ.filter fun i => u i ≠ v i).card
+      ≤ (Finset.univ \ T).card := by
+        apply Finset.card_le_card
+        intro i hi
+        simp only [Finset.mem_filter] at hi
+        simp only [Finset.mem_sdiff, Finset.mem_univ, true_and]
+        intro hT
+        exact hi.2 (h_agree i hT)
+    _ = n - T.card := by
+        rw [Finset.card_univ_diff, Fintype.card_fin]
+
+/-! ### MDS rigidity: codewords agreeing on `≥ k` positions are equal -/
+
+/-- **Key lemma for §6.1.** In an MDS code with dimension `k`, two codewords
+that agree on a set `T` of size at least `k` must be equal. This is the
+algebraic backbone of BCGM25 Theorem 6.1's polynomial argument. -/
+theorem agreement_implies_eq_of_MDS [DecidableEq F]
+    {k : ℕ} {c : Submodule F (Fin n → F)}
+    (h_MDS : IsMDS c k)
+    {u v : Fin n → F} (hu : u ∈ c) (hv : v ∈ c)
+    {T : Finset (Fin n)} (h_size : k ≤ T.card)
+    (h_agree : ∀ i ∈ T, u i = v i) :
+    u = v := by
+  by_contra h_ne
+  obtain ⟨_h_dim, h_mindist⟩ := h_MDS
+  have h_sub_mem : u - v ∈ c := c.sub_mem hu hv
+  have h_sub_ne : u - v ≠ 0 := sub_ne_zero.mpr h_ne
+  have h_lo := h_mindist (u - v) h_sub_mem h_sub_ne
+  have h_eq := hammingDistance_eq_hammingWeight_sub u v
+  have h_hi := hammingDistance_le_of_agree_on h_agree
+  have h_chain : n - k + 1 ≤ n - T.card := by
+    rw [← h_eq] at h_lo
+    exact h_lo.trans h_hi
+  omega
+
 end LinearCodes

@@ -154,4 +154,21 @@ theorem ZeroEvading_from_inducedCode_min_dist {F : Type*} [Field F] [DecidableEq
   simpa [w, Generator.dotMap_apply] using hbound
 
 
+/-! ### Dimension and injectivity -/
+
+/-- The induced code's dimension is at most `ℓ` (it's the image of a map
+from `F^ℓ`). -/
+theorem inducedCode_finrank_le {F : Type*} [Field F] {S : Type*} [Fintype S]
+    {ℓ : ℕ} (G : Generator F S ℓ) :
+    Module.finrank F G.inducedCode ≤ ℓ := by
+  sorry
+
+/-- `dotMap` is injective iff the only `v ∈ F^ℓ` whose dot products with
+all rows of `G` vanish is `v = 0`. -/
+theorem dotMap_injective_iff {F : Type*} [Field F] {S : Type*} {ℓ : ℕ}
+    (G : Generator F S ℓ) :
+    Function.Injective G.dotMap ↔
+    ∀ v : Fin ℓ → F, (∀ x : S, ∑ j, G x j * v j = 0) → v = 0 := by
+  sorry
+
 end LinearCodes
