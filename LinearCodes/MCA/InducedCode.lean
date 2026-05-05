@@ -163,12 +163,24 @@ theorem inducedCode_finrank_le {F : Type*} [Field F] {S : Type*} [Fintype S]
     Module.finrank F G.inducedCode ≤ ℓ := by
   sorry
 
-/-- `dotMap` is injective iff the only `v ∈ F^ℓ` whose dot products with
-all rows of `G` vanish is `v = 0`. -/
 theorem dotMap_injective_iff {F : Type*} [Field F] {S : Type*} {ℓ : ℕ}
     (G : Generator F S ℓ) :
     Function.Injective G.dotMap ↔
     ∀ v : Fin ℓ → F, (∀ x : S, ∑ j, G x j * v j = 0) → v = 0 := by
-  sorry
+  constructor
+  · intro hinj v hv
+    apply hinj
+    ext x
+    simpa only [Generator.dotMap_apply, Pi.zero_apply, mul_zero, Finset.sum_const_zero] using hv x
+  · intro hker u v huv
+    have hsub : G.dotMap (u - v) = 0 := by
+      rw [LinearMap.map_sub, huv, sub_self]
+    have huv0 : u - v = 0 := by
+      apply hker
+      intro x
+      have hx := congrFun hsub x
+      simpa only [Generator.dotMap_apply, Pi.zero_apply] using hx
+    exact sub_eq_zero.mp huv0
+
 
 end LinearCodes
