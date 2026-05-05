@@ -11,5 +11,7 @@ lean_lib «InteractiveProtocol» where
 
 lean_lib «LinearCodes» where
 
+lean_lib «Upstream» where
+
 require "leanprover-community" / mathlib @ git "v4.28.0"
 require CompPoly from git "https://github.com/z-tech/CompPoly" @ "z-tech/keep_add_rm_instHAddMaxNat"

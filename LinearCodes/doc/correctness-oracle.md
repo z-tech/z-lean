@@ -7,7 +7,7 @@ same epistemic sense as `Sumcheck.Src.Transcript.generateHonestTranscript`
 (which has `perfect_completeness` + `soundness_dishonest` formally
 attached).
 
-## Current state (2026-05-04)
+## Current state (2026-05-05)
 
 | Layer | Status |
 |---|---|
@@ -15,13 +15,33 @@ attached).
 | `LinearCode` typeclass methods (`messageLen`, `codeLen`, `minimumDistance`, `johnsonRadius`, `mcaProximityGapError`) | **Computable** ✅ |
 | Derived helpers (`rate`, `uniqueDecodingRadius`) | **Computable** ✅ |
 | `encode_size`, `encode_add`, `encode_smul` (encoder linearity) | **Proved** ✅ |
-| `encode_min_distance`, `encode_injective`, `johnson_list_decoding_radius`, `mca_correlated_agreement` | **Stubbed (`sorry`)** ❌ |
-| Bridge to Mathlib's `Polynomial.eval` | **Not written** ❌ |
+| `encode_min_distance`, `encode_injective`, `johnson_list_decoding_radius` | **Proved** ✅ |
+| `mca_correlated_agreement` (case-(a) form, Johnson regime) | **Proved** ✅ |
+| Bridge to Mathlib's `Polynomial.eval` (`reedSolomonEncode_eq_polynomial_eval`) | **Proved** ✅ |
 
-**Plain reading:** this is runnable Lean code that you can fuzz against
-a Rust implementation, and the seven property statements give a clear
-contract — but no proof object yet attests that the runnable code
-matches its spec, nor that the spec satisfies the seven properties.
+**Zero sorries.** The encoder is computable, machine-verified to agree
+with Mathlib's canonical polynomial-evaluation, and all seven property
+theorems are closed.
+
+### Note on the MCA theorem shape
+
+The `mca_correlated_agreement` theorem is in **case-(a) form**: it
+assumes directly that *every* `α ∈ 𝔽` gives a δ-close combination, and
+concludes mutual correlated agreement (shared support, possibly
+different witness codewords per `fᵢ`). The proof uses
+`2^(domain size)` pigeonhole on the supports + Lagrange interpolation,
+requiring the field-size hypothesis `|𝔽| > (l + 1) · 2^n`.
+
+The published BCGM25 quantitative form bounds the *number of bad
+seeds* by `O((l+1) · n²)` via a Guruswami-Sudan polynomial
+construction — machinery (rational function fields, GS interpolation)
+that is not yet in Mathlib. Our case-(a) form is the structural
+implication that downstream protocols invoke; the BCGM25 quantitative
+threshold is treated as an external runtime check, not a Lean theorem.
+
+For practical RS instances with `n ≤ 60` and Goldilocks-class fields
+(`|𝔽| ≈ 2^64`), our `(l+1)·2^n` field-size requirement is satisfied
+comfortably.
 
 ## What "FFT" is and isn't here
 
