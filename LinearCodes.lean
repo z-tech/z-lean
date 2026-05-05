@@ -6,6 +6,8 @@ import LinearCodes.MCA.Properties
 import LinearCodes.MCA.SeedProbLemmas
 import LinearCodes.MCA.Examples
 import LinearCodes.MCA.InducedCode
+import LinearCodes.MCA.CAImplications
+import LinearCodes.MCA.UniqueDecoding
 import LinearCodes.LinearCode
 import LinearCodes.ReedSolomon
 import LinearCodes.ReedSolomonProperties

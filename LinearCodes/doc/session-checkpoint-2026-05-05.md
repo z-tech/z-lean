@@ -129,32 +129,73 @@ the original plan. No agent has been near it.
 
 ## Workflow rules going forward
 
-1. **User is sole git author.** I add files/sorries locally; user
-   pushes, sends to Aleph, merges PRs.
-2. **I don't push.** Ever.
-3. **Don't race ahead with stubs.** Stage one or two clean targets
-   per round, wait for the user to feed Aleph, then continue.
-4. **Stop padding theorems.** If a lemma is `rfl` or `simp`, write
-   it inline rather than as a separate theorem unless it's load-
-   bearing.
-5. **Pivot to depth when shallow agents stop adding value.** That
-   point is here. Next hard target should be tackled with focused
-   work, not 100-agent fanout.
+1. **User is sole git author.** I never push or commit; user pushes
+   batches and sends targets to Aleph.
+2. **Throughput matters.** Stage as many *substantive* targets as makes
+   sense in a batch — Aleph runs them in parallel. The earlier
+   problem wasn't volume, it was racing ahead of the user's push
+   cadence and padding with trivia.
+3. **No padding.** Trivial `rfl`/`simp` lemmas go inline. Aleph
+   targets must be load-bearing toward Theorem 6.1, §4 toolbox, or
+   Phase B.
+4. **Each target gets a clean docstring** plus a brief in
+   `LinearCodes/doc/aleph-target-*.md` when the proof strategy is
+   non-obvious.
+5. **General-purpose agent fanout** is still useful for *known-tractable*
+   sub-goals (helpers, definitional unfolding) — Aleph for the
+   research-grade theorems.
 
-## Git state
+## Git state (at refresh)
 
-* Local changes (uncommitted): `Code.lean`, `CAImplications.lean`,
-  `InducedCode.lean`, `aleph-target-lemma-3-22.md`.
-* Local sorries: 3 (Lemma 3.22, `inducedCode_finrank_le`,
-  `dotMap_injective_iff`).
-* Remote `origin/z-tech/linear-codes`: through Aleph's Lemma 3.13 +
-  MCA-zero-simplify merges.
+* Working tree clean (user pushed after this checkpoint was first
+  written). All local sorries are now on the remote.
+* Three Aleph runs **in flight** (started 2026-05-05 ~16:00):
+  * `MCA_implies_CA` in `LinearCodes/MCA/CAImplications.lean` —
+    revised with `hℓ : 0 < ℓ` per Aleph's earlier counterexample.
+  * `inducedCode_finrank_le` in `LinearCodes/MCA/InducedCode.lean`.
+  * `dotMap_injective_iff` in `LinearCodes/MCA/InducedCode.lean`.
+* §6.1 foundation lemmas (`hammingDistance_le_of_agree_on`,
+  `agreement_implies_eq_of_MDS`) are **proved and pushed** in
+  `LinearCodes/Algebraic/Code.lean`.
 
-## What I need from the user to continue cleanly
+## First prompt for the next session
 
-1. Pull Aleph's `MCA_implies_CA` PR diff so I can see the actual
-   counterexample, OR confirm I should pivot away from 3.22.
-2. Decide whether to push my local stubs (`§6.1 foundation lemmas`
-   in Code.lean — these are genuinely useful and proved, not stubs).
-3. Direction: continue trying to crack Phase A blocks (A.4 toolbox
-   is the next major one), or pause and review architecture.
+Suggested kickoff message:
+
+> Continuing the BCGM25 formalization. Read
+> `LinearCodes/doc/session-checkpoint-2026-05-05.md` for full context.
+>
+> Workflow rules:
+> 1. I am sole git author. You never push or commit.
+> 2. Stage as many *substantive* targets per round as makes sense — I'll
+>    push them in batches and feed Aleph in parallel. Throughput matters.
+> 3. **No padding.** Trivial `rfl`/`simp` lemmas go inline. Aleph targets
+>    must be load-bearing toward Theorem 6.1 / §4 toolbox / Phase B.
+> 4. Each Aleph target needs a clean docstring + (when non-obvious) a
+>    brief explaining the proof strategy and helper lemmas in scope.
+>
+> Direction: BCGM25 Theorem 6.1 capstone. Next sub-blocks are §4 toolbox
+> (linear transformations, tensor products, matrix-vector composition)
+> and §5 counting lemmas. §6.1 foundation (MDS rigidity) is already done.
+>
+> First questions:
+> 1. Did the three pending Aleph runs finish? Which proved, which failed?
+> 2. After they land, stage the next batch toward §4.1 / §6.1.
+
+## Where the project actually is
+
+* **~90 theorems closed**, full project builds clean.
+* **§3 Preliminaries**: ~75% done. Lemma 3.18 forward (Aleph),
+  Lemma 3.13 (Aleph), MCA-zero simplify (Aleph), Corrádi (me),
+  full structural framework.
+* **§6.1 foundation**: MDS rigidity proved (the algebraic backbone
+  of Theorem 6.1).
+* **§4 toolbox**: 0%. Next major block.
+* **§5 counting**: 0%. Unblocked by §4.
+* **§6 capstone (Theorem 6.1)**: 0%. Needs §4, §5, plus the seed-
+  counting argument that uses Corrádi.
+* **Phase B (bivariate, GS list-decoder, §6.2, §9)**: 0%. Research-
+  grade, not yet started.
+
+**Honest progress estimate:** ~17–20% of total project. Phase A is
+~50–60% done; Phase B is the major remaining mass.

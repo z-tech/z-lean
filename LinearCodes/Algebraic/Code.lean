@@ -280,4 +280,64 @@ theorem agreement_implies_eq_of_MDS [DecidableEq F]
     exact h_lo.trans h_hi
   omega
 
+/-! ### MDS corollaries for §6.1 capstone -/
+
+/-- **Contrapositive of MDS rigidity.** In an MDS code with dimension `k`,
+two distinct codewords agree on strictly fewer than `k` positions. -/
+theorem MDS_distinct_codewords_disagree [DecidableEq F]
+    {k : ℕ} {c : Submodule F (Fin n → F)}
+    (h_MDS : IsMDS c k)
+    {u v : Fin n → F} (hu : u ∈ c) (hv : v ∈ c) (h_ne : u ≠ v) :
+    (agreementSet u v).card < k := by
+  by_contra h_size_ge
+  push_neg at h_size_ge
+  apply h_ne
+  apply agreement_implies_eq_of_MDS h_MDS hu hv h_size_ge
+  intros i hi
+  exact mem_agreementSet.mp hi
+
+/-- **Pairwise agreement bound for §6.1.** Given a fixed vector `u` and two
+distinct codewords `c₁, c₂` in a dimension-`k` MDS code, the intersection
+of their agreement sets with `u` has size strictly less than `k`. This
+is the bound that plugs into Corrádi to count "bad" seeds in BCGM25
+Theorem 6.1's proof. -/
+theorem MDS_pairwise_agreement_bound [DecidableEq F]
+    {k : ℕ} {c : Submodule F (Fin n → F)}
+    (h_MDS : IsMDS c k)
+    (u : Fin n → F)
+    {c₁ c₂ : Fin n → F} (hc₁ : c₁ ∈ c) (hc₂ : c₂ ∈ c) (h_ne : c₁ ≠ c₂) :
+    (agreementSet u c₁ ∩ agreementSet u c₂).card < k := by
+  have h_subset : agreementSet u c₁ ∩ agreementSet u c₂ ⊆ agreementSet c₁ c₂ := by
+    intro i hi
+    simp only [Finset.mem_inter, mem_agreementSet] at hi
+    simp only [mem_agreementSet]
+    rw [← hi.1, hi.2]
+  have h_card_le : (agreementSet u c₁ ∩ agreementSet u c₂).card ≤ (agreementSet c₁ c₂).card :=
+    Finset.card_le_card h_subset
+  have h_lt : (agreementSet c₁ c₂).card < k :=
+    MDS_distinct_codewords_disagree h_MDS hc₁ hc₂ h_ne
+  exact lt_of_le_of_lt h_card_le h_lt
+
+/-- **Classical unique-decoding bound.** In a dimension-`k` MDS code, if
+two codewords are each at distance ≤ `(n−k)/2` from a fixed vector `u`,
+they must be equal. -/
+theorem MDS_unique_decoding [DecidableEq F]
+    {k : ℕ} {c : Submodule F (Fin n → F)}
+    (h_MDS : IsMDS c k)
+    (u : Fin n → F)
+    {c₁ c₂ : Fin n → F} (hc₁ : c₁ ∈ c) (hc₂ : c₂ ∈ c)
+    (h₁ : 2 * hammingDistance u c₁ ≤ n - k)
+    (h₂ : 2 * hammingDistance u c₂ ≤ n - k) :
+    c₁ = c₂ := by
+  by_contra h_ne
+  have h_tri : hammingDistance c₁ c₂ ≤ hammingDistance c₁ u + hammingDistance u c₂ :=
+    hammingDistance_triangle c₁ u c₂
+  rw [hammingDistance_comm c₁ u] at h_tri
+  have h_sub_mem : c₁ - c₂ ∈ c := c.sub_mem hc₁ hc₂
+  have h_sub_ne : c₁ - c₂ ≠ 0 := sub_ne_zero.mpr h_ne
+  obtain ⟨_h_dim, h_mindist⟩ := h_MDS
+  have h_lo : n - k + 1 ≤ hammingWeight (c₁ - c₂) := h_mindist (c₁ - c₂) h_sub_mem h_sub_ne
+  rw [← hammingDistance_eq_hammingWeight_sub] at h_lo
+  omega
+
 end LinearCodes
