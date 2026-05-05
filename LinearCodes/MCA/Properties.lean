@@ -111,9 +111,12 @@ Let `v ∈ F^ℓ` be nonzero. We want to bound the probability that
 * `inv_mul_cancel₀`, `smul_smul`, `zero_smul`
 -/
 
-/-- **BCGM25 Lemma 3.18 (forward direction).** If `G` has MCA for a proper
-subcode `c ⊊ ⊤` with error `εMCA`, then `G` is zero-evading with error
-`εMCA 0`. -/
+theorem smul_not_mem_of_ne_zero_of_not_mem {F : Type*} [Field F] {n : ℕ} {c : Submodule F (Fin n → F)} {a : F} {u : Fin n → F} : a ≠ 0 → u ∉ c → a • u ∉ c := by
+  intro ha hu hau
+  apply hu
+  have h := c.smul_mem a⁻¹ hau
+  simpa only [smul_smul, inv_mul_cancel₀ ha, one_smul] using h
+
 theorem MCA_implies_ZeroEvading_at_zero {F : Type*} [Field F] [DecidableEq F]
     {S : Type*} [Fintype S] {n ℓ : ℕ}
     (G : Generator F S ℓ) {c : Submodule F (Fin n → F)}
@@ -121,6 +124,26 @@ theorem MCA_implies_ZeroEvading_at_zero {F : Type*} [Field F] [DecidableEq F]
     {εMCA : ℚ → ℚ}
     (hMCA : MutualCorrelatedAgreement G c εMCA) :
     ZeroEvading G (εMCA 0) := by
-  sorry
+  intro v hv
+  obtain ⟨u, hu_not⟩ : ∃ u : Fin n → F, u ∉ c := by
+    by_contra h
+    push_neg at h
+    exact h_proper.ne (Submodule.eq_top_iff'.2 h)
+  obtain ⟨j₀, hj₀⟩ : ∃ j : Fin ℓ, v j ≠ 0 := by
+    by_contra h
+    push_neg at h
+    exact hv (funext h)
+  refine le_trans (seedProb_mono ?_) (hMCA (fun j => v j • u) 0 ?_ ?_)
+  · intro x hx
+    refine ⟨Finset.univ, ?_, ?_, ?_⟩
+    · simpa only [Finset.card_univ, Fintype.card_fin, sub_zero, mul_one] using (show (n : ℚ) ≥ n by exact le_rfl)
+    · rw [Generator.combine_smul_const G x v u, hx, zero_smul]
+      exact inRestrictedCode_zero c Finset.univ
+    · exact ⟨j₀, by
+        rw [inRestrictedCode_univ_iff]
+        exact smul_not_mem_of_ne_zero_of_not_mem hj₀ hu_not⟩
+  · norm_num
+  · norm_num
+
 
 end LinearCodes
