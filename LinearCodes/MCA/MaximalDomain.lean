@@ -67,14 +67,73 @@ theorem IsMaxCADomain.isCADomain
 
 /-! ### BCGM25 Lemma 6.4: intersection of max agreement → max CA -/
 
-/-- **BCGM25 Lemma 6.4.** Let `G` be an MDS generator. Suppose for `ℓ`
-distinct seeds `xs : Fin ℓ → S` and rows `us : Fin ℓ → (Fin n → F)`,
-each `Aⱼ` is a maximal agreement domain between `G.combine (xs j) us`
-and `c`. If `T` equals the `ℓ`-fold intersection (i.e., `T ⊆ each Aⱼ`
-and `T` is maximal under that condition) and has size strictly greater
-than `n - δ_C`, then `T` is a maximal CA domain. -/
-theorem maxAgreement_intersection_isMaxCA
-    [DecidableEq S]
+theorem codeword_eq_of_agree_on_large_set {c : Submodule F (Fin n → F)} {δ_C : ℕ} (h_minDist : MinDistAtLeast c δ_C)
+    {u v : Fin n → F} (hu : u ∈ c) (hv : v ∈ c)
+    {U : Finset (Fin n)} (hU : U.card > n - δ_C)
+    (h_agree : ∀ i ∈ U, u i = v i) :
+    u = v := by
+  by_contra hne
+  have hsubmem : u - v ∈ c := c.sub_mem hu hv
+  have hsubne : u - v ≠ 0 := sub_ne_zero.mpr hne
+  have hδ : δ_C ≤ hammingDistance u v := by
+    have hδ' : δ_C ≤ hammingWeight (u - v) := h_minDist (u - v) hsubmem hsubne
+    rwa [← hammingDistance_eq_hammingWeight_sub u v] at hδ'
+  have hdist : hammingDistance u v ≤ n - U.card := hammingDistance_le_of_agree_on h_agree
+  have hcard_le : U.card ≤ n := by
+    simpa [Fintype.card_fin] using Finset.card_le_card (Finset.subset_univ U)
+  omega
+
+def vanishingOn (T : Finset (Fin n)) : Submodule F (Fin n → F) where
+  carrier := {u | ∀ i ∈ T, u i = 0}
+  zero_mem' := by
+    intro i hi
+    rfl
+  add_mem' := by
+    intro u v hu hv i hi
+    simp [hu i hi, hv i hi]
+  smul_mem' := by
+    intro a u hu i hi
+    simp [hu i hi]
+
+theorem inRestrictedCode_iff_mem_sup_vanishingOn {c : Submodule F (Fin n → F)} {T : Finset (Fin n)} {u : Fin n → F} :
+    InRestrictedCode c T u ↔ u ∈ c ⊔ vanishingOn (F := F) T := by
+  constructor
+  · rintro ⟨v, hv, hagree⟩
+    rw [Submodule.mem_sup]
+    refine ⟨v, hv, u - v, ?_, ?_⟩
+    · intro i hi
+      have h := hagree i hi
+      simp [h]
+    · ext i
+      simp
+  · rw [Submodule.mem_sup]
+    rintro ⟨v, hv, z, hz, rfl⟩
+    refine ⟨v, hv, ?_⟩
+    intro i hi
+    have hzi := hz i hi
+    simp [hzi]
+
+theorem isCADomain_of_all_combines_agree [DecidableEq S]
+    (G : Generator F S ℓ) (hG_MDS : G.IsMDS)
+    {c : Submodule F (Fin n → F)}
+    (us : Fin ℓ → (Fin n → F))
+    (xs : Fin ℓ → S) (h_distinct : Function.Injective xs)
+    (T : Finset (Fin n))
+    (h_agree : ∀ j, IsAgreementDomain c (G.combine (xs j) us) T) :
+    IsCADomain c us T := by
+  let cT : Submodule F (Fin n → F) := c ⊔ vanishingOn (F := F) T
+  have h_combines : ∀ j, G.combine (xs j) us ∈ cT := by
+    intro j
+    exact (inRestrictedCode_iff_mem_sup_vanishingOn).mp (by
+      change InRestrictedCode c T (G.combine (xs j) us)
+      exact h_agree j)
+  have h_us : ∀ k, us k ∈ cT :=
+    all_us_mem_of_combine_at_distinct_seeds G hG_MDS cT us xs h_distinct h_combines
+  change ∀ k : Fin ℓ, InRestrictedCode c T (us k)
+  intro k
+  exact (inRestrictedCode_iff_mem_sup_vanishingOn).mpr (h_us k)
+
+theorem maxAgreement_intersection_isMaxCA [DecidableEq S]
     (G : Generator F S ℓ) (hG_MDS : G.IsMDS)
     {c : Submodule F (Fin n → F)} {δ_C : ℕ} (h_minDist : MinDistAtLeast c δ_C)
     (us : Fin ℓ → (Fin n → F))
@@ -85,75 +144,52 @@ theorem maxAgreement_intersection_isMaxCA
     (h_T_max_inter : ∀ T₀ : Finset (Fin n), (∀ j, T₀ ⊆ As j) → T₀ ⊆ T)
     (h_T_size : T.card > n - δ_C) :
     IsMaxCADomain c us T := by
-  have h_agree_T : ∀ j, IsAgreementDomain c (G.combine (xs j) us) T := fun j =>
-    inRestrictedCode_mono (h_T_inter j) (h_max_agree j).isAgreementDomain
-  have h_uniq : ∀ {u v : Fin n → F}, u ∈ c → v ∈ c →
-      ∀ {U : Finset (Fin n)}, U.card > n - δ_C →
-      (∀ i ∈ U, u i = v i) → u = v := by
-    intro u v hu hv U hU h_agree
-    by_contra h_ne
-    have h_sub_mem : u - v ∈ c := c.sub_mem hu hv
-    have h_sub_ne : u - v ≠ 0 := sub_ne_zero.mpr h_ne
-    have h_lo := h_minDist (u - v) h_sub_mem h_sub_ne
-    have h_eq := hammingDistance_eq_hammingWeight_sub u v
-    have h_hi := hammingDistance_le_of_agree_on h_agree
-    rw [← h_eq] at h_lo
-    have hU_le_n : U.card ≤ n := by
-      have := Finset.card_le_card (Finset.subset_univ U)
-      simpa [Finset.card_univ, Fintype.card_fin] using this
-    have : δ_C ≤ n - U.card := h_lo.trans h_hi
-    omega
-  refine ⟨?_, ?_⟩
-  · -- T is a CA domain (algebraic core — matrix inversion).
-    sorry
-  · intro T' hTT' hT'_CA
-    obtain ⟨hTsub, hTne⟩ := hTT'
-    have h_T'_agree : ∀ j, IsAgreementDomain c (G.combine (xs j) us) T' := by
-      intro j
-      choose v hv_mem hv_agree using
-        fun k => (hT'_CA k : InRestrictedCode c T' (us k))
-      refine ⟨∑ k, G (xs j) k • v k, ?_, ?_⟩
-      · exact Submodule.sum_mem _ (fun k _ => Submodule.smul_mem _ _ (hv_mem k))
-      · intro i hi
-        rw [Generator.combine_apply]
-        simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul]
-        apply Finset.sum_congr rfl
-        intro k _
-        rw [hv_agree k i hi]
-    choose cw' hcw'_mem hcw'_agree using
-      fun j => (h_T'_agree j : InRestrictedCode c T' (G.combine (xs j) us))
-    choose caw hcaw_mem hcaw_agree using
-      fun j => ((h_max_agree j).isAgreementDomain :
-        InRestrictedCode c (As j) (G.combine (xs j) us))
-    have h_eq_witnesses : ∀ j, cw' j = caw j := by
-      intro j
-      apply h_uniq (hcw'_mem j) (hcaw_mem j) h_T_size
-      intro i hi
-      have hi_T' : i ∈ T' := hTsub hi
-      have hi_Aj : i ∈ As j := h_T_inter j hi
-      rw [hcw'_agree j i hi_T', ← hcaw_agree j i hi_Aj]
-    have h_union_agree : ∀ j,
-        IsAgreementDomain c (G.combine (xs j) us) (As j ∪ T') := by
-      intro j
+  classical
+  have h_agree_T : ∀ j, IsAgreementDomain c (G.combine (xs j) us) T := by
+    intro j
+    exact inRestrictedCode_mono (h_T_inter j) (h_max_agree j).isAgreementDomain
+  have h_CA : IsCADomain c us T :=
+    isCADomain_of_all_combines_agree G hG_MDS us xs h_distinct T h_agree_T
+  refine ⟨h_CA, ?_⟩
+  intro T' hTss hT'_CA
+  rcases hTss with ⟨hTsub, hTne⟩
+  choose v hv_mem hv_agree using hT'_CA
+  have hT'_agree : ∀ j, IsAgreementDomain c (G.combine (xs j) us) T' := by
+    intro j
+    refine ⟨∑ k, G (xs j) k • v k, ?_, ?_⟩
+    · exact Submodule.sum_mem c fun k _ => Submodule.smul_mem c _ (hv_mem k)
+    · intro i hi
+      rw [Generator.combine_apply]
+      simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul]
+      apply Finset.sum_congr rfl
+      intro k hk
+      rw [hv_agree k i hi]
+  choose cw' hcw'_mem hcw'_agree using hT'_agree
+  choose caw hcaw_mem hcaw_agree using fun j => (h_max_agree j).isAgreementDomain
+  have h_eq : ∀ j, cw' j = caw j := by
+    intro j
+    apply codeword_eq_of_agree_on_large_set h_minDist (hcw'_mem j) (hcaw_mem j) h_T_size
+    intro i hi
+    rw [hcw'_agree j i (hTsub hi), hcaw_agree j i ((h_T_inter j) hi)]
+  have hT'sub : ∀ j, T' ⊆ As j := by
+    intro j
+    by_contra h_not
+    have h_agree_union : IsAgreementDomain c (G.combine (xs j) us) (As j ∪ T') := by
       refine ⟨caw j, hcaw_mem j, ?_⟩
       intro i hi
-      rw [Finset.mem_union] at hi
-      rcases hi with hAj | hT'
-      · exact hcaw_agree j i hAj
-      · rw [← h_eq_witnesses j]; exact hcw'_agree j i hT'
-    have h_T'_sub_As : ∀ j, T' ⊆ As j := by
-      intro j
-      by_contra hnot
-      have h_strict : As j ⊂ As j ∪ T' := by
-        refine ⟨Finset.subset_union_left, ?_⟩
-        intro h_eq_sup
-        apply hnot
-        intro i hi_T'
-        have : i ∈ As j ∪ T' := Finset.mem_union_right _ hi_T'
-        exact h_eq_sup this
-      exact (h_max_agree j).2 _ h_strict (h_union_agree j)
-    have h_T'_sub_T : T' ⊆ T := h_T_max_inter T' h_T'_sub_As
-    exact hTne h_T'_sub_T
+      rcases Finset.mem_union.mp hi with hiA | hiT'
+      · exact hcaw_agree j i hiA
+      · rw [← h_eq j]
+        exact hcw'_agree j i hiT'
+    have h_ss : As j ⊂ As j ∪ T' := by
+      refine ⟨Finset.subset_union_left, ?_⟩
+      intro h_sup
+      apply h_not
+      intro i hi
+      exact h_sup (Finset.mem_union.mpr (Or.inr hi))
+    exact (h_max_agree j).2 (As j ∪ T') h_ss h_agree_union
+  exact False.elim (hTne (h_T_max_inter T' hT'sub))
+
 
 /-! ### BCGM25 Lemma 6.5: ℓ-fold intersection equals the maximal CA domain -/
 
