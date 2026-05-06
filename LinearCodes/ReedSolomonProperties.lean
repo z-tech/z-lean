@@ -1,9 +1,24 @@
 import LinearCodes.ReedSolomon
-import Mathlib.Data.Set.Finite.Basic
+import Mathlib.Algebra.BigOperators.Group.Finset.Basic
+import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.Algebra.Polynomial.Basic
+import Mathlib.Algebra.Polynomial.BigOperators
+import Mathlib.Algebra.Polynomial.Coeff
+import Mathlib.Algebra.Polynomial.Degree.Definitions
+import Mathlib.Algebra.Polynomial.Eval.Defs
+import Mathlib.Algebra.Polynomial.Roots
+import Mathlib.Combinatorics.Pigeonhole
 import Mathlib.Data.Fintype.Basic
+import Mathlib.Data.Fintype.Card
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.List.Basic
+import Mathlib.Data.List.Range
+import Mathlib.Data.Set.Finite.Basic
+import Mathlib.FieldTheory.Finite.Basic
+import Mathlib.LinearAlgebra.Lagrange
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
-
-import Mathlib
 /-!
 # Reed-Solomon: formal properties
 

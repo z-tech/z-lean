@@ -47,6 +47,16 @@ bound, achieved with equality). -/
 def IsMDS [DecidableEq F] (c : Submodule F (Fin n → F)) (k : ℕ) : Prop :=
   Module.finrank F c = k ∧ MinDistAtLeast c (n - k + 1)
 
+/-- Accessor: an MDS submodule's min-distance bound. -/
+theorem IsMDS.minDistAtLeast {n k : ℕ} {F : Type*} [Field F] [DecidableEq F] [Fintype F]
+    {c : Submodule F (Fin n → F)} (h : IsMDS c k) :
+    MinDistAtLeast c (n - k + 1) := h.2
+
+/-- Accessor: an MDS submodule's dimension. -/
+theorem IsMDS.finrank_eq {n k : ℕ} {F : Type*} [Field F] [DecidableEq F] [Fintype F]
+    {c : Submodule F (Fin n → F)} (h : IsMDS c k) :
+    Module.finrank F c = k := h.1
+
 /-! ### Basic identities for `hammingWeight` -/
 
 /-- The zero vector has weight zero. -/
@@ -339,5 +349,42 @@ theorem MDS_unique_decoding [DecidableEq F]
   have h_lo : n - k + 1 ≤ hammingWeight (c₁ - c₂) := h_mindist (c₁ - c₂) h_sub_mem h_sub_ne
   rw [← hammingDistance_eq_hammingWeight_sub] at h_lo
   omega
+
+/-! ### MinDistAtLeast strengthening of MDS rigidity -/
+
+/-- **MinDist version of MDS rigidity.** In a code with minimum distance
+at least `d`, two codewords agreeing on more than `n − d` positions are
+equal. This generalizes `agreement_implies_eq_of_MDS` to the
+`MinDistAtLeast` predicate (without requiring `IsMDS`). -/
+theorem MinDistAtLeast.codewords_eq_of_agree [DecidableEq F]
+    {d : ℕ} {c : Submodule F (Fin n → F)} (h_minDist : MinDistAtLeast c d)
+    {u v : Fin n → F} (hu : u ∈ c) (hv : v ∈ c)
+    {T : Finset (Fin n)} (hT : T.card > n - d)
+    (h_agree : ∀ i ∈ T, u i = v i) :
+    u = v := by
+  by_contra h_ne
+  have h_sub_mem : u - v ∈ c := c.sub_mem hu hv
+  have h_sub_ne : u - v ≠ 0 := sub_ne_zero.mpr h_ne
+  have h_lo := h_minDist (u - v) h_sub_mem h_sub_ne
+  have h_eq := hammingDistance_eq_hammingWeight_sub u v
+  have h_hi := hammingDistance_le_of_agree_on h_agree
+  rw [← h_eq] at h_lo
+  have hT_le_n : T.card ≤ n := by
+    have := Finset.card_le_card (Finset.subset_univ T)
+    simpa [Finset.card_univ, Fintype.card_fin] using this
+  have : d ≤ n - T.card := h_lo.trans h_hi
+  omega
+
+/-- Contrapositive of `MinDistAtLeast.codewords_eq_of_agree`: distinct codewords
+disagree on a substantial fraction of coordinates. If `u, v ∈ c` are distinct
+codewords agreeing on a set `T`, then `T` has cardinality at most `n - d`. -/
+theorem MinDistAtLeast.disagree_count_of_ne [DecidableEq F]
+    {d : ℕ} {c : Submodule F (Fin n → F)} (h_minDist : MinDistAtLeast c d)
+    {u v : Fin n → F} (hu : u ∈ c) (hv : v ∈ c) (h_ne : u ≠ v)
+    (T : Finset (Fin n)) (h_agree : ∀ i ∈ T, u i = v i) :
+    T.card ≤ n - d := by
+  by_contra h
+  push_neg at h
+  exact h_ne (h_minDist.codewords_eq_of_agree hu hv h h_agree)
 
 end LinearCodes

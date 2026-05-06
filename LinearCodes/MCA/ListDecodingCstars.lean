@@ -1,0 +1,74 @@
+/-
+# Cstars-from-list construction
+
+Group C of §6.2: lift a per-seed list of candidate codewords to a family
+of `cstars` parameterized by choice functions.
+-/
+
+import LinearCodes.MCA.Case2Subtargets
+
+set_option linter.unusedSectionVars false
+
+namespace LinearCodes
+
+variable {F : Type*} [Field F] [DecidableEq F]
+variable {S : Type*} [Fintype S] {n ℓ L : ℕ}
+
+/-! ### C1: Multi-witness lift -/
+
+/-- C1: For each "choice function" `Fin ℓ → Fin L`, exists `cstars` matching
+the chosen codewords at each distinct seed. -/
+theorem exists_cstars_list_of_MDS [DecidableEq S]
+    {G : Generator F S ℓ} (hG_MDS : G.IsMDS)
+    {c : Submodule F (Fin n → F)}
+    (xs : Fin ℓ → S) (h_distinct : Function.Injective xs)
+    (cs_list : Fin ℓ → Fin L → (Fin n → F))
+    (h_cs : ∀ k ℓ_idx, cs_list k ℓ_idx ∈ c) :
+    ∃ cstars_fam : (Fin ℓ → Fin L) → Fin ℓ → (Fin n → F),
+      ∀ choose : Fin ℓ → Fin L,
+        (∀ j, cstars_fam choose j ∈ c) ∧
+        (∀ k, G.combine (xs k) (cstars_fam choose) = cs_list k (choose k)) := by
+  classical
+  choose cstars_fam h_cstars_fam using
+    fun choose : Fin ℓ → Fin L => exists_cstars_of_MDS hG_MDS xs h_distinct
+      (fun k => cs_list k (choose k)) (fun k => h_cs k (choose k))
+  exact ⟨cstars_fam, h_cstars_fam⟩
+
+/-! ### C2: List-version of bad-witness codeword equality -/
+
+/-- C2: For each choice function and corresponding `cstars`, the chosen
+codeword from each list bad-witness equals `G.combine (xs k) cstars`. -/
+theorem bad_witness_list_cw_eq_combine_cstars
+    [DecidableEq S]
+    {G : Generator F S ℓ} (hG_MDS : G.IsMDS) (hℓ : 0 < ℓ)
+    {c : Submodule F (Fin n → F)} {δ_C : ℕ} (h_minDist : MinDistAtLeast c δ_C)
+    (us : Fin ℓ → (Fin n → F))
+    {γ : ℚ} (hγ_hi : γ * (ℓ + 1) < δ_C / n) (hn : 0 < n)
+    (xs : Fin ℓ → S) (h_distinct : Function.Injective xs)
+    (cs_list : Fin ℓ → Fin L → (Fin n → F))
+    (h_cs : ∀ k ℓ_idx, cs_list k ℓ_idx ∈ c)
+    (cstars_fam : (Fin ℓ → Fin L) → Fin ℓ → (Fin n → F))
+    (h_fam : ∀ choose : Fin ℓ → Fin L, ∀ k,
+      G.combine (xs k) (cstars_fam choose) = cs_list k (choose k))
+    (choose : Fin ℓ → Fin L) :
+    ∀ k, cs_list k (choose k) = G.combine (xs k) (cstars_fam choose) := by
+  sorry
+
+/-! ### C3: Per-choice Ttilde definition -/
+
+/-- C3: For each choice function, the corresponding `Ttilde` set of coordinates
+where `us` matches the chosen `cstars` family. -/
+def Ttilde_choose
+    (us : Fin ℓ → (Fin n → F))
+    (cstars_fam : (Fin ℓ → Fin L) → Fin ℓ → (Fin n → F))
+    (choose : Fin ℓ → Fin L) : Finset (Fin n) :=
+  Finset.univ.filter (fun i : Fin n => ∀ j, us j i = cstars_fam choose j i)
+
+@[simp] theorem mem_Ttilde_choose
+    (us : Fin ℓ → (Fin n → F))
+    (cstars_fam : (Fin ℓ → Fin L) → Fin ℓ → (Fin n → F))
+    (choose : Fin ℓ → Fin L) (i : Fin n) :
+    i ∈ Ttilde_choose us cstars_fam choose ↔ ∀ j, us j i = cstars_fam choose j i := by
+  simp [Ttilde_choose]
+
+end LinearCodes
