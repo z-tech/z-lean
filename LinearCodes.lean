@@ -9,6 +9,8 @@ import LinearCodes.MCA.InducedCode
 import LinearCodes.MCA.CAImplications
 import LinearCodes.MCA.UniqueDecoding
 import LinearCodes.MCA.MaximalDomain
+import LinearCodes.MCA.Case2Subtargets
+import LinearCodes.MCA.Case2Capstone
 import LinearCodes.LinearCode
 import LinearCodes.ReedSolomon
 import LinearCodes.ReedSolomonProperties

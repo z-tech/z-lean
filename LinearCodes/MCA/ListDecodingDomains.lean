@@ -65,6 +65,31 @@ theorem IsListAgreementDomain.mono_L
 
 /-! ### B4: List-CA from list-combine agreement (the heavy stub) -/
 
+/-- B4 specialised to `L = 1`. Reduces to Phase A's
+`isCADomain_of_all_combines_agree` (in `LinearCodes/MCA/MaximalDomain.lean`):
+since `IsListAgreementDomain c u T 1` is equivalent (via the constant
+`Fin 1 → _` family) to `IsAgreementDomain c u T`, we just plug into the
+single-codeword theorem. -/
+theorem isListCADomain_of_all_combines_agree_one
+    [DecidableEq S] [Fintype S]
+    (G : Generator F S ℓ) (hG_MDS : G.IsMDS)
+    {c : Submodule F (Fin n → F)}
+    (us : Fin ℓ → (Fin n → F))
+    (xs : Fin ℓ → S) (h_distinct : Function.Injective xs)
+    (T : Finset (Fin n))
+    (h_agree : ∀ j, IsAgreementDomain c (G.combine (xs j) us) T) :
+    IsListCADomain c us T 1 := by
+  -- Phase A gives us a per-row witness codeword.
+  have h_CA : IsCADomain c us T :=
+    isCADomain_of_all_combines_agree G hG_MDS us xs h_distinct T h_agree
+  intro j
+  obtain ⟨v, hv_mem, hv_agree⟩ := h_CA j
+  refine ⟨fun _ => v, ?_, ?_, ?_⟩
+  · intro _; exact hv_mem
+  · intro a b _; exact Subsingleton.allEq a b
+  · intro _ i hi; exact hv_agree i hi
+
+
 /-- B4: Analog of `isCADomain_of_all_combines_agree` for list-decoding.
 
 **STRATEGY (not yet formalized — see `LinearCodes/MCA/ListDecodingDomains.lean`).**

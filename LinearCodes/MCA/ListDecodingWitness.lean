@@ -40,7 +40,19 @@ noncomputable def mkMCAListBadWitness
       InRestrictedCode c T (G.combine x us) ∧
       ∃ j : Fin ℓ, ¬ InRestrictedCode c T (us j)) :
     MCAListBadWitness G c us γ L x := by
-  sorry
+  let T := h_bad.choose
+  let hT_full := h_bad.choose_spec
+  let h_inRest := hT_full.2.1
+  let cw := h_inRest.choose
+  let hcw_full := h_inRest.choose_spec
+  exact {
+    T := T
+    cws := fun _ => cw
+    T_size := hT_full.1
+    cws_mem := fun _ => hcw_full.1
+    agree := fun _ => hcw_full.2
+    bad_row := hT_full.2.2
+  }
 
 /-! ### A3: Extension to maximal agreement (per list element) -/
 

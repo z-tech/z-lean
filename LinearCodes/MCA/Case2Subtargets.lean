@@ -9,6 +9,7 @@ infrastructure.
 -/
 
 import LinearCodes.MCA.UniqueDecoding
+import LinearCodes.MCA.MaximalDomain
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 
 set_option linter.unusedSectionVars false
@@ -540,9 +541,11 @@ theorem degree_bound_at_non_Ttilde
       ∀ i ∈ Bx x hx, G.combine x us i = G.combine x cstars i)
     (j : Fin n) (hj_notT : j ∉ Ttilde) :
     (B_set.filter (fun x => ∃ hx : x ∈ B_set, j ∈ Bx x hx)).card ≤ ℓ - 1 := by
+  classical
   -- Suppose for contradiction the filter has ≥ ℓ elements.
   by_contra h_card
-  push_neg at h_card
+  have h_card' : ℓ - 1 < (B_set.filter (fun x => ∃ hx : x ∈ B_set, j ∈ Bx x hx)).card :=
+    Nat.lt_of_not_le h_card
   set F_set := B_set.filter (fun x => ∃ hx : x ∈ B_set, j ∈ Bx x hx) with hF_def
   have hℓ_le : ℓ ≤ F_set.card := by omega
   -- Extract ℓ distinct seeds in F_set.

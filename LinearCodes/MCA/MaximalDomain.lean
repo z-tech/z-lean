@@ -284,43 +284,45 @@ theorem IsMaxAgreementDomain.witness
 
 /-! ### §6.1 Case 2: γ ≥ 1/n MCA bound -/
 
-/-- **§6.1 Case 2 MCA bound.** For an MDS generator and γ ∈ [1/n, δ_C/(ℓ+1)),
-the MCA bad-event probability is bounded by `n·γ·(ℓ-1)/|S|`. The proof
-uses Lemmas 6.4-6.6 to bound the bad seed count via Corrádi.
+/-- Every bad-witness's `T` extends to a maximal agreement domain.
 
-This is the large-γ branch of BCGM25 Theorem 6.1's MCA error formula. -/
-theorem MCA_unique_decoding_large_gamma_bound
-    [Fintype S] [DecidableEq S] [Nonempty S]
-    (G : Generator F S ℓ) (hG_MDS : G.IsMDS) (hℓ : 0 < ℓ)
-    (c : Submodule F (Fin n → F)) {δ_C : ℕ} (h_minDist : MinDistAtLeast c δ_C)
-    (us : Fin ℓ → (Fin n → F))
-    {γ : ℚ} (hγ_lo : 1 / n ≤ γ) (hγ_hi : γ * (ℓ + 1) < δ_C / n) :
-    seedProb (S := S) (fun x =>
-      ∃ T : Finset (Fin n), (T.card : ℚ) ≥ n * (1 - γ) ∧
-        InRestrictedCode c T (G.combine x us) ∧
-        ∃ j : Fin ℓ, ¬ InRestrictedCode c T (us j))
-    ≤ n * γ * (ℓ - 1 : ℚ) / Fintype.card S := by
-  sorry
+This is the single-witness analog of `MCAListBadWitness.exists_maxAgreement_extending`,
+inlined here so it can be used from the §6.1 Case 2 capstone (see
+`LinearCodes.MCA.Case2Capstone`). -/
+theorem MCABadWitness.exists_maxAgreement_extending
+    {G : Generator F S ℓ} {c : Submodule F (Fin n → F)}
+    {us : Fin ℓ → (Fin n → F)} {γ : ℚ} {x : S}
+    (w : MCABadWitness G c us γ x) :
+    ∃ T : Finset (Fin n), w.T ⊆ T ∧
+      IsMaxAgreementDomain c (G.combine x us) T := by
+  classical
+  have h₀ : IsAgreementDomain c (G.combine x us) w.T :=
+    ⟨w.cw, w.cw_mem, w.agree⟩
+  let goodSets : Finset (Finset (Fin n)) :=
+    (Finset.univ : Finset (Finset (Fin n))).filter
+      (fun T => w.T ⊆ T ∧ IsAgreementDomain c (G.combine x us) T)
+  have h_nonempty : goodSets.Nonempty := by
+    refine ⟨w.T, ?_⟩
+    simp only [goodSets, Finset.mem_filter, Finset.mem_univ, true_and]
+    exact ⟨subset_refl _, h₀⟩
+  obtain ⟨T, hT_mem, hT_max⟩ :=
+    goodSets.exists_max_image (fun T => T.card) h_nonempty
+  have hT_props : w.T ⊆ T ∧ IsAgreementDomain c (G.combine x us) T := by
+    have := hT_mem
+    simp only [goodSets, Finset.mem_filter, Finset.mem_univ, true_and] at this
+    exact this
+  refine ⟨T, hT_props.1, hT_props.2, ?_⟩
+  intro T' hT'_ssub hT'_AD
+  have hT'_good : T' ∈ goodSets := by
+    simp only [goodSets, Finset.mem_filter, Finset.mem_univ, true_and]
+    exact ⟨hT_props.1.trans hT'_ssub.subset, hT'_AD⟩
+  have h_card_lt : T.card < T'.card := Finset.card_lt_card hT'_ssub
+  have h_card_le : T'.card ≤ T.card := hT_max T' hT'_good
+  omega
 
-/-! ### BCGM25 Theorem 6.1 unified bound (unique-decoding regime) -/
-
-/-- **BCGM25 Theorem 6.1 (unique-decoding regime).** For an MDS generator
-and `γ < δ_C/(n·(ℓ+1))`, the MCA bad-event probability is bounded by
-`max{n·γ, 1} · (ℓ-1) / |S|`. The proof case-splits on `γ < 1/n` (Case 1,
-proved as `MCA_unique_decoding_small_gamma_bound`) vs `γ ≥ 1/n` (Case 2,
-proved as `MCA_unique_decoding_large_gamma_bound`). -/
-theorem MCA_unique_decoding_bound
-    [Fintype S] [DecidableEq S] [Nonempty S]
-    (G : Generator F S ℓ) (hG_MDS : G.IsMDS) (hℓ : 0 < ℓ)
-    (c : Submodule F (Fin n → F)) (hn : 0 < n)
-    {δ_C : ℕ} (h_minDist : MinDistAtLeast c δ_C)
-    (us : Fin ℓ → (Fin n → F))
-    {γ : ℚ} (hγ_pos : 0 ≤ γ) (hγ_hi : γ * (ℓ + 1) < δ_C / n) :
-    seedProb (S := S) (fun x =>
-      ∃ T : Finset (Fin n), (T.card : ℚ) ≥ n * (1 - γ) ∧
-        InRestrictedCode c T (G.combine x us) ∧
-        ∃ j : Fin ℓ, ¬ InRestrictedCode c T (us j))
-    ≤ max ((n : ℚ) * γ) 1 * (ℓ - 1) / Fintype.card S := by
-  sorry
+/-! The §6.1 Case 2 capstone `MCA_unique_decoding_large_gamma_bound` and the
+unified BCGM25 Theorem 6.1 statement `MCA_unique_decoding_bound` live in
+`LinearCodes.MCA.Case2Capstone`, which imports both this file and
+`LinearCodes.MCA.Case2Subtargets`. -/
 
 end LinearCodes

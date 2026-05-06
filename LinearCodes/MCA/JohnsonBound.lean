@@ -69,6 +69,12 @@ theorem IsListDecodable_squared_johnson_MDS
     {c : Submodule F (Fin n → F)} (h_MDS : IsMDS c k)
     {τ : ℕ} (h_johnson : (n - τ) * (n - τ) > n * k) :
     IsListDecodable c τ (JohnsonListSize 0 n) := by
+  -- TODO: Classical Johnson bound for MDS codes. Requires either:
+  -- (a) Guruswami-Sudan style bivariate-polynomial interpolation (heavy infrastructure)
+  -- (b) Direct counting argument using the "agreement points" of two codewords
+  --
+  -- Both approaches are well-known but require ~500+ lines of new infrastructure.
+  -- Deferred until Phase B's interpolation infrastructure lands.
   sorry
 
 /-- J7: J6 with explicit `ℓ` parameter via `mono_L`. -/
@@ -111,6 +117,43 @@ theorem zeroEvading_implies_list_decodable_johnson
 theorem johnson_squared_iff_real_sqrt
     {n k τ : ℕ} (hk : k ≤ n) (hτ : τ ≤ n) :
     ((n : ℝ) - τ) > Real.sqrt ((n : ℝ) * k) ↔ (n - τ) * (n - τ) > n * k := by
-  sorry
+  have hk_R : (0 : ℝ) ≤ ((n : ℝ) * k) := by positivity
+  have hτ_R : (τ : ℝ) ≤ n := by exact_mod_cast hτ
+  have h_n_sub_R : (0 : ℝ) ≤ (n : ℝ) - τ := by linarith
+  have h_cast : ((n - τ : ℕ) : ℝ) = (n : ℝ) - (τ : ℝ) := by
+    rw [Nat.cast_sub hτ]
+  have h_sqrt_nn : (0 : ℝ) ≤ Real.sqrt ((n : ℝ) * k) := Real.sqrt_nonneg _
+  constructor
+  · intro h_R
+    -- (n - τ : ℝ) > sqrt(nk) ≥ 0, so squaring both sides preserves the inequality
+    have h_sq : ((n : ℝ) - τ) * ((n : ℝ) - τ) > (n : ℝ) * k := by
+      have h1 : ((n : ℝ) - τ) * ((n : ℝ) - τ) >
+          Real.sqrt ((n : ℝ) * k) * Real.sqrt ((n : ℝ) * k) := by
+        exact mul_lt_mul'' h_R h_R h_sqrt_nn h_sqrt_nn
+      rwa [Real.mul_self_sqrt hk_R] at h1
+    -- Cast back to ℕ
+    have h_R' : (((n - τ) * (n - τ) : ℕ) : ℝ) > ((n * k : ℕ) : ℝ) := by
+      push_cast
+      rw [h_cast]
+      exact h_sq
+    exact_mod_cast h_R'
+  · intro h_ℕ
+    -- ℕ inequality lifts to ℝ
+    have h_R' : (((n - τ) * (n - τ) : ℕ) : ℝ) > ((n * k : ℕ) : ℝ) := by
+      exact_mod_cast h_ℕ
+    have h_sq : ((n : ℝ) - τ) * ((n : ℝ) - τ) > (n : ℝ) * k := by
+      have htmp := h_R'
+      push_cast at htmp
+      rw [h_cast] at htmp
+      exact htmp
+    -- (n - τ) ≥ 0 and (n - τ)² > nk gives (n - τ) > sqrt(nk)
+    by_contra h_neg
+    push_neg at h_neg
+    -- h_neg : (n : ℝ) - τ ≤ sqrt(nk)
+    have h_le : ((n : ℝ) - τ) * ((n : ℝ) - τ) ≤
+        Real.sqrt ((n : ℝ) * k) * Real.sqrt ((n : ℝ) * k) :=
+      mul_le_mul h_neg h_neg h_n_sub_R h_sqrt_nn
+    rw [Real.mul_self_sqrt hk_R] at h_le
+    linarith
 
 end LinearCodes

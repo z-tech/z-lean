@@ -120,7 +120,25 @@ theorem bad_pair_count_per_coord_le_list
 /-! ### D3: List version of Lemma 5.3 -/
 
 /-- D3: There exists a choice function for which `Ttilde_choose` has size
-`≥ n(1-γ) - 1`. -/
+`≥ n(1-γ) - 1`.
+
+OBSTRUCTION (sorry'd): The natural pigeonhole strategy assigns each `x ∈ B_set`
+to some `choose(x) : Fin ℓ → Fin L` via `Classical.choose` on `h_agree`, then
+selects the most-popular preimage `B' ⊆ B_set` with size `≥ |B_set| / L^ℓ`,
+and applies Phase A's `Ttilde_card_gt_of_MDS_aggregate` to that `B'` with
+`cstars := cstars_fam choose₀` (where `choose₀` is the popular choice).
+
+Phase A requires `|B'| > (nγ+1)(ℓ-1)`. With pigeonhole this needs
+`|B_set| > L^ℓ · (nγ+1)(ℓ-1)`, but the given hypothesis is only
+`|B_set| > L · (nγ+1)(ℓ-1)` — short by a factor `L^(ℓ-1)`. The bound
+`(nγ+1)(ℓ-1)L` in the hypothesis was likely derived from a more refined
+double-counting (cf. D1 `list_strict_superset_count_bound`, which counts
+over `Fin t × Fin L` rather than `Fin ℓ → Fin L`), so closing this stub
+requires either (i) redesigning the hypothesis to `> L^ℓ · (nγ+1)(ℓ-1)`,
+or (ii) inlining a list-aware aggregate counting argument that mirrors
+Phase A's `Ttilde_card_gt_of_MDS_aggregate` proof but works directly
+over the parameterized family `cstars_fam` without first restricting to
+a single choice. Both are substantial; deferred. -/
 theorem exists_Ttilde_choose_card_large
     [DecidableEq S] [Nonempty S]
     {G : Generator F S ℓ} (hG_MDS : G.IsMDS) (hℓ : 0 < ℓ)

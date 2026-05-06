@@ -52,7 +52,8 @@ theorem bad_witness_list_cw_eq_combine_cstars
       G.combine (xs k) (cstars_fam choose) = cs_list k (choose k))
     (choose : Fin ℓ → Fin L) :
     ∀ k, cs_list k (choose k) = G.combine (xs k) (cstars_fam choose) := by
-  sorry
+  intro k
+  exact (h_fam choose k).symm
 
 /-! ### C3: Per-choice Ttilde definition -/
 
