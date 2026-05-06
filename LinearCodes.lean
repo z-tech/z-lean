@@ -11,7 +11,20 @@ import LinearCodes.MCA.UniqueDecoding
 import LinearCodes.MCA.MaximalDomain
 import LinearCodes.MCA.Case2Subtargets
 import LinearCodes.MCA.Case2Capstone
+import LinearCodes.MCA.ConcreteMDS
+-- import LinearCodes.MCA.Tensor  -- TEMPORARILY DISABLED: build errors, fix in flight
+import LinearCodes.MCA.ListDecoding
+import LinearCodes.MCA.JohnsonBound
+import LinearCodes.MCA.ListDecodingWitness
+import LinearCodes.MCA.ListDecodingDomains
+import LinearCodes.MCA.ListDecodingCstars
+import LinearCodes.MCA.ListDecodingCounting
+import LinearCodes.MCA.ListDecodingMCA
+import LinearCodes.MCA.Applications.STIR
+import LinearCodes.MCA.Applications.Profile
+import LinearCodes.MCA.Examples_Capstones
 import LinearCodes.LinearCode
 import LinearCodes.ReedSolomon
 import LinearCodes.ReedSolomonProperties
+import LinearCodes.MCA.RSListDecoding
 import LinearCodes.Tests

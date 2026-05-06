@@ -68,6 +68,67 @@ where $r_1, \dots, r_{i-1}$ are the verifier's previous challenges. This is impl
 2. Evaluates $p$ under this substitution via `eval₂Poly`, producing a univariate polynomial.
 3. **Sums** these univariates over all $\\{0,1\\}^{n-i-1}$ assignments using `sum_over_hypercube_recursive`.
 
+## BCGM25 Mutual Correlated Agreement
+
+The [`LinearCodes/MCA/`](LinearCodes/MCA/) tree formalizes the linear-code
+*mutual correlated agreement* (MCA) framework of Bordage, Chiesa, Guan, and
+Manzur (2025), *Correlated agreement, revisited*, IACR ePrint
+[2025/2051](https://eprint.iacr.org/2025/2051). BCGM25 unifies the
+correlated-agreement (CA) and mutual-correlated-agreement (MCA) bounds used by
+modern IOP-based SNARKs (STIR, WHIR, WARP) by reducing them to a single
+generator-level seed-probability bound, parameterized by a relaxation
+parameter `γ` and the minimum distance `δ_C` of the underlying linear code.
+
+### Capstones
+
+- **Phase A — unique-decoding regime (Theorem 6.1)**:
+  [`LinearCodes/MCA/Case2Capstone.lean`](LinearCodes/MCA/Case2Capstone.lean) →
+  `MCA_unique_decoding_bound`. Bounds the seed probability of the MCA bad
+  event by `((n·γ + 1)·(ℓ−1)) / |S|` for any generator over a code with
+  `MinDistAtLeast c δ_C` and `γ·ℓ < δ_C / n`.
+- **Phase B — list-decoding regime (Theorem 6.2)**:
+  [`LinearCodes/MCA/ListDecodingMCA.lean`](LinearCodes/MCA/ListDecodingMCA.lean)
+  → `MCA_list_decoding_bound`. Strengthens the bound to the list-decoding
+  regime, where each bad seed may admit up to `L` candidate codewords
+  agreeing on the witness set.
+- **Concrete application — STIR**:
+  [`LinearCodes/MCA/Applications/STIR.lean`](LinearCodes/MCA/Applications/STIR.lean)
+  → `STIR_MCA_unique_decoding_bound`, `STIR_MutualCorrelatedAgreement`,
+  `STIR_zeroEvading`. Specializes the abstract MCA capstones to the
+  univariate-powers generator `G(x) = (1, x, x^2, …, x^d)` used by STIR.
+
+### Module structure
+
+- *Foundations*:
+  [`Definitions.lean`](LinearCodes/MCA/Definitions.lean) (`Generator`,
+  `seedProb`, `MutualCorrelatedAgreement`, `ZeroEvading`),
+  [`Properties.lean`](LinearCodes/MCA/Properties.lean) (basic lemmas),
+  [`SeedProbLemmas.lean`](LinearCodes/MCA/SeedProbLemmas.lean) (probability
+  bounds over uniform seed types).
+- *MDS infrastructure*:
+  [`UniqueDecoding.lean`](LinearCodes/MCA/UniqueDecoding.lean),
+  [`Examples.lean`](LinearCodes/MCA/Examples.lean) (Vandermonde and
+  univariate-powers generators),
+  [`ConcreteMDS.lean`](LinearCodes/MCA/ConcreteMDS.lean) (concrete MDS
+  certificates).
+- *Lemma 5.3 sub-targets*:
+  [`Case2Subtargets.lean`](LinearCodes/MCA/Case2Subtargets.lean) — the
+  ℚ-double-counting argument bounding the size of the maximal agreement
+  domain `T̃`.
+- *Capstones*:
+  [`Case2Capstone.lean`](LinearCodes/MCA/Case2Capstone.lean) (Theorem 6.1),
+  [`ListDecodingMCA.lean`](LinearCodes/MCA/ListDecodingMCA.lean)
+  (Theorem 6.2 list-decoding regime), supported by
+  [`ListDecodingWitness.lean`](LinearCodes/MCA/ListDecodingWitness.lean),
+  [`ListDecodingDomains.lean`](LinearCodes/MCA/ListDecodingDomains.lean),
+  [`ListDecodingCstars.lean`](LinearCodes/MCA/ListDecodingCstars.lean),
+  [`ListDecodingCounting.lean`](LinearCodes/MCA/ListDecodingCounting.lean),
+  and [`JohnsonBound.lean`](LinearCodes/MCA/JohnsonBound.lean).
+- *Applications*:
+  [`Applications/STIR.lean`](LinearCodes/MCA/Applications/STIR.lean),
+  [`Applications/Profile.lean`](LinearCodes/MCA/Applications/Profile.lean)
+  (cross-cutting predicates for STIR / WHIR-univariate / WARP).
+
 ## License
 
 This project is released under the **Apache License 2.0**. See [LICENSE](LICENSE) for details.

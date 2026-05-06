@@ -1,8 +1,22 @@
 /-
 # BCGM25 §9 cross-cutting predicates
 
-Predicates connecting concrete generators (STIR, WHIR-univariate, WARP) to
-the abstract MCA framework.
+Cross-cutting predicates connecting concrete generators used by modern
+IOP-based SNARKs (STIR, WHIR-univariate, WARP) to the abstract MCA /
+CA framework defined in `LinearCodes.MCA.Definitions`. These predicates
+let downstream consumers state hypotheses against a single named
+"profile" rather than re-deriving the structural facts each time.
+
+Key contents:
+* `IsSTIRGenerator G` — predicate asserting that `G` equals
+  `Generator.univariatePowers F d` for some `d`, exposing the
+  univariate-powers structure to the consumer.
+* `univariatePowers_isSTIR` — sanity check: the canonical STIR generator
+  satisfies the predicate.
+
+Depends on `LinearCodes.MCA.Applications.STIR`. Future profiles
+(WHIR-univariate, WARP) will be added here as their applications are
+formalized.
 -/
 
 import LinearCodes.MCA.Applications.STIR

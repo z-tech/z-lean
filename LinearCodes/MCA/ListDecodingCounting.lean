@@ -1,11 +1,31 @@
 /-
 # List-decoding counting bounds
 
-Group D of §6.2: list versions of Lemma 5.3 and the degree bound.
+Group D of the BCGM25 §6.2 decomposition. The list versions of the
+double-counting infrastructure that powers Lemma 5.3 (large-`T̃` bound)
+and the degree bound at coordinates outside the maximal agreement set.
+
+Key contents:
+* `list_strict_superset_count_bound` — multiplicity-aware generalization
+  of `strict_superset_count_bound`: counts seed-list pairs `(i, k)`
+  whose witness set strictly contains a fixed `A`, giving a bound of
+  the shape `t·L ≤ (ℓ' − 1)·L · (|α| − |A|)`.
+* `bad_pair_count_per_coord_le_list` — per-coordinate degree bound on
+  bad seed-list pairs.
+* `exists_Ttilde_choose_card_large` — produces a "large" maximal
+  agreement set `T̃` together with a choice function selecting one
+  candidate codeword per seed.
+* `degree_bound_at_non_Ttilde_list` — degree bound at coordinates
+  outside `T̃`.
+
+Depends on `LinearCodes.MCA.ListDecodingCstars`,
+`LinearCodes.MCA.ListDecodingDomains`, and
+`Mathlib.Combinatorics.Pigeonhole`.
 -/
 
 import LinearCodes.MCA.ListDecodingCstars
 import LinearCodes.MCA.ListDecodingDomains
+import Mathlib.Combinatorics.Pigeonhole
 
 set_option linter.unusedSectionVars false
 
@@ -122,23 +142,20 @@ theorem bad_pair_count_per_coord_le_list
 /-- D3: There exists a choice function for which `Ttilde_choose` has size
 `≥ n(1-γ) - 1`.
 
-OBSTRUCTION (sorry'd): The natural pigeonhole strategy assigns each `x ∈ B_set`
-to some `choose(x) : Fin ℓ → Fin L` via `Classical.choose` on `h_agree`, then
-selects the most-popular preimage `B' ⊆ B_set` with size `≥ |B_set| / L^ℓ`,
-and applies Phase A's `Ttilde_card_gt_of_MDS_aggregate` to that `B'` with
-`cstars := cstars_fam choose₀` (where `choose₀` is the popular choice).
+STRATEGY (Strategy A, hypothesis strengthened by `L^(ℓ-1)`):
+The natural pigeonhole strategy assigns each `x ∈ B_set` to some
+`choose(x) : Fin ℓ → Fin L` via `Classical.choose` on `h_agree`, then
+selects the most-popular fiber `B' ⊆ B_set` with size `> (nγ+1)(ℓ-1)`,
+and applies Phase A's `Ttilde_card_gt_of_MDS_aggregate` to that `B'`
+with `cstars := cstars_fam choose₀` (where `choose₀` is the popular choice).
+Pigeonhole over the codomain of size `L^ℓ` therefore requires
+`|B_set| > L^ℓ · (nγ+1)(ℓ-1)` — a factor of `L^(ℓ-1)` stronger than the
+naive `L · (nγ+1)(ℓ-1)` bound suggested by D1's pair-counting form.
 
-Phase A requires `|B'| > (nγ+1)(ℓ-1)`. With pigeonhole this needs
-`|B_set| > L^ℓ · (nγ+1)(ℓ-1)`, but the given hypothesis is only
-`|B_set| > L · (nγ+1)(ℓ-1)` — short by a factor `L^(ℓ-1)`. The bound
-`(nγ+1)(ℓ-1)L` in the hypothesis was likely derived from a more refined
-double-counting (cf. D1 `list_strict_superset_count_bound`, which counts
-over `Fin t × Fin L` rather than `Fin ℓ → Fin L`), so closing this stub
-requires either (i) redesigning the hypothesis to `> L^ℓ · (nγ+1)(ℓ-1)`,
-or (ii) inlining a list-aware aggregate counting argument that mirrors
-Phase A's `Ttilde_card_gt_of_MDS_aggregate` proof but works directly
-over the parameterized family `cstars_fam` without first restricting to
-a single choice. Both are substantial; deferred. -/
+TRADE-OFF: a tighter (and harder) approach would inline a list-aware
+aggregate count that works directly over the parameterized family
+`cstars_fam` without restricting to a single fiber. We take the
+simpler strengthened-hypothesis route here. -/
 theorem exists_Ttilde_choose_card_large
     [DecidableEq S] [Nonempty S]
     {G : Generator F S ℓ} (hG_MDS : G.IsMDS) (hℓ : 0 < ℓ)
@@ -146,13 +163,95 @@ theorem exists_Ttilde_choose_card_large
     (cstars_fam : (Fin ℓ → Fin L) → Fin ℓ → (Fin n → F))
     {γ : ℚ} (hγ_pos : 0 ≤ γ) (hn : 0 < n)
     (B_set : Finset S)
-    (h_size : (B_set.card : ℚ) > ((n : ℚ) * γ + 1) * (ℓ - 1) * L)
+    (h_size : (B_set.card : ℚ) > ((n : ℚ) * γ + 1) * (ℓ - 1) * (L : ℚ) ^ ℓ)
     (h_agree : ∀ x ∈ B_set, ∃ choose : Fin ℓ → Fin L, ∃ Tx : Finset (Fin n),
       (Tx.card : ℚ) ≥ n * (1 - γ) ∧
       ∀ i ∈ Tx, G.combine x us i = G.combine x (cstars_fam choose) i) :
     ∃ choose : Fin ℓ → Fin L,
       ((Ttilde_choose us cstars_fam choose).card : ℚ) ≥ n * (1 - γ) - 1 := by
-  sorry
+  classical
+  -- Setup: cast helpers.
+  have hℓ_Q : (1 : ℚ) ≤ (ℓ : ℚ) := by exact_mod_cast hℓ
+  have hℓ_sub_nn : (0 : ℚ) ≤ (ℓ : ℚ) - 1 := by linarith
+  have hn_Q : (0 : ℚ) ≤ (n : ℚ) := by exact_mod_cast Nat.zero_le n
+  have hnγ1_pos : (0 : ℚ) < (n : ℚ) * γ + 1 := by
+    have : (0 : ℚ) ≤ (n : ℚ) * γ := mul_nonneg hn_Q hγ_pos
+    linarith
+  have hnγ1_nn : (0 : ℚ) ≤ (n : ℚ) * γ + 1 := le_of_lt hnγ1_pos
+  have h_factor_nn : (0 : ℚ) ≤ ((n : ℚ) * γ + 1) * (ℓ - 1) :=
+    mul_nonneg hnγ1_nn hℓ_sub_nn
+  have hL_pow_nn : (0 : ℚ) ≤ (L : ℚ) ^ ℓ :=
+    pow_nonneg (by exact_mod_cast Nat.zero_le L) ℓ
+  -- B_set is nonempty: B_set.card ≥ 1 (else h_size : 0 > nonneg, contradiction).
+  have hB_pos : 0 < B_set.card := by
+    rcases Nat.eq_zero_or_pos B_set.card with hc | hc
+    · exfalso
+      rw [hc] at h_size
+      simp at h_size
+      have : ((n : ℚ) * γ + 1) * (ℓ - 1) * (L : ℚ) ^ ℓ ≥ 0 :=
+        mul_nonneg h_factor_nn hL_pow_nn
+      linarith
+    · exact hc
+  obtain ⟨x₀, hx₀⟩ := Finset.card_pos.mp hB_pos
+  -- Inhabit `Fin ℓ → Fin L` using the witness from `h_agree x₀`.
+  obtain ⟨choose₀_default, _, _, _⟩ := h_agree x₀ hx₀
+  haveI : Nonempty (Fin ℓ → Fin L) := ⟨choose₀_default⟩
+  -- Define the choice function f : S → (Fin ℓ → Fin L).
+  let f : S → (Fin ℓ → Fin L) := fun x =>
+    if hx : x ∈ B_set then (h_agree x hx).choose else choose₀_default
+  -- For x ∈ B_set, f x is a witness from h_agree.
+  have hf_witness : ∀ x ∈ B_set, ∃ Tx : Finset (Fin n),
+      (Tx.card : ℚ) ≥ n * (1 - γ) ∧
+      ∀ i ∈ Tx, G.combine x us i = G.combine x (cstars_fam (f x)) i := by
+    intro x hx
+    have h_spec := (h_agree x hx).choose_spec
+    have hfx : f x = (h_agree x hx).choose := by simp [f, hx]
+    rw [hfx]
+    exact h_spec
+  -- Apply pigeonhole. Codomain has cardinality L^ℓ.
+  set t : Finset (Fin ℓ → Fin L) := (Finset.univ : Finset (Fin ℓ → Fin L)) with ht_def
+  have ht_card : t.card = L ^ ℓ := by
+    rw [ht_def, Finset.card_univ, Fintype.card_fun, Fintype.card_fin, Fintype.card_fin]
+  have hf_maps : ∀ x ∈ B_set, f x ∈ t := fun x _ => Finset.mem_univ _
+  -- Pigeonhole hypothesis (over ℚ): (#t) • A < (#B_set) where A = (nγ+1)(ℓ-1).
+  have h_pigeon_hyp : (t.card : ℕ) • (((n : ℚ) * γ + 1) * ((ℓ : ℚ) - 1)) <
+      (B_set.card : ℚ) := by
+    rw [nsmul_eq_mul, ht_card]
+    push_cast
+    -- Goal: (L : ℚ) ^ ℓ * ((n*γ+1)*(ℓ-1)) < B_set.card
+    linarith
+  -- Apply pigeonhole (ℚ-valued head version) to get choose₀ with fiber > A.
+  obtain ⟨choose₀, _, hfiber⟩ :=
+    Finset.exists_lt_card_fiber_of_nsmul_lt_card_of_maps_to hf_maps h_pigeon_hyp
+  -- Define B' := preimage of choose₀ under f, restricted to B_set.
+  set B' : Finset S := B_set.filter (fun x => f x = choose₀) with hB'_def
+  have hB'_sub : B' ⊆ B_set := Finset.filter_subset _ _
+  have hB'_size : (B'.card : ℚ) > ((n : ℚ) * γ + 1) * ((ℓ : ℚ) - 1) := hfiber
+  -- Build h_agree' for B' with cstars := cstars_fam choose₀.
+  have h_agree' : ∀ x ∈ B', ∃ Tx : Finset (Fin n),
+      (Tx.card : ℚ) ≥ n * (1 - γ) ∧
+      ∀ i ∈ Tx, G.combine x us i = G.combine x (cstars_fam choose₀) i := by
+    intro x hx
+    rw [hB'_def, Finset.mem_filter] at hx
+    obtain ⟨hx_B, hfx⟩ := hx
+    obtain ⟨Tx, hTx_card, hTx_agree⟩ := hf_witness x hx_B
+    refine ⟨Tx, hTx_card, ?_⟩
+    intro i hi
+    have := hTx_agree i hi
+    rw [hfx] at this
+    exact this
+  -- Apply Phase A's `Ttilde_card_gt_of_MDS_aggregate` to (B', cstars_fam choose₀).
+  set cstars : Fin ℓ → (Fin n → F) := cstars_fam choose₀ with hcstars_def
+  set Ttilde : Finset (Fin n) := Ttilde_choose us cstars_fam choose₀ with hTtilde_def
+  have h_Ttilde_def : ∀ i, i ∈ Ttilde ↔ ∀ j, us j i = cstars j i := by
+    intro i
+    rw [hTtilde_def, hcstars_def]
+    exact mem_Ttilde_choose us cstars_fam choose₀ i
+  have h_concl :
+      (Ttilde.card : ℚ) ≥ n * (1 - γ) - 1 :=
+    Ttilde_card_gt_of_MDS_aggregate hG_MDS hℓ us cstars hγ_pos hn B'
+      h_agree' hB'_size Ttilde h_Ttilde_def
+  exact ⟨choose₀, h_concl⟩
 
 /-! ### D4: Degree bound for list version -/
 

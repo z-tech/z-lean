@@ -1,8 +1,21 @@
 /-
 # Cstars-from-list construction
 
-Group C of §6.2: lift a per-seed list of candidate codewords to a family
-of `cstars` parameterized by choice functions.
+Group C of the BCGM25 §6.2 decomposition. Given a per-seed list of `L`
+candidate codewords (the list-decoding analog of the unique-decoding
+witness codeword), this file lifts the list to a family of `cstars`
+parameterized by a "choice function" `Fin ℓ → Fin L` selecting one
+candidate per seed.
+
+Key contents:
+* `exists_cstars_list_of_MDS` — for any choice function, produces an
+  `ℓ`-tuple `cstars_fam choose : Fin ℓ → (Fin n → F)` of code elements
+  whose `G.combine`-image at each distinguished seed `xs k` recovers
+  the chosen candidate. Uses the MDS hypothesis on the generator to
+  invert at the `ℓ` distinct seed values.
+
+Depends on `LinearCodes.MCA.Case2Subtargets`. Used by
+`ListDecodingCounting.lean` and ultimately by `ListDecodingMCA.lean`.
 -/
 
 import LinearCodes.MCA.Case2Subtargets

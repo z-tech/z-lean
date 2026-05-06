@@ -1,7 +1,10 @@
 /-
 # §6.1 Case 2 capstone: MCA unique-decoding large-γ bound
 
-This file wires together the sub-targets from `Case2Subtargets.lean` with the
+This file contains **BCGM25 Theorem 6.1 (unique-decoding regime)**, namely
+`MCA_unique_decoding_bound`, together with its large-γ ingredient
+`MCA_unique_decoding_large_gamma_bound` (the §6.1 Case 2 capstone). It wires
+together the sub-targets from `Case2Subtargets.lean` with the
 maximal-agreement infrastructure from `MaximalDomain.lean` to prove the
 weakened §6.1 Case 2 capstone:
 
@@ -9,14 +12,28 @@ weakened §6.1 Case 2 capstone:
 seedProb (...) ≤ ((n·γ + 1)·(ℓ-1)) / |S|
 ```
 
-It also contains the unified MCA bound `MCA_unique_decoding_bound` (Theorem 6.1
-in the unique-decoding regime) that case-splits on `γ < 1/n` vs `γ ≥ 1/n`.
+## `+1` additive slack vs the paper
 
-The two theorems are moved here (rather than into `MaximalDomain.lean`) to
-avoid creating a circular import: `Case2Subtargets.lean` imports
-`MaximalDomain.lean` for the `IsCADomain`/`IsMaxAgreementDomain` predicates
-used by sub-target F (etc.), so the capstone — which uses both — has to live
-above both of them.
+The original BCGM25 large-γ bound is `n·γ·(ℓ-1)/|S|` (and the unified
+Theorem 6.1 bound is `max{n·γ,1}·(ℓ-1)/|S|`). The Lean statements here have
+an extra `+1` additive slack inside the leading factor, yielding
+`(n·γ + 1)·(ℓ-1)/|S|` and `(max{n·γ,1} + 1)·(ℓ-1)/|S|` respectively.
+
+This slack is introduced by `Ttilde_card_gt_of_MDS_aggregate` (BCGM25
+Lemma 5.3) — see the docstring of that lemma — whose clean ℚ-double-counting
+argument requires the strengthened hypothesis
+`B_set.card > (n·γ + 1)·(ℓ-1)`. The slack is benign: it is absorbed
+identically into both the small-γ and large-γ branches via
+`max_one_nGamma_relax_v2`, and it does not affect the asymptotic regime in
+which the BCGM25 protocols are applied.
+
+## Why this file exists separately from `MaximalDomain.lean`
+
+The two theorems live here, not in `MaximalDomain.lean`, to avoid a circular
+import. `Case2Subtargets.lean` imports `MaximalDomain.lean` for the
+`IsCADomain`/`IsMaxAgreementDomain` predicates used by sub-target F (etc.),
+so the capstone — which uses both `Case2Subtargets` and `MaximalDomain` —
+has to live strictly above both of them.
 -/
 
 import LinearCodes.MCA.MaximalDomain
@@ -437,5 +454,20 @@ theorem MCA_unique_decoding_bound
     have h_le := MCA_unique_decoding_large_gamma_bound (S := S) G hG_MDS hℓ c h_minDist us
       hγ_lo hγ_hi
     exact le_trans h_le h_relax_large
+
+-- Sanity: the capstone elaborates against a concrete instance.
+-- Don't actually evaluate it; just verify the types fit.
+example {F : Type*} [Field F] [DecidableEq F] [Fintype F]
+    {n : ℕ} (G : Generator F F 2) (hG_MDS : G.IsMDS)
+    (c : Submodule F (Fin n → F)) (hn : 0 < n)
+    {δ_C : ℕ} (h_minDist : MinDistAtLeast c δ_C)
+    (us : Fin 2 → (Fin n → F))
+    {γ : ℚ} (hγ_pos : 0 ≤ γ) (hγ_hi : γ * (2 + 1) < δ_C / n) :
+    seedProb (S := F) (fun x =>
+      ∃ T : Finset (Fin n), (T.card : ℚ) ≥ n * (1 - γ) ∧
+        InRestrictedCode c T (G.combine x us) ∧
+        ∃ j : Fin 2, ¬ InRestrictedCode c T (us j))
+    ≤ (max ((n : ℚ) * γ) 1 + 1) * (2 - 1) / Fintype.card F :=
+  MCA_unique_decoding_bound G hG_MDS (by omega) c hn h_minDist us hγ_pos hγ_hi
 
 end LinearCodes

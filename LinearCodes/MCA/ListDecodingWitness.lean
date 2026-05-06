@@ -1,9 +1,22 @@
 /-
 # List-decoding bad witness for BCGM25 §6.2
 
-Group A of §6.2 decomposition: the list-version of `MCABadWitness`.
-For each bad seed `x`, instead of one witness codeword `cw`, there can
-be up to `L` candidate codewords agreeing on the witness set `T`.
+Group A of the BCGM25 §6.2 decomposition: the list-version of
+`MCABadWitness` from the unique-decoding regime. For each bad seed `x`,
+instead of one witness codeword `cw`, there can be up to `L` candidate
+codewords all agreeing with `G.combine x us` on the witness set `T`.
+
+Key contents:
+* `MCAListBadWitness G c us γ L x` — structure packaging the witness
+  set `T` of size `≥ n·(1 − γ)`, the `L`-tuple `cws` of candidate
+  codewords, codeword-membership proofs, and per-row agreement on `T`.
+* `MCAListBadWitness.exists_maxAgreement_extending` — extends the bare
+  witness to a maximal-agreement domain inside the list-decoding ball.
+* `extract_list_bad_witnesses_at_distinct_seeds` — given `ℓ` distinct
+  bad seeds, produces a uniform list of `MCAListBadWitness` data,
+  ready to feed into the counting bounds in `ListDecodingCounting.lean`.
+
+Depends on `UniqueDecoding`, `ListDecoding`, `Case2Subtargets`.
 -/
 
 import LinearCodes.MCA.UniqueDecoding

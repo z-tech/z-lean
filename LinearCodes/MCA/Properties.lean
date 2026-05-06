@@ -111,12 +111,16 @@ Let `v ∈ F^ℓ` be nonzero. We want to bound the probability that
 * `inv_mul_cancel₀`, `smul_smul`, `zero_smul`
 -/
 
+/-- Helper: scaling a non-zero submodule-non-member by a nonzero scalar
+preserves non-membership. -/
 theorem smul_not_mem_of_ne_zero_of_not_mem {F : Type*} [Field F] {n : ℕ} {c : Submodule F (Fin n → F)} {a : F} {u : Fin n → F} : a ≠ 0 → u ∉ c → a • u ∉ c := by
   intro ha hu hau
   apply hu
   have h := c.smul_mem a⁻¹ hau
   simpa only [smul_smul, inv_mul_cancel₀ ha, one_smul] using h
 
+/-- See also `MutualCorrelatedAgreement_zero_simplify` in
+`LinearCodes/MCA/CAImplications.lean` for a related simplification at `γ = 0`. -/
 theorem MCA_implies_ZeroEvading_at_zero {F : Type*} [Field F] [DecidableEq F]
     {S : Type*} [Fintype S] {n ℓ : ℕ}
     (G : Generator F S ℓ) {c : Submodule F (Fin n → F)}

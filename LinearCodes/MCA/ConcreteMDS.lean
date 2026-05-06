@@ -13,6 +13,7 @@ import Mathlib.Tactic.LinearCombination
 import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.Algebra.Polynomial.BigOperators
 import Mathlib.Algebra.Polynomial.Eval.Defs
+import Mathlib.Algebra.Field.ZMod
 
 set_option linter.unusedSectionVars false
 
@@ -290,9 +291,116 @@ theorem univariatePowers_IsMDS {F : Type*} [Field F] [DecidableEq F] [Fintype F]
   rw [heq]
   exact h
 
-/-! ### affineSpace
+/-! ### affineSpace boundary cases (s = 0 and s = 1)
 
-**TODO (deferred): `affineSpace_IsMDS`.**
+For `s ≤ 1`, `affineSpace F s` is MDS. The case `s = 0` is degenerate
+(the seed type is `Fin 0 → F` which has cardinality 1) and the case
+`s = 1` is essentially equivalent to `affineLine`. -/
+
+/-- Helper: cardinality of the seed type for `affineSpace F 1`. -/
+private theorem fin_one_to_F_card {F : Type*} [Fintype F] :
+    Fintype.card (Fin 1 → F) = Fintype.card F := by
+  rw [Fintype.card_fun, Fintype.card_fin, pow_one]
+
+/-- Helper: `Fin 1 → F ≃ F` via evaluation at `0`. -/
+private def finOneToFEquivF (F : Type*) : (Fin 1 → F) ≃ F where
+  toFun := fun x => x 0
+  invFun := fun y _ => y
+  left_inv := by intro x; funext i; fin_cases i; rfl
+  right_inv := by intro y; rfl
+
+/-- The induced code of `affineSpace F 1` has minimum distance at least
+`|F| − 1`. The proof mirrors `affineLine_inducedCode_minDist`, identifying
+the seed `x : Fin 1 → F` with its single coordinate `x 0 : F`. -/
+theorem affineSpace_one_inducedCode_minDist {F : Type*} [Field F] [DecidableEq F]
+    [Fintype F] (h_card : 2 ≤ Fintype.card F) :
+    Generator.fnMinDistAtLeast (Generator.affineSpace F 1).inducedCode
+      (Fintype.card F - 1) := by
+  intro w hw_mem hw_ne
+  obtain ⟨v, hv⟩ := (Generator.mem_inducedCode_iff (affineSpace F 1) w).mp hw_mem
+  have hw_eq : ∀ x : Fin 1 → F, w x = v 0 + (x 0) * v 1 := by
+    intro x
+    rw [hv x]
+    simp [affineSpace, Fin.sum_univ_succ, Fin.cons_zero, Fin.cons_succ]
+  have hv_ne : v ≠ 0 := by
+    intro hv_eq
+    apply hw_ne
+    funext x
+    rw [hw_eq x, hv_eq]
+    simp
+  by_cases hv1 : v 1 = 0
+  · have hv0_ne : v 0 ≠ 0 := by
+      intro h0
+      apply hv_ne
+      funext i
+      fin_cases i
+      · simpa using h0
+      · simpa using hv1
+    have hw_const : ∀ x : Fin 1 → F, w x = v 0 := by
+      intro x
+      rw [hw_eq x, hv1, mul_zero, add_zero]
+    have h_filter_eq :
+        (Finset.univ.filter fun x : Fin 1 → F => w x ≠ 0) = Finset.univ := by
+      apply Finset.eq_univ_of_forall
+      intro x
+      rw [Finset.mem_filter]
+      refine ⟨Finset.mem_univ x, ?_⟩
+      rw [hw_const x]
+      exact hv0_ne
+    unfold Generator.fnHammingWeight
+    rw [h_filter_eq, Finset.card_univ, fin_one_to_F_card]
+    omega
+  · -- The zero set of `w` (as a Finset) embeds into the singleton `{(-v 0 / v 1 : Fin 1 → F)}`.
+    have h_zero_subset :
+        (Finset.univ.filter fun x : Fin 1 → F => w x = 0) ⊆
+          {(fun _ => -v 0 / v 1 : Fin 1 → F)} := by
+      intro x hx
+      simp only [Finset.mem_filter] at hx
+      rw [hw_eq x] at hx
+      have hx2 : v 0 + (x 0) * v 1 = 0 := hx.2
+      have hxv1 : (x 0) * v 1 = -v 0 := by linear_combination hx2
+      have hx0_eq : x 0 = -v 0 / v 1 := by
+        rw [eq_div_iff hv1]
+        linear_combination hxv1
+      rw [Finset.mem_singleton]
+      funext i
+      fin_cases i
+      exact hx0_eq
+    have h_zero_card_le :
+        (Finset.univ.filter fun x : Fin 1 → F => w x = 0).card ≤ 1 := by
+      have h := Finset.card_le_card h_zero_subset
+      simpa using h
+    have h_partition :
+        (Finset.univ.filter fun x : Fin 1 → F => w x ≠ 0).card +
+        (Finset.univ.filter fun x : Fin 1 → F => w x = 0).card =
+          Fintype.card (Fin 1 → F) := by
+      simpa only [not_not, Finset.card_univ] using
+        (Finset.card_filter_add_card_filter_not (s := (Finset.univ : Finset (Fin 1 → F)))
+          (p := fun x : Fin 1 → F => w x ≠ 0))
+    unfold Generator.fnHammingWeight
+    rw [fin_one_to_F_card] at h_partition
+    omega
+
+/-- The `affineSpace F 1` generator is MDS over fields with at least 2 elements.
+The seed type `Fin 1 → F` has the same cardinality as `F`, so this is
+essentially `affineLine_IsMDS`. -/
+theorem affineSpace_IsMDS_of_s_one {F : Type*} [Field F] [DecidableEq F] [Fintype F]
+    (h_card : 2 ≤ Fintype.card F) :
+    (Generator.affineSpace F 1).IsMDS := by
+  refine ⟨affineSpace_dotMap_injective h_card, ?_⟩
+  have h := affineSpace_one_inducedCode_minDist h_card
+  -- Goal: `fnMinDistAtLeast _ (Fintype.card (Fin 1 → F) - (1 + 1) + 1)`.
+  -- Use `Fintype.card (Fin 1 → F) = Fintype.card F` and arithmetic.
+  show Generator.fnMinDistAtLeast (Generator.affineSpace F 1).inducedCode
+    (Fintype.card (Fin 1 → F) - (1 + 1) + 1)
+  rw [fin_one_to_F_card]
+  have heq : Fintype.card F - (1 + 1) + 1 = Fintype.card F - 1 := by omega
+  rw [heq]
+  exact h
+
+/-! ### affineSpace general (s ≥ 2)
+
+**TODO (deferred): `affineSpace_IsMDS` for `s ≥ 2`.**
 
 The `affineSpace F s` generator is **not generally MDS** in the strong
 Singleton-bound sense over arbitrary fields with `s ≥ 2`.
@@ -326,6 +434,23 @@ Possible refinements (future work):
   `|F|^(s-1) · (|F| - 1)` and prove a custom `affineSpace_minDist`
   lemma without going through `IsMDS`.
 -/
+
+/-! ### Sanity checks: concrete fields -/
+
+section SanityChecks
+
+instance : Fact (Nat.Prime 5) := ⟨by decide⟩
+instance : Fact (Nat.Prime 7) := ⟨by decide⟩
+
+/-- Sanity: `affineLine` over `ZMod 5` is MDS. -/
+example : (Generator.affineLine (ZMod 5)).IsMDS :=
+  affineLine_IsMDS (by decide : 2 ≤ Fintype.card (ZMod 5))
+
+/-- Sanity: `univariatePowers (ZMod 7) 3` (degree-3 RS-style) is MDS. -/
+example : (Generator.univariatePowers (ZMod 7) 3).IsMDS :=
+  univariatePowers_IsMDS (by decide : 3 + 1 ≤ Fintype.card (ZMod 7))
+
+end SanityChecks
 
 end Generator
 end LinearCodes

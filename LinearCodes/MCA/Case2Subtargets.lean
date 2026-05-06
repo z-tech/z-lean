@@ -718,6 +718,91 @@ Sketch: at each `i ∉ Ttilde`, the column-difference vector
 has size ≤ ℓ-1. Counting pairs `(x ∈ B, i ∉ Ttilde)` with x in the
 "agreement at i" set gives a size bound forcing `|Ttilde| > n(1-γ)`.
 
+## Slack analysis (formalization vs. paper)
+
+BCGM25's Lemma 5.3 states `|T̃| > n(1-γ)` (strict) under the hypothesis
+`|B_set| > n·γ·(ℓ-1)`. We instead have `|T̃| ≥ n(1-γ) - 1` under the
+strengthened hypothesis `|B_set| > (n·γ + 1)·(ℓ-1)`. The `+1` slack on
+the hypothesis (equivalently `−1` slack on the conclusion) propagates
+to a `+1` factor in the Phase A capstone bound:
+* BCGM25:        `n·γ·(ℓ-1) / |S|`
+* This codebase: `(n·γ + 1)·(ℓ-1) / |S|`
+
+**This slack appears intrinsic to the pure aggregate-counting argument**
+(verified 2026-05-06). The combined per-coord/per-seed double counting
+yields exactly:
+```
+  s · (b - (ℓ-1)) ≤ n·γ · (ℓ-1)         where s := n(1-γ) - t, b := |B_set|, t := |T̃|
+```
+To force `s ≤ 0` (i.e., the strict `t ≥ n(1-γ)` BCGM25 conclusion)
+from a hypothesis on `b` alone, one needs `b - (ℓ-1) > n·γ · (ℓ-1)`,
+i.e., `b > (n·γ + 1)(ℓ-1)`. The case `0 < s < 1` is admissible under
+`b > n·γ·(ℓ-1)`: the bound only gives `s · (b - (ℓ-1)) ≤ n·γ·(ℓ-1)`,
+which permits `s` arbitrarily close to 0+ as `b → ∞`.
+
+Approaches considered but rejected:
+* **Tighter per-coord upper bound**: would require `< ℓ-1` strictly,
+  contradicting the tightness of zero-evading at MDS distance.
+* **Tighter per-seed lower bound**: replacing `Tx \ T̃` (witness diff)
+  with `Ax \ T̃` (true agreement diff) doesn't help — we lack a lower
+  bound on `|Ax|` beyond `≥ |Tx| ≥ n(1-γ)`.
+* **Using strict containment T̃ ⊊ Bx**: this is the technique used
+  *downstream* (in `Case2Capstone.lean` via `strict_superset_count_bound`)
+  but requires `T̃` to already be established — circular for this lemma.
+* **Integer rounding on `t`**: t is a natural, but n(1-γ) is rational
+  with γ rational. Using `t ≥ ⌈n(1-γ)⌉` only converts `t > n(1-γ) - 1`
+  (ℚ) to `t ≥ ⌈n(1-γ) - 1⌉ + 1`, which can fail to equal `⌈n(1-γ)⌉`
+  when `n(1-γ)` is integral.
+
+The original BCGM25 likely uses a different proof structure — possibly
+via `MDS_pairwise_agreement_bound` + Corrádi (cf. `swarm-plan-theorem-6-1.md`),
+or via the maximal-agreement-domain framework where strictness is built in.
+Either alternative would require substantial new infrastructure (Corrádi
+already exists; the wiring through MCA bad-event semantics does not).
+
+## Corrádi attempt (2026-05-06)
+
+A direct application of `Finset.corradi_unconditional` /
+`Finset.corradi_ratio` (in `Upstream/Combinatorics/Corradi.lean`) to the
+family `{B_x}_{x ∈ B_set}` defined by
+`B_x := {i ∈ Fin n : G.combine x us i = G.combine x cstars i}` was
+considered. The plan was: each `|B_x| ≥ n(1-γ)`, pairwise
+`|B_x ∩ B_y| ≤ ℓ - 1`, then Corrádi gives `|B_set| ≤ N(a-b)/(a²-Nb) =
+n·γ·(ℓ-1)` (paper-tight).
+
+This **does not work**: the pairwise bound `|B_x ∩ B_y| ≤ ℓ - 1` is
+**false in general**. For all `i ∈ Ttilde`, `i ∈ B_x ∩ B_y` for every
+`x, y` (because `i ∈ Ttilde ⇒ ∀ j, us j i = cstars j i`, hence
+`combine x us i = combine x cstars i` for every `x`). So `Ttilde ⊆
+B_x ∩ B_y` for *every* pair, giving `|B_x ∩ B_y| ≥ |Ttilde|`, which
+generally exceeds `ℓ-1`.
+
+Restricting to `(B_x \ Ttilde) ∩ (B_y \ Ttilde)` does not help either:
+on this set, `colDiff us cstars i ≠ 0` and both `x, y` are seeds of
+`G.dotMap (colDiff i)` zero-set (size ≤ ℓ-1 by zero-evading), but this
+constrains the *seeds* per coordinate, not the *count of coordinates*
+across pairs. So no tight pairwise bound emerges.
+
+The same fundamental obstruction blocks attempts using max-agreement
+domains in place of `B_x`: any two domains contain a common max-CA
+extension of `Ttilde`, defeating the `< ℓ` pairwise bound.
+
+The genuine paper proof of BCGM25 Lemma 5.3 likely uses a more delicate
+group-by-witness-codeword argument where Corrádi is applied at the
+**codeword level** (codewords `c ∈ c` indexing groups of seeds), with
+the pairwise bound coming from `MDS_pairwise_agreement_bound` over the
+underlying linear code's min-distance, not the MDS dimension `ℓ`.
+Implementing this requires:
+* a partition `B_set = ⋃_c S_c` by witness-codeword equivalence;
+* per-codeword agreement-set sizes `≥ |S_c| · n(1-γ) / |S_c|`;
+* a Corrádi instantiation over the codeword index set.
+
+This is a **major** refactor of the witness-codeword infrastructure
+and is deferred. The slack form below is retained as a
+formally-verified weakening of the paper bound, with `+1` propagated
+identically through the Phase A and Phase B capstones via
+`max_one_nGamma_relax_v2`.
+
 This stub captures the specialized statement we need for the capstone. -/
 theorem Ttilde_card_gt_of_MDS_aggregate
     [Fintype S] [DecidableEq S] [Nonempty S]

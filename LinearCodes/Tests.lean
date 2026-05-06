@@ -9,6 +9,9 @@ import Mathlib.Algebra.Field.ZMod
 Concrete encoding examples over `ZMod 17` validated by `decide`. Force the
 linear-code interface and the polynomial-evaluation kernel to elaborate on
 real inputs.
+
+See also `LinearCodes/ReedSolomonProperties.lean` for proven properties
+(minimum distance, etc.) of the Reed-Solomon code.
 -/
 
 namespace __ReedSolomonTests__
