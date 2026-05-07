@@ -6,3 +6,4 @@ import Sumcheck.Src.Verifier
 import Sumcheck.Src.Convention
 import Sumcheck.Src.EvalForm
 import Sumcheck.Src.EvalFormVerifier
+import Sumcheck.Src.MultilinearProver
