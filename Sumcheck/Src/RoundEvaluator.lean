@@ -1,4 +1,5 @@
 import Sumcheck.Src.CMvPolynomial
+import Sumcheck.IP.SharpSAT.Degree
 
 /-!
 # Arbitrary-degree round-poly evaluator (Phase 5(b))
@@ -95,4 +96,35 @@ def multilinearEvaluator {𝔽 : Type} [Field 𝔽] [DecidableEq 𝔽] {n : ℕ}
     {𝔽 : Type} [Field 𝔽] [DecidableEq 𝔽] {n : ℕ}
     (p : CMvPolynomial n 𝔽) (hp : ∀ i : Fin n, indDegreeK p i ≤ 1) :
     (multilinearEvaluator p hp).virtualPolynomial = p := rfl
+
+/--
+Inner-product evaluator: `d = 2`. Built from two multilinears `f, g`
+together with their per-variable degree bounds; the virtual polynomial
+is the symbolic product `f * g`. The degree bound chains
+`SharpSAT.degreeOf_mul_le_c` (`(f*g).degreeOf i ≤ f.degreeOf i + g.degreeOf i`)
+with `Nat.add_le_add hf hg` to land at `≤ 1 + 1 = 2`.
+
+Mirrors the Phase 5(a) `InnerProduct.NativeStatement.toEvalFormStatement`
+construction. The `[BEq 𝔽] [LawfulBEq 𝔽]` constraints are inherited from
+`SharpSAT.degreeOf_mul_le_c`'s preconditions. -/
+def innerProductEvaluator
+    {𝔽 : Type} [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] {n : ℕ}
+    (f g : CMvPolynomial n 𝔽)
+    (hf : ∀ i : Fin n, indDegreeK f i ≤ 1)
+    (hg : ∀ i : Fin n, indDegreeK g i ≤ 1) :
+    RoundPolyEvaluator 𝔽 n 2 where
+  virtualPolynomial := f * g
+  virtualPolynomial_degree_le := by
+    intro i
+    have hmul : (f * g).degreeOf i ≤ f.degreeOf i + g.degreeOf i :=
+      SharpSAT.degreeOf_mul_le_c f g i
+    -- `indDegreeK p i = p.degreeOf i` by definition.
+    exact le_trans hmul (Nat.add_le_add (hf i) (hg i))
+
+@[simp] lemma innerProductEvaluator_virtualPolynomial
+    {𝔽 : Type} [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] {n : ℕ}
+    (f g : CMvPolynomial n 𝔽)
+    (hf : ∀ i : Fin n, indDegreeK f i ≤ 1)
+    (hg : ∀ i : Fin n, indDegreeK g i ≤ 1) :
+    (innerProductEvaluator f g hf hg).virtualPolynomial = f * g := rfl
 
