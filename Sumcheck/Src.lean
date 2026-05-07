@@ -8,3 +8,4 @@ import Sumcheck.Src.EvalForm
 import Sumcheck.Src.EvalFormVerifier
 import Sumcheck.Src.MultilinearProver
 import Sumcheck.Src.RoundEvaluator
+import Sumcheck.Src.SubstRound0
