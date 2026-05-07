@@ -444,4 +444,297 @@ theorem finSum_lsb_eq_msb [Zero 𝔽] [One 𝔽] {β : Type _} [AddCommMonoid β
   intro k _
   rw [boolFromFin_lsb_bitReverseEquiv]
 
+/-! ### Task 3: bridge to `honestProverMessageEvalsAt`
+
+We connect `compute_correctness_table` (which expresses the table-prover's
+`(s0, s1)` as sums over `Fin (2^n)` of `boolPoint_msb`-indexed evaluations)
+to `honestProverMessageEvalsAt [0,1] p ⟨0, _⟩ Fin.elim0 c` (which is a
+`sumOverDomainRecursive [0,1] (·+·) 0` over the Boolean hypercube of `n`
+open variables).
+
+For the round-0 message, the open variables are exactly the `n` non-leading
+positions of `Fin (n+1)`, and the leading position is fixed to `c`. The
+chain is:
+
+  honestProverMessageEvalsAt … c
+    = sumOverDomainRecursive [0,1] _ _ (m := n) (fun x => eval (cons c x) p)   [defn]
+    = ∑ k : Fin (2^n), eval (cons c (boolFromFin_lsb k)) p                       [Task 1]
+    = ∑ k : Fin (2^n), eval (cons c (boolFromFin_msb k)) p                       [Task 2]
+    = ∑ k : Fin (2^n), eval (boolPoint_msb (k as Fin (2^(n+1)) with high bit c-encoded)) p
+
+The last step uses `boolFromFin_msb_eq_boolPoint_msb` and a bookkeeping
+lemma about `Fin.cons` agreeing with `boolPoint_msb` on a half-cube. -/
+
+variable [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+
+omit [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] in
+/-- The point built inside `residualSumWithOpenVars` at round 0 with no prior
+    challenges and current value `c` equals `Fin.cons c x` (where `x` is the
+    open-variable assignment). -/
+private lemma residual_point_round_zero
+    {n : ℕ} (c : 𝔽) (x : Fin n → 𝔽) (i : Fin (n+1)) :
+    addCasesFun (Fin.snoc (Fin.elim0 : Fin 0 → 𝔽) c) x
+        (Fin.cast (snoc_split_eq (n := n+1) ⟨0, Nat.succ_pos n⟩).symm i)
+      = Fin.cons (α := fun _ : Fin (n+1) => 𝔽) c x i := by
+  unfold addCasesFun
+  refine Fin.cases ?_ (fun i' => ?_) i
+  · -- index 0
+    have h0 : (Fin.cast (snoc_split_eq (n := n+1) ⟨0, Nat.succ_pos n⟩).symm 0)
+        = Fin.castAdd (numOpenVars (n := n+1) ⟨0, Nat.succ_pos n⟩)
+            (⟨0, Nat.succ_pos 0⟩ : Fin 1) := by
+      apply Fin.ext; rfl
+    rw [h0]
+    rw [Fin.addCases_left (motive := fun _ => 𝔽) (m := 1)
+        (n := numOpenVars (n := n+1) ⟨0, Nat.succ_pos n⟩)
+        (left := Fin.snoc (Fin.elim0 : Fin 0 → 𝔽) c) (right := x)
+        (⟨0, Nat.succ_pos 0⟩ : Fin 1)]
+    have hlast : (⟨0, Nat.succ_pos 0⟩ : Fin 1) = Fin.last 0 := by
+      apply Fin.ext; rfl
+    rw [hlast, Fin.snoc_last, Fin.cons_zero]
+  · -- index i'.succ
+    have h0 : (Fin.cast (snoc_split_eq (n := n+1) ⟨0, Nat.succ_pos n⟩).symm i'.succ)
+        = Fin.natAdd 1
+            (⟨i'.val, by
+              have := i'.isLt
+              show i'.val < numOpenVars (n := n+1) ⟨0, Nat.succ_pos n⟩
+              show i'.val < (n+1) - (0 + 1)
+              omega⟩ : Fin (numOpenVars (n := n+1) ⟨0, Nat.succ_pos n⟩)) := by
+      apply Fin.ext
+      show i'.val + 1 = 1 + i'.val
+      omega
+    rw [h0]
+    rw [Fin.addCases_right (motive := fun _ => 𝔽) (m := 1)
+        (n := numOpenVars (n := n+1) ⟨0, Nat.succ_pos n⟩)
+        (left := Fin.snoc (Fin.elim0 : Fin 0 → 𝔽) c) (right := x)
+        (⟨i'.val, by
+          have := i'.isLt
+          show i'.val < numOpenVars (n := n+1) ⟨0, Nat.succ_pos n⟩
+          show i'.val < (n+1) - (0 + 1)
+          omega⟩ : Fin (numOpenVars (n := n+1) ⟨0, Nat.succ_pos n⟩))]
+    rw [Fin.cons_succ]
+    -- Now x ⟨i'.val, _⟩ = x i' since the index has the same value.
+    congr 1
+
+omit [BEq 𝔽] [LawfulBEq 𝔽] in
+/-- Unfolding of `honestProverMessageEvalsAt` at round 0 with no prior
+    challenges. The result is a `sumOverDomainRecursive` of `eval (Fin.cons c x) p`. -/
+private lemma honestProverMessageEvalsAt_zero_unfold
+    {n : ℕ}
+    (domain : List 𝔽)
+    (p : CPoly.CMvPolynomial (n+1) 𝔽)
+    (c : 𝔽) :
+    honestProverMessageEvalsAt domain p ⟨0, Nat.succ_pos n⟩ Fin.elim0 c
+      = sumOverDomainRecursive (𝔽 := 𝔽) (β := 𝔽)
+          domain (· + ·) 0 (m := n)
+          (fun x => CPoly.CMvPolynomial.eval
+            (Fin.cons (α := fun _ : Fin (n+1) => 𝔽) c x) p) := by
+  unfold honestProverMessageEvalsAt residualSumWithOpenVars
+  show sumOverDomainRecursive (𝔽 := 𝔽) (β := 𝔽) domain (· + ·) 0
+      (m := numOpenVars (n := n+1) ⟨0, Nat.succ_pos n⟩)
+      (fun x =>
+        let point : Fin (n+1) → 𝔽 := fun i =>
+          addCasesFun (Fin.snoc Fin.elim0 c) x
+            (Fin.cast (snoc_split_eq (n := n+1) ⟨0, Nat.succ_pos n⟩).symm i)
+        CPoly.CMvPolynomial.eval point p)
+    = sumOverDomainRecursive (𝔽 := 𝔽) (β := 𝔽) domain (· + ·) 0 (m := n)
+        (fun x => CPoly.CMvPolynomial.eval
+          (Fin.cons (α := fun _ : Fin (n+1) => 𝔽) c x) p)
+  -- numOpenVars i for i.val = 0 is n+1 - 1 = n; the cast is reflexive
+  have hopen : numOpenVars (n := n+1) ⟨0, Nat.succ_pos n⟩ = n := by
+    show n + 1 - (0 + 1) = n
+    omega
+  rw [sum_over_domain_recursive_cast (hm := hopen)]
+  apply sum_over_domain_recursive_congr
+  intro x
+  -- After cast, the inner sum's argument becomes x ∘ Fin.cast hopen.
+  -- The point function in the let-binding agrees pointwise with Fin.cons c x.
+  show CPoly.CMvPolynomial.eval (fun i : Fin (n+1) =>
+            addCasesFun (Fin.snoc Fin.elim0 c) (x ∘ Fin.cast hopen)
+              (Fin.cast (snoc_split_eq (n := n+1) ⟨0, Nat.succ_pos n⟩).symm i)) p
+      = CPoly.CMvPolynomial.eval
+          (Fin.cons (α := fun _ : Fin (n+1) => 𝔽) c x) p
+  congr 1
+  funext i
+  rw [residual_point_round_zero c (x ∘ Fin.cast hopen) i]
+  refine Fin.cases ?_ (fun i' => ?_) i
+  · rw [Fin.cons_zero, Fin.cons_zero]
+  · rw [Fin.cons_succ, Fin.cons_succ]
+    show x ((Fin.cast hopen) i') = x i'
+    have : (Fin.cast hopen) i' = i' := by apply Fin.ext; rfl
+    rw [this]
+
+omit [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] in
+/-- Helper: `Fin.cons c (boolFromFin_msb k)` for `k : Fin (2^n)` equals
+    `boolPoint_msb` of the `Fin (2^(n+1))` index obtained by encoding `c` as the
+    high bit. We give two specialised versions: `c = 0` (low half) and `c = 1`
+    (high half). -/
+private lemma Fin_cons_zero_boolFromFin_msb_eq [Zero 𝔽] [One 𝔽]
+    {n : ℕ} (k : Fin (2^n)) :
+    (Fin.cons (α := fun _ : Fin (n+1) => 𝔽) (0 : 𝔽)
+      (boolFromFin_msb (𝔽 := 𝔽) k))
+      = boolPoint_msb (𝔽 := 𝔽) (n := n+1)
+          (⟨k.val, by
+            have hk : k.val < 2^n := k.isLt
+            have : (2:ℕ)^n ≤ 2^(n+1) := by rw [pow_succ]; omega
+            omega⟩ : Fin (2^(n+1))) := by
+  have hkbnd : k.val < 2^(n+1) := by
+    have hk : k.val < 2^n := k.isLt
+    have : (2:ℕ)^n ≤ 2^(n+1) := by rw [pow_succ]; omega
+    omega
+  funext j
+  refine Fin.cases ?_ (fun j' => ?_) j
+  · -- index 0: LHS = 0; RHS = bit n of k.val (which is 0 since k.val < 2^n).
+    show Fin.cons (α := fun _ : Fin (n+1) => 𝔽) (0 : 𝔽)
+            (boolFromFin_msb (𝔽 := 𝔽) k) 0
+        = boolPoint_msb (𝔽 := 𝔽) (⟨k.val, hkbnd⟩ : Fin (2^(n+1))) 0
+    rw [Fin.cons_zero]
+    show (0 : 𝔽) = if (BitVec.ofFin (⟨k.val, hkbnd⟩ : Fin (2^(n+1)))).getLsb
+              (reverseFin (n := n+1) (0 : Fin (n+1)))
+            then (1 : 𝔽) else 0
+    have hbit : (BitVec.ofFin (⟨k.val, hkbnd⟩ : Fin (2^(n+1)))).getLsb
+              (reverseFin (n := n+1) (0 : Fin (n+1))) = false := by
+      show k.val.testBit ((reverseFin (n := n+1) (0 : Fin (n+1))).val) = false
+      rw [show (reverseFin (n := n+1) (0 : Fin (n+1))).val = n from by
+        show (n+1) - 1 - 0 = n; omega]
+      have hk : k.val < 2^n := k.isLt
+      exact Nat.testBit_lt_two_pow hk
+    rw [hbit]; simp
+  · -- index j'.succ: LHS = boolFromFin_msb k j'; RHS = bit (n - 1 - j') of k.val.
+    show Fin.cons (α := fun _ : Fin (n+1) => 𝔽) (0 : 𝔽)
+            (boolFromFin_msb (𝔽 := 𝔽) k) j'.succ
+        = boolPoint_msb (𝔽 := 𝔽) (⟨k.val, hkbnd⟩ : Fin (2^(n+1))) j'.succ
+    rw [Fin.cons_succ]
+    show (if k.val.testBit (n - 1 - j'.val) then (1 : 𝔽) else 0)
+        = if (BitVec.ofFin (⟨k.val, hkbnd⟩ : Fin (2^(n+1)))).getLsb
+              (reverseFin (n := n+1) j'.succ)
+            then (1 : 𝔽) else 0
+    have hr : (reverseFin (n := n+1) j'.succ).val = n - 1 - j'.val := by
+      show (n+1) - 1 - (j'.val + 1) = n - 1 - j'.val
+      have := j'.isLt
+      omega
+    -- (BitVec.ofFin _).getLsb (reverseFin _) = k.val.testBit (reverseFin _ .val)
+    show (if k.val.testBit (n - 1 - j'.val) then (1 : 𝔽) else 0)
+        = if k.val.testBit (reverseFin (n := n+1) j'.succ).val
+            then (1 : 𝔽) else 0
+    rw [hr]
+
+omit [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] in
+/-- Companion for the `c = 1` (high-half) case. -/
+private lemma Fin_cons_one_boolFromFin_msb_eq [Zero 𝔽] [One 𝔽]
+    {n : ℕ} (k : Fin (2^n)) :
+    (Fin.cons (α := fun _ : Fin (n+1) => 𝔽) (1 : 𝔽)
+      (boolFromFin_msb (𝔽 := 𝔽) k))
+      = boolPoint_msb (𝔽 := 𝔽) (n := n+1)
+          (⟨2^n + k.val, by
+            have hk : k.val < 2^n := k.isLt
+            show 2^n + k.val < 2^(n+1)
+            rw [pow_succ]; omega⟩ : Fin (2^(n+1))) := by
+  have hkbnd : 2^n + k.val < 2^(n+1) := by
+    have hk : k.val < 2^n := k.isLt
+    show 2^n + k.val < 2^(n+1)
+    rw [pow_succ]; omega
+  funext j
+  refine Fin.cases ?_ (fun j' => ?_) j
+  · show Fin.cons (α := fun _ : Fin (n+1) => 𝔽) (1 : 𝔽)
+            (boolFromFin_msb (𝔽 := 𝔽) k) 0
+        = boolPoint_msb (𝔽 := 𝔽) (⟨2^n + k.val, hkbnd⟩ : Fin (2^(n+1))) 0
+    rw [Fin.cons_zero]
+    show (1 : 𝔽) = if (BitVec.ofFin
+              (⟨2^n + k.val, hkbnd⟩ : Fin (2^(n+1)))).getLsb
+              (reverseFin (n := n+1) (0 : Fin (n+1)))
+            then (1 : 𝔽) else 0
+    have hbit : (BitVec.ofFin
+        (⟨2^n + k.val, hkbnd⟩ : Fin (2^(n+1)))).getLsb
+        (reverseFin (n := n+1) (0 : Fin (n+1))) = true := by
+      show (2^n + k.val).testBit ((reverseFin (n := n+1) (0 : Fin (n+1))).val) = true
+      rw [show (reverseFin (n := n+1) (0 : Fin (n+1))).val = n from by
+        show (n+1) - 1 - 0 = n; omega]
+      have hk : k.val < 2^n := k.isLt
+      rw [Nat.testBit_two_pow_add_eq]
+      rw [Nat.testBit_lt_two_pow hk]
+      rfl
+    rw [hbit]; simp
+  · show Fin.cons (α := fun _ : Fin (n+1) => 𝔽) (1 : 𝔽)
+            (boolFromFin_msb (𝔽 := 𝔽) k) j'.succ
+        = boolPoint_msb (𝔽 := 𝔽) (⟨2^n + k.val, hkbnd⟩ : Fin (2^(n+1))) j'.succ
+    rw [Fin.cons_succ]
+    show (if k.val.testBit (n - 1 - j'.val) then (1 : 𝔽) else 0)
+        = if (BitVec.ofFin (⟨2^n + k.val, hkbnd⟩ : Fin (2^(n+1)))).getLsb
+              (reverseFin (n := n+1) j'.succ)
+            then (1 : 𝔽) else 0
+    have hr : (reverseFin (n := n+1) j'.succ).val = n - 1 - j'.val := by
+      have := j'.isLt
+      show (n+1) - 1 - (j'.val + 1) = n - 1 - j'.val
+      omega
+    show (if k.val.testBit (n - 1 - j'.val) then (1 : 𝔽) else 0)
+        = if (2^n + k.val).testBit (reverseFin (n := n+1) j'.succ).val
+            then (1 : 𝔽) else 0
+    rw [hr]
+    congr 1
+    have hjlt : n - 1 - j'.val < n := by
+      have := j'.isLt
+      omega
+    rw [Nat.testBit_two_pow_add_gt hjlt]
+
+/-- **Task 3 — Final bridge: `s0` matches the symbolic eval-form spec at round 0
+    on input `c = 0`.** -/
+theorem compute_correctness_at_zero
+    {n : ℕ} (p : CPoly.CMvPolynomial (n+1) 𝔽) :
+    (computeS0S1_msb (toEvalTable (𝔽 := 𝔽) p)).1
+      = honestProverMessageEvalsAt [(0:𝔽), 1] p ⟨0, Nat.succ_pos n⟩ Fin.elim0 0 := by
+  -- LHS: Use compute_correctness_table to express as ∑ k, eval (boolPoint_msb (low k)) p.
+  have hL := compute_correctness_table (𝔽 := 𝔽) (n := n) p
+  rw [show (computeS0S1_msb (toEvalTable (𝔽 := 𝔽) p)).1
+        = (∑ k : Fin (2^n), CPoly.CMvPolynomial.eval
+            (boolPoint_msb (𝔽 := 𝔽) (n := n+1)
+              (⟨k.val, by
+                have hk : k.val < 2^n := k.isLt
+                have : (2:ℕ)^n ≤ 2^(n+1) := by rw [pow_succ]; omega
+                omega⟩ : Fin (2^(n+1)))) p) from by rw [hL]]
+  -- RHS: unfold and apply Task 1 + Task 2.
+  rw [honestProverMessageEvalsAt_zero_unfold]
+  rw [sumOverDomainRecursive_bool_eq_finSum
+        (F := fun x => CPoly.CMvPolynomial.eval (Fin.cons (0 : 𝔽) x) p)]
+  rw [finSum_lsb_eq_msb
+        (F := fun x => CPoly.CMvPolynomial.eval (Fin.cons (0 : 𝔽) x) p)]
+  -- Now align points via Fin_cons_zero_boolFromFin_msb_eq.
+  apply Finset.sum_congr rfl
+  intro k _
+  -- LHS index: ⟨k.val, _⟩; RHS uses Fin.cons 0 (boolFromFin_msb k) which equals
+  -- boolPoint_msb of ⟨k.val, _⟩ by Fin_cons_zero_boolFromFin_msb_eq.
+  rw [Fin_cons_zero_boolFromFin_msb_eq]
+
+/-- **Task 4 — Companion: `s1` matches the symbolic eval-form spec at round 0
+    on input `c = 1`.** -/
+theorem compute_correctness_at_one
+    {n : ℕ} (p : CPoly.CMvPolynomial (n+1) 𝔽) :
+    (computeS0S1_msb (toEvalTable (𝔽 := 𝔽) p)).2
+      = honestProverMessageEvalsAt [(0:𝔽), 1] p ⟨0, Nat.succ_pos n⟩ Fin.elim0 1 := by
+  have hL := compute_correctness_table (𝔽 := 𝔽) (n := n) p
+  rw [show (computeS0S1_msb (toEvalTable (𝔽 := 𝔽) p)).2
+        = (∑ k : Fin (2^n), CPoly.CMvPolynomial.eval
+            (boolPoint_msb (𝔽 := 𝔽) (n := n+1)
+              (⟨2^n + k.val, by
+                have hk : k.val < 2^n := k.isLt
+                show 2^n + k.val < 2^(n+1)
+                rw [pow_succ]; omega⟩ : Fin (2^(n+1)))) p) from by rw [hL]]
+  rw [honestProverMessageEvalsAt_zero_unfold]
+  rw [sumOverDomainRecursive_bool_eq_finSum
+        (F := fun x => CPoly.CMvPolynomial.eval (Fin.cons (1 : 𝔽) x) p)]
+  rw [finSum_lsb_eq_msb
+        (F := fun x => CPoly.CMvPolynomial.eval (Fin.cons (1 : 𝔽) x) p)]
+  apply Finset.sum_congr rfl
+  intro k _
+  rw [Fin_cons_one_boolFromFin_msb_eq]
+
+/-- **Task 4 (bundled): full round-0 correctness.** -/
+theorem compute_correctness
+    {n : ℕ} (p : CPoly.CMvPolynomial (n+1) 𝔽) :
+    computeS0S1_msb (toEvalTable (𝔽 := 𝔽) p)
+      = ( honestProverMessageEvalsAt [(0:𝔽), 1] p ⟨0, Nat.succ_pos n⟩ Fin.elim0 0,
+          honestProverMessageEvalsAt [(0:𝔽), 1] p ⟨0, Nat.succ_pos n⟩ Fin.elim0 1 ) := by
+  refine Prod.ext ?_ ?_
+  · exact compute_correctness_at_zero p
+  · exact compute_correctness_at_one p
+
 end Sumcheck.MultilinearProver
