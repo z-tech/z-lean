@@ -8,3 +8,4 @@ import Sumcheck.IP.EvalForm
 import Sumcheck.IP.InnerProduct
 import Sumcheck.IP.InnerProductNative
 import Sumcheck.IP.SharpSAT
+import Sumcheck.IP.CoefficientProver
