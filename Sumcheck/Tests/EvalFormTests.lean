@@ -2,6 +2,7 @@ import Mathlib.Data.ZMod.Basic
 
 import Sumcheck.Src.EvalForm
 import Sumcheck.Src.Verifier
+import Sumcheck.Src.Convention
 
 /-!
 # Eval-form sumcheck oracle: `#eval` test cases
@@ -259,5 +260,87 @@ above. -/
 example : indDegreeK p ⟨0, by decide⟩ = 2 := by native_decide
 
 end Example3
+
+/-! ## Example 4 — MSB vs LSB convention on an asymmetric multilinear
+
+Lean's spec convention is LSB (round-`i` binds `Fin n` position `i`); `effsc`'s
+multilinear prover is MSB (round-`0` splits the table into halves of high-bit
+0 vs 1). For symmetric polynomials the two conventions produce the same
+round messages, so testing the convention layer needs an *asymmetric* poly.
+
+Here `p(x₀, x₁) = 1 + 2·x₀ + 3·x₁ + 5·x₀·x₁`.
+* LSB round 0 binds `x₀`. The round message is
+  `G_0^LSB(c) = Σ_y p(c, y) = (1 + 2c) + (1 + 2c + 3 + 5c) = 5 + 9c`.
+* MSB round 0 binds `x₁`. The round message is
+  `G_0^MSB(c) = Σ_x p(x, c) = (1 + 3c) + (1 + 2 + 3c + 5c) = 4 + 11c`.
+
+These differ at c=1 (LSB: 14; MSB: 15), confirming the convention parameter
+actually changes the prover's output and is not vacuous. The
+`honestProverMessageEvalsAtConv_MSB_eq_LSB_rename` theorem says MSB on `p`
+is LSB on `rename reverseFin p`; this file pins the corresponding `#eval`
+values so any regression in the convention plumbing breaks here. -/
+
+namespace Example4
+
+open Sumcheck
+
+/-- p(x₀, x₁) = 1 + 2x₀ + 3x₁ + 5x₀x₁. -/
+def p : CPoly.CMvPolynomial 2 𝔽 :=
+  CPoly.Lawful.fromUnlawful <|
+    ((0 : CPoly.Unlawful 2 𝔽).insert ⟨#[0, 0], by decide⟩ (1 : 𝔽))
+      |>.insert ⟨#[1, 0], by decide⟩ (2 : 𝔽)
+      |>.insert ⟨#[0, 1], by decide⟩ (3 : 𝔽)
+      |>.insert ⟨#[1, 1], by decide⟩ (5 : 𝔽)
+
+#eval honestClaim domain p                                                              -- 2 (= 19 mod 17)
+
+-- LSB round-0 evaluations: G_0^LSB(c) = 5 + 9c.
+#eval honestProverMessageEvalsAtConv Convention.LSB domain p ⟨0, by decide⟩ Fin.elim0 (0 : 𝔽)  -- 5
+#eval honestProverMessageEvalsAtConv Convention.LSB domain p ⟨0, by decide⟩ Fin.elim0 (1 : 𝔽)  -- 14
+-- MSB round-0 evaluations: G_0^MSB(c) = 4 + 11c.
+#eval honestProverMessageEvalsAtConv Convention.MSB domain p ⟨0, by decide⟩ Fin.elim0 (0 : 𝔽)  -- 4
+#eval honestProverMessageEvalsAtConv Convention.MSB domain p ⟨0, by decide⟩ Fin.elim0 (1 : 𝔽)  -- 15
+
+example :
+    honestProverMessageEvalsAtConv Convention.LSB domain p ⟨0, by decide⟩ Fin.elim0 (0 : 𝔽)
+      = (5 : 𝔽) := by native_decide
+
+example :
+    honestProverMessageEvalsAtConv Convention.LSB domain p ⟨0, by decide⟩ Fin.elim0 (1 : 𝔽)
+      = (14 : 𝔽) := by native_decide
+
+example :
+    honestProverMessageEvalsAtConv Convention.MSB domain p ⟨0, by decide⟩ Fin.elim0 (0 : 𝔽)
+      = (4 : 𝔽) := by native_decide
+
+example :
+    honestProverMessageEvalsAtConv Convention.MSB domain p ⟨0, by decide⟩ Fin.elim0 (1 : 𝔽)
+      = (15 : 𝔽) := by native_decide
+
+/-- The conventions disagree on this polynomial — confirms the convention
+parameter is non-vacuous on asymmetric multilinears. -/
+example :
+    honestProverMessageEvalsAtConv Convention.LSB domain p ⟨0, by decide⟩ Fin.elim0 (1 : 𝔽)
+      ≠ honestProverMessageEvalsAtConv Convention.MSB domain p ⟨0, by decide⟩ Fin.elim0 (1 : 𝔽) := by
+  native_decide
+
+/-- Both conventions compute the same total claim (sum over the full hypercube
+is permutation-invariant). `Σ_x p(x) = p(0,0) + p(1,0) + p(0,1) + p(1,1)
+= 1 + 3 + 4 + 11 = 19 ≡ 2 mod 17`. -/
+example : honestClaim (n := 2) domain p = (2 : 𝔽) := by native_decide
+
+/-- Both conventions satisfy the round-0 sumcheck identity
+`G_0(0) + G_0(1) = honestClaim`. -/
+example :
+    honestProverMessageEvalsAtConv Convention.LSB domain p ⟨0, by decide⟩ Fin.elim0 (0 : 𝔽)
+      + honestProverMessageEvalsAtConv Convention.LSB domain p ⟨0, by decide⟩ Fin.elim0 (1 : 𝔽)
+        = honestClaim (n := 2) domain p := by native_decide
+
+example :
+    honestProverMessageEvalsAtConv Convention.MSB domain p ⟨0, by decide⟩ Fin.elim0 (0 : 𝔽)
+      + honestProverMessageEvalsAtConv Convention.MSB domain p ⟨0, by decide⟩ Fin.elim0 (1 : 𝔽)
+        = honestClaim (n := 2) domain p := by native_decide
+
+end Example4
 
 end __EvalFormTests__
