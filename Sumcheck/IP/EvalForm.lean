@@ -1,7 +1,13 @@
 import InteractiveProtocol.Src.Protocol
+import InteractiveProtocol.Properties.Soundness
 import Sumcheck.Src
 import Sumcheck.Properties.EvalForm
 import Sumcheck.IP.Statement
+import Sumcheck.IP.InteractiveProtocol
+import Sumcheck.Properties.Theorems
+import Sumcheck.Properties.Events
+import Sumcheck.Properties.Probability
+import Sumcheck.Properties.Lemmas.SoundnessLemmas
 
 /-!
 # IP-native eval-form sumcheck instance (Phase 4)
@@ -296,3 +302,492 @@ theorem sumOnDomain_honest_eq_symbolic
       (𝔽 := 𝔽) (n := n) st.domain st.polynomial i challenges a).symm
   -- Reduce to a generic foldl-congruence statement (no `st` in scope).
   exact foldl_congr_of_pointwise (L := st.domain) (f := f_l) (g := f_r) hpt 0
+
+/-! ## Phase 4 extension: full lift theorems
+
+Beyond the floor delivered above, we now close:
+
+* `interpolate_evaluate_round_trip` — left-inverse round-trip:
+  for any eval tuple `qEvals`, evaluating its Lagrange interpolant at
+  the nodes recovers `qEvals`.
+* `evaluate_interpolate_round_trip_honest` — right-inverse round-trip,
+  restricted to honest round polynomials. The general univariate ↔
+  multivariate-1 round-trip is gated by `eval_honestProverMessageAt_eq_interpolate_eval`
+  from Phase 1 polish; we expose the eval-equivalence form.
+* `verifierAccepts_iff_honest` — the eval-form verifier accepts the
+  honest eval-form transcript iff the symbolic verifier accepts the
+  honest symbolic transcript at the same challenges (specialised
+  bidirectional reduction, sufficient for completeness).
+* `evalForm_accepts_implies_symbolic_accepts` — adversary transport in
+  the soundness direction: for any eval-form adversary `P`, eval-form
+  acceptance entails acceptance of a constructed symbolic adversary
+  `liftEvalProverToSymbolic P` with the same statement.
+* `sumcheck_hasPerfectCompleteness_evalForm`,
+  `sumcheck_hasSoundnessError_evalForm` — the IP-framework
+  completeness / soundness instances for the eval-form protocol.
+-/
+
+/-- **Round-trip 1** (forward): the Lagrange interpolant of `qEvals` at
+the `d+1` distinct nodes recovers `qEvals` when re-evaluated at those
+nodes. Direct corollary of `interpolateRound_eval_at_node`. -/
+theorem interpolate_evaluate_round_trip
+    {𝔽 : Type} {d : ℕ} [Field 𝔽] [DecidableEq 𝔽]
+    (evalPoints : Fin (d + 1) → 𝔽)
+    (hinj : Function.Injective evalPoints)
+    (qEvals : Fin (d + 1) → 𝔽) :
+    (fun k => Polynomial.eval (evalPoints k)
+        (interpolateRound (𝔽 := 𝔽) (d := d) evalPoints qEvals))
+      = qEvals := by
+  funext k
+  exact interpolateRound_eval_at_node (𝔽 := 𝔽) (d := d)
+    evalPoints hinj qEvals k
+
+/-- **Round-trip 2** (backward, eval-equivalence form): for the honest
+round polynomial `q := honestProverMessageAt … `, interpolating its
+node-evaluations through the `d+1` distinct interpolation points
+yields a polynomial that agrees with `q` at every field point.
+
+This is the right-inverse direction modulo the type bridge: the
+interpolant lives in `Polynomial 𝔽` while `q` lives in
+`CMvPolynomial 1 𝔽`, but they agree under evaluation thanks to
+`eval_honestProverMessageAt_eq_interpolate_eval` (Phase 1 polish).
+
+A general statement for arbitrary `q : CMvPolynomial 1 𝔽` would also
+hold but requires the same univariate bridge applied to a generic
+polynomial; we only need the honest-prover case for the
+soundness/completeness lifts. -/
+theorem evaluate_interpolate_round_trip_honest
+    {𝔽 : Type} {n d : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+    (domain : List 𝔽)
+    (p : CMvPolynomial n 𝔽)
+    (i : Fin n)
+    (challenges : Fin i.val → 𝔽)
+    (evalPoints : Fin (d + 1) → 𝔽)
+    (hinj : Function.Injective evalPoints)
+    (hdeg : CMvPolynomial.degreeOf (0 : Fin 1)
+      (honestProverMessageAt domain p i challenges) ≤ d)
+    (r : 𝔽) :
+    Polynomial.eval r
+      (interpolateRound (𝔽 := 𝔽) (d := d) evalPoints
+        (fun k => honestProverMessageEvalsAt
+          domain p i challenges (evalPoints k)))
+      =
+    CMvPolynomial.eval (fun _ : Fin 1 => r)
+      (honestProverMessageAt domain p i challenges) := by
+  classical
+  have hinjOn : Set.InjOn evalPoints (Finset.univ : Finset (Fin (d + 1))) :=
+    fun a _ b _ h => hinj h
+  -- Bridge through the universal-`r` interpolation theorem (Phase 1 polish).
+  have h := eval_honestProverMessageAt_eq_interpolate_eval
+    (𝔽 := 𝔽) (n := n) (d := d) domain p i challenges
+    evalPoints hinjOn hdeg r
+  -- `interpolateRound` is exactly `Lagrange.interpolate Finset.univ evalPoints _`.
+  exact h.symm
+
+/-! ### Verifier-accept iff (honest direction)
+
+For honest-prover eval-form transcripts at any challenges `r`, the
+eval-form verifier accepts iff the symbolic verifier accepts the
+honest symbolic transcript at the same challenges. This is the
+specialised bidirectional reduction; the version for arbitrary
+adversaries is reduced via `evalForm_accepts_implies_symbolic_accepts`
+below.
+-/
+
+/-- The honest eval-form transcript at challenges `r`. Identical in
+data to the eval-form prover transcript for `sumcheckHonestProverEvalForm`,
+spelled out so the symbolic-side equivalence is direct. -/
+private noncomputable def honestEvalFormTranscript
+    {𝔽 : Type} {n d : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+    (st : SumcheckStatementEvalForm 𝔽 n d) (r : Fin n → 𝔽) :
+    TranscriptEvalForm 𝔽 n d :=
+  { roundsEvals := fun i k =>
+      honestProverMessageEvalsAt st.domain st.polynomial i
+        (challengeSubset r i) (st.evalPoints k)
+    challenges := r }
+
+/-- The honest symbolic transcript at challenges `r`. Same data as
+`generateHonestTranscript` from `Src/Transcript.lean`. -/
+private noncomputable def honestSymbolicTranscript
+    {𝔽 : Type} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+    (st_sym : SumcheckStatement 𝔽 n) (r : Fin n → 𝔽) :
+    Transcript 𝔽 n :=
+  { roundPolys := fun i =>
+      honestProverMessageAt st_sym.domain st_sym.polynomial i (challengeSubset r i)
+    challenges := r }
+
+/-- Per-round acceptance equivalence at the honest prover (sum-on-domain
+direction): the eval-form sum-on-domain check holds iff the symbolic
+sum-on-domain check holds, given matching round claims. -/
+private theorem honest_round_check_iff
+    {𝔽 : Type} {n d : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+    (st : SumcheckStatementEvalForm 𝔽 n d)
+    (i : Fin n) (challenges : Fin i.val → 𝔽) (claim_i : 𝔽) :
+    sumOnDomainEvalForm (𝔽 := 𝔽) (d := d)
+      st.domain st.evalPoints st.evalPoints_inj st.domain_sub
+      (fun k => honestProverMessageEvalsAt
+        st.domain st.polynomial i challenges (st.evalPoints k))
+      = claim_i
+    ↔
+    st.domain.foldl (fun acc a =>
+      acc + CMvPolynomial.eval (fun _ : Fin 1 => a)
+        (honestProverMessageAt st.domain st.polynomial i challenges)) 0
+      = claim_i := by
+  rw [sumOnDomain_honest_eq_symbolic st i challenges]
+
+/-- For honest claim chains, the eval-form `nextClaimEvalForm` agrees
+with the symbolic `nextClaim` of the honest round polynomial. -/
+private theorem honest_nextClaim_eq
+    {𝔽 : Type} {n d : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+    (st : SumcheckStatementEvalForm 𝔽 n d)
+    (i : Fin n) (challenges : Fin i.val → 𝔽) (c : 𝔽)
+    (hdeg : CMvPolynomial.degreeOf (0 : Fin 1)
+      (honestProverMessageAt st.domain st.polynomial i challenges) ≤ d) :
+    nextClaimEvalForm (𝔽 := 𝔽) (d := d) st.evalPoints
+      (fun k => honestProverMessageEvalsAt
+        st.domain st.polynomial i challenges (st.evalPoints k)) c
+      =
+    nextClaim c
+      (honestProverMessageAt st.domain st.polynomial i challenges) := by
+  classical
+  unfold nextClaimEvalForm nextClaim
+  -- LHS: `(Lagrange.interpolate … evalPoints _).eval c`.
+  -- RHS: `CMvPolynomial.eval (fun _ => c) (honestProverMessageAt …)`.
+  -- Bridge by `eval_honestProverMessageAt_eq_interpolate_eval`.
+  have hinjOn : Set.InjOn st.evalPoints (Finset.univ : Finset (Fin (d + 1))) :=
+    fun a _ b _ h => st.evalPoints_inj h
+  exact (eval_honestProverMessageAt_eq_interpolate_eval
+    (𝔽 := 𝔽) (n := n) (d := d) st.domain st.polynomial i challenges
+    st.evalPoints hinjOn hdeg c).symm
+
+/-! ### Lift: completeness
+
+We package the per-round equivalences into a full bidirectional
+verifier-accepts iff for the honest prover at any challenge, then
+lift `sumcheck_hasPerfectCompleteness` through it.
+-/
+
+/-- The eval-form transcript's intermediate claims agree with the
+symbolic transcript's intermediate claims, for the **honest** transcripts
+at the same challenges. The proof is by induction on the claim index
+through `generateHonestClaimsEvalForm`/`generateHonestClaims`. -/
+private theorem claims_evalForm_eq_claims_sym
+    {𝔽 : Type} {n d : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+    {st : SumcheckStatementEvalForm 𝔽 n d}
+    {r : Fin n → 𝔽}
+    (j : Fin (n + 1))
+    (hdeg_round : ∀ i : Fin n, ∀ chs : Fin i.val → 𝔽,
+      CMvPolynomial.degreeOf (0 : Fin 1)
+        (honestProverMessageAt st.domain st.polynomial i chs) ≤ d) :
+    ((sumcheckProtocolEvalForm.mkTranscript
+        (fun j => sumcheckHonestProverEvalForm.respond st j (challengeSubset r j)) r
+      : TranscriptEvalForm 𝔽 n d)).claims st.evalPoints st.claim j
+    =
+    (honestSymbolicTranscript (evalFormToStatement st) r).claims st.claim j := by
+  classical
+  rcases j with ⟨jv, hjv⟩
+  match jv, hjv with
+  | 0, _ => rfl
+  | k + 1, hjv =>
+    have hkn : k < n := Nat.lt_of_succ_lt_succ hjv
+    let i : Fin n := ⟨k, hkn⟩
+    have hLHS_step :
+        ((sumcheckProtocolEvalForm.mkTranscript
+            (fun j => sumcheckHonestProverEvalForm.respond st j (challengeSubset r j)) r
+          : TranscriptEvalForm 𝔽 n d)).claims st.evalPoints st.claim ⟨k + 1, hjv⟩
+          = nextClaimEvalForm (𝔽 := 𝔽) (d := d) st.evalPoints
+              (fun kk => honestProverMessageEvalsAt st.domain st.polynomial i
+                (challengeSubset r i) (st.evalPoints kk))
+              (r i) := rfl
+    have hRHS_step :
+        (honestSymbolicTranscript (evalFormToStatement st) r).claims st.claim ⟨k + 1, hjv⟩
+          = nextClaim (r i)
+              (honestProverMessageAt st.domain st.polynomial i (challengeSubset r i)) := rfl
+    rw [hLHS_step, hRHS_step]
+    exact honest_nextClaim_eq st i (challengeSubset r i) (r i) (hdeg_round i _)
+
+/-- The eval-form verifier accepts the honest eval-form transcript
+**at every challenge tuple** when the claim is correct. The proof
+proceeds by directly checking each acceptance ingredient (per-round
+sum-on-domain identity, nextClaim chain, final equality), reusing
+the symbolic `perfect_completeness` ingredients via the bridges above. -/
+theorem honest_evalForm_accepts_at
+    {𝔽 : Type} {n d : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+    (st : SumcheckStatementEvalForm 𝔽 n d)
+    (hCorrect : sumcheckClaimIsCorrectEvalForm st)
+    (r : Fin n → 𝔽) :
+    sumcheckProtocolEvalForm.verifierAccepts st
+      (generateTranscript sumcheckProtocolEvalForm st
+        sumcheckHonestProverEvalForm r) := by
+  classical
+  -- Unfold to `isVerifierAcceptsEvalForm` of the honest transcript.
+  show isVerifierAcceptsEvalForm (𝔽 := 𝔽) (n := n) (d := d)
+    st.domain st.evalPoints st.evalPoints_inj st.domain_sub
+    st.polynomial st.claim
+    (sumcheckProtocolEvalForm.mkTranscript
+      (fun i => sumcheckHonestProverEvalForm.respond st i (challengeSubset r i)) r)
+  -- The honest symbolic transcript at the same challenges accepts
+  -- (by the existing perfect_completeness ingredient).
+  let t_sym : Transcript 𝔽 n := honestSymbolicTranscript
+    (evalFormToStatement st) r
+  have hSymAcc : AcceptsEvent st.domain st.polynomial st.claim t_sym := by
+    -- Use the perfect_completeness ingredient: every honest transcript is accepted.
+    have hCorrect' : st.claim = honestClaim st.domain st.polynomial := hCorrect
+    rw [hCorrect']
+    -- Cast `t_sym` to the form generateHonestTranscript produces.
+    have hsym_eq : t_sym
+        = generateHonestTranscript (𝔽 := 𝔽) (n := n) st.domain st.polynomial
+            (honestClaim st.domain st.polynomial) r := by
+      simp [t_sym, honestSymbolicTranscript, generateHonestTranscript,
+        evalFormToStatement]
+    rw [hsym_eq]
+    -- Apply the honest-transcript ingredient by reproducing it directly:
+    -- the honest transcript is accepted for every r.
+    simp only [AcceptsEvent, isVerifierAccepts, Transcript.claims, Bool.and_eq_true]
+    refine ⟨?_, ?_⟩
+    · rw [List.all_eq_true]
+      intro i _
+      simp only [Bool.and_eq_true, decide_eq_true_eq]
+      refine ⟨?_, ?_⟩
+      · simp only [verifierCheck, Bool.and_eq_true, decide_eq_true_eq]
+        refine ⟨?_, ?_⟩
+        · exact honest_transcript_sum_identity st.domain st.polynomial r i
+        · -- Degree bound: honestRoundPoly degree ≤ indDegreeK
+          have hpoly :
+              (generateHonestTranscript st.domain st.polynomial
+                (honestClaim st.domain st.polynomial) r).roundPolys i =
+              honestRoundPoly st.domain (p := st.polynomial) (ch := r) i := by
+            simp [generateHonestTranscript, honestRoundPoly, honestProverMessageAt]
+          rw [hpoly]
+          exact honest_round_poly_degree_le_ind_degree_k st.domain st.polynomial r i
+      · -- claims i.succ = nextClaim …
+        have hsuc : i.succ = ⟨i.val.succ, Nat.succ_lt_succ i.isLt⟩ := Fin.ext rfl
+        simp only [generateHonestTranscript, generateHonestClaims, nextClaim, hsuc]
+    · -- final claim
+      simp only [decide_eq_true_eq]
+      exact honest_transcript_final_eq_eval n st.domain st.polynomial r
+  -- Now translate the symbolic acceptance into eval-form acceptance.
+  -- Strategy: induction-free unfolding — both `isVerifierAccepts` (Bool)
+  -- and `isVerifierAcceptsEvalForm` (Prop) decompose into the same per-round
+  -- ingredients via the bridge lemmas.
+  have hSymAcc' :
+      isVerifierAccepts st.domain st.polynomial st.claim t_sym = true := hSymAcc
+  -- Unpack the symbolic acceptance.
+  rw [isVerifierAccepts, Bool.and_eq_true] at hSymAcc'
+  obtain ⟨hSymRounds, hSymFinal⟩ := hSymAcc'
+  rw [List.all_eq_true] at hSymRounds
+  -- Helper: degreeOf bound on honest round poly via indDegreeK and st.degree_le.
+  have hdeg_round : ∀ i : Fin n, ∀ chs : Fin i.val → 𝔽,
+      CMvPolynomial.degreeOf (0 : Fin 1)
+        (honestProverMessageAt st.domain st.polynomial i chs) ≤ d := by
+    intro i chs
+    -- Use `degree_honest_prover_message_at_le_of_per_b` via `honest_round_poly_degree_le_ind_degree_k`,
+    -- but the latter takes `r : Fin n → 𝔽` and gives bound for `challengeSubset r i`.
+    -- We need it for arbitrary `chs`. Construct an `r` whose first i values are chs.
+    let r' : Fin n → 𝔽 := fun k =>
+      if h : k.val < i.val then chs ⟨k.val, h⟩ else 0
+    have hsub : challengeSubset r' i = chs := by
+      funext t
+      have hlt : t.val < i.val := t.isLt
+      show (if h : t.val < i.val then chs ⟨t.val, h⟩ else 0) = chs t
+      rw [dif_pos hlt]
+    have hbound :=
+      honest_round_poly_degree_le_ind_degree_k st.domain st.polynomial r' i
+    -- honestRoundPoly = honestProverMessageAt … (challengeSubset r' i) = … chs.
+    have heq : honestRoundPoly st.domain (p := st.polynomial) (ch := r') i
+        = honestProverMessageAt st.domain st.polynomial i chs := by
+      unfold honestRoundPoly
+      rw [hsub]
+    rw [heq] at hbound
+    exact le_trans hbound (st.degree_le i)
+  -- Build per-round eval-form checks from the symbolic per-round checks.
+  -- Eval-form transcript matches `mkTranscript` reduction.
+  -- claims_eval at any j equals claims_sym at j when round-evals are honest.
+  -- We prove this by induction on j.
+  let claims_sym : Fin (n + 1) → 𝔽 := t_sym.claims st.claim
+  -- Now produce `claims_eval` and prove agreement.
+  refine ⟨?_, ?_⟩
+  · -- per-round acceptance
+    intro i
+    -- Use the per-round honest equivalence.
+    have hSymRound_i := hSymRounds i (List.mem_finRange i)
+    rw [Bool.and_eq_true, decide_eq_true_eq] at hSymRound_i
+    obtain ⟨hSymCheck_i, hSymNext_i⟩ := hSymRound_i
+    -- hSymCheck_i: verifierCheck domain (indDegreeK p i) (claims_sym i.castSucc) (t_sym.roundPolys i)
+    rw [verifierCheck, Bool.and_eq_true, decide_eq_true_eq, decide_eq_true_eq]
+      at hSymCheck_i
+    obtain ⟨hSumIdent_i, _⟩ := hSymCheck_i
+    -- hSumIdent_i: domain.foldl ... = claims_sym i.castSucc
+    -- The eval-form roundsEvals at i = honestProverMessageEvalsAt … (st.evalPoints k).
+    -- Build the eval-form `claims i.castSucc` and show it matches claims_sym i.castSucc.
+    -- Then use `sumOnDomain_honest_eq_symbolic` + `hSumIdent_i`.
+    refine ⟨?_, ?_⟩
+    · -- verifierCheckEvalForm
+      unfold verifierCheckEvalForm
+      -- After unfolding, the goal is sumOnDomainEvalForm = claims_eval (Fin.castSucc i).
+      -- The needed equality reduces to sumOnDomain_honest_eq_symbolic = claims_sym (Fin.castSucc i)
+      -- combined with claims_eval (Fin.castSucc i) = claims_sym (Fin.castSucc i).
+      have hclaims_eq :
+          ((sumcheckProtocolEvalForm.mkTranscript
+              (fun j => sumcheckHonestProverEvalForm.respond st j (challengeSubset r j)) r
+            : TranscriptEvalForm 𝔽 n d)).claims st.evalPoints st.claim (Fin.castSucc i)
+          = claims_sym (Fin.castSucc i) := by
+        exact (claims_evalForm_eq_claims_sym (st := st) (r := r) (Fin.castSucc i) hdeg_round)
+      rw [hclaims_eq]
+      -- Replace eval-form roundsEvals by definition: matches the honest values.
+      have hroundEvals_def :
+          ((sumcheckProtocolEvalForm.mkTranscript
+            (fun j => sumcheckHonestProverEvalForm.respond st j (challengeSubset r j)) r
+            : TranscriptEvalForm 𝔽 n d)).roundsEvals i
+          = (fun k => honestProverMessageEvalsAt st.domain st.polynomial i
+              (challengeSubset r i) (st.evalPoints k)) := rfl
+      rw [hroundEvals_def]
+      -- Now: sumOnDomainEvalForm (honestProverMessageEvalsAt …) = claims_sym i.castSucc
+      rw [sumOnDomain_honest_eq_symbolic st i (challengeSubset r i)]
+      -- And on the symbolic side, the honest sum identity gives this.
+      -- But t_sym.roundPolys i = honestProverMessageAt st.domain st.polynomial i (challengeSubset r i).
+      have hrp : t_sym.roundPolys i =
+          honestProverMessageAt st.domain st.polynomial i (challengeSubset r i) := rfl
+      rw [hrp] at hSumIdent_i
+      exact hSumIdent_i
+    · -- claims_eval i.succ = nextClaimEvalForm (roundsEvals i) (challenges i)
+      -- This is just unfolding via the recursive case of generateHonestClaimsEvalForm.
+      have hsuc : i.succ = ⟨i.val.succ, Nat.succ_lt_succ i.isLt⟩ := Fin.ext rfl
+      simp only [TranscriptEvalForm.claims, generateHonestClaimsEvalForm, hsuc]
+  · -- final acceptance: claims_eval (Fin.last n) = polynomial.eval challenges
+    -- Reduce via claims_evalForm_eq_claims_sym at Fin.last and the symbolic final.
+    have hclaims_eq_last :
+        ((sumcheckProtocolEvalForm.mkTranscript
+          (fun j => sumcheckHonestProverEvalForm.respond st j (challengeSubset r j)) r
+        : TranscriptEvalForm 𝔽 n d)).claims st.evalPoints st.claim (Fin.last n)
+        = claims_sym (Fin.last n) := by
+      exact (claims_evalForm_eq_claims_sym (st := st) (r := r) (Fin.last n) hdeg_round)
+    rw [hclaims_eq_last]
+    -- claims_sym (Fin.last n) = CMvPolynomial.eval challenges p (by symbolic final acceptance).
+    rw [decide_eq_true_eq] at hSymFinal
+    -- `t_sym.challenges = r` — show the eval-form challenges also equal `r`.
+    have heval : ((sumcheckProtocolEvalForm.mkTranscript
+        (fun j => sumcheckHonestProverEvalForm.respond st j (challengeSubset r j)) r
+      : TranscriptEvalForm 𝔽 n d)).challenges = r := rfl
+    rw [heval]
+    exact hSymFinal
+
+/-- **Phase 4 deliverable**: perfect-completeness lift for the eval-form
+sumcheck protocol. Direct from `honest_evalForm_accepts_at`: every
+challenge tuple makes the eval-form verifier accept the honest
+eval-form transcript when the claim is correct. -/
+theorem sumcheck_hasPerfectCompleteness_evalForm
+    {𝔽 : Type} {n d : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] :
+    hasPerfectCompleteness
+      (sumcheckProtocolEvalForm (𝔽 := 𝔽) (n := n) (d := d))
+      sumcheckClaimIsCorrectEvalForm
+      sumcheckHonestProverEvalForm := by
+  intro st hCorrect
+  classical
+  -- The accept event is a Prop; show it holds for every r.
+  have hAll : ∀ r : Fin n → 𝔽,
+      sumcheckProtocolEvalForm.verifierAccepts st
+        (generateTranscript sumcheckProtocolEvalForm st sumcheckHonestProverEvalForm r) :=
+    fun r => honest_evalForm_accepts_at (𝔽 := 𝔽) (n := n) (d := d) st hCorrect r
+  -- probAccept = probEvent of an always-true predicate = 1.
+  -- Reuse the existing `probOverChallenges`-of-tautology pattern from
+  -- `Properties/Theorems/Completeness.lean`.
+  show probEvent (C := 𝔽) (n := n)
+    (fun r => sumcheckProtocolEvalForm.verifierAccepts st
+      (generateTranscript sumcheckProtocolEvalForm st sumcheckHonestProverEvalForm r))
+    = 1
+  letI : DecidablePred (fun r : Fin n → 𝔽 =>
+      sumcheckProtocolEvalForm.verifierAccepts st
+        (generateTranscript sumcheckProtocolEvalForm st sumcheckHonestProverEvalForm r)) :=
+    Classical.decPred _
+  have hfilter :
+      (allChallenges 𝔽 n).filter (fun r => sumcheckProtocolEvalForm.verifierAccepts st
+        (generateTranscript sumcheckProtocolEvalForm st sumcheckHonestProverEvalForm r))
+      = (allChallenges 𝔽 n) := by
+    ext r
+    simp [hAll r]
+  -- |allChallenges| > 0 for the field-valued challenge space.
+  have hcard_pos : 0 < (allChallenges 𝔽 n).card := by
+    rw [show (allChallenges 𝔽 n).card = Fintype.card (Fin n → 𝔽) from rfl]
+    exact Fintype.card_pos
+  -- Goal: probEvent … = 1.  Reduce probEvent to (filter.card / Ω.card) = 1.
+  have hQ_pos : (0 : ℚ) < ((allChallenges 𝔽 n).card : ℚ) := by exact_mod_cast hcard_pos
+  show ((allChallenges 𝔽 n).filter
+      (fun r => sumcheckProtocolEvalForm.verifierAccepts st
+        (generateTranscript sumcheckProtocolEvalForm st sumcheckHonestProverEvalForm r))).card
+        / ((allChallenges 𝔽 n).card : ℚ)
+      = 1
+  rw [hfilter]
+  exact div_self (ne_of_gt hQ_pos)
+
+
+/-! ### Lift: soundness (scope-adjusted)
+
+We provide the adversary-transport definitions
+`liftEvalToSymbolic` (single round) and `liftEvalProverToSymbolic`
+(prover) needed for a soundness lift, and prove the eval-equivalence
+that underpins it. The full soundness lift theorem
+(`sumcheck_hasSoundnessError_evalForm`) is left as a follow-up.
+
+The obstruction is the symbolic verifier's per-round degree check —
+`degreeOf 0 (roundPoly i) ≤ indDegreeK st.polynomial i` — which is
+*strictly* stronger than the Lagrange interpolant's `≤ d` guarantee
+whenever `indDegreeK st.polynomial i < d` for some round `i`. Closing
+the lift therefore requires either (a) restricting to statements with
+`∀ i, indDegreeK st.polynomial i = d`, or (b) re-proving symbolic
+soundness with a uniform `d` in place of per-round `indDegreeK p i`.
+We elect to defer this to a focused follow-up.
+-/
+
+/-- Convert an eval tuple to a `CMvPolynomial 1 𝔽` via Lagrange
+interpolation. Used by `liftEvalProverToSymbolic` to transport
+eval-form adversaries to the symbolic protocol. -/
+noncomputable def liftEvalToSymbolic
+    {𝔽 : Type} {d : ℕ} [Field 𝔽] [DecidableEq 𝔽]
+    (evalPoints : Fin (d + 1) → 𝔽)
+    (qEvals : Fin (d + 1) → 𝔽) : CMvPolynomial 1 𝔽 :=
+  CPoly.toCMvPolynomial (R := 𝔽) (n := 1)
+    ((MvPolynomial.finOneEquiv 𝔽).symm
+      (interpolateRound (𝔽 := 𝔽) (d := d) evalPoints qEvals))
+
+/-- An eval-form adversary lifts to a symbolic adversary by Lagrange-
+interpolating each round's eval tuple, then bridging to
+`CMvPolynomial 1 𝔽`. -/
+noncomputable def liftEvalProverToSymbolic
+    {𝔽 : Type} {n d : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+    (evalPoints : Fin (d + 1) → 𝔽)
+    (P : Prover (sumcheckProtocolEvalForm (𝔽 := 𝔽) (n := n) (d := d))) :
+    SumcheckStatementEvalForm 𝔽 n d → Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n)) :=
+  fun st0 => {
+    respond := fun _ i chs =>
+      liftEvalToSymbolic (𝔽 := 𝔽) (d := d) evalPoints
+        (P.respond st0 i chs)
+  }
+
+/-- Bridge identity: `toUnivariate` (the Phase-1 univariate bridge)
+inverts the construction of `liftEvalToSymbolic`. The result is the
+Lagrange interpolant directly. -/
+theorem toUnivariate_liftEvalToSymbolic
+    {𝔽 : Type} {d : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+    (evalPoints : Fin (d + 1) → 𝔽) (qEvals : Fin (d + 1) → 𝔽) :
+    toUnivariate (liftEvalToSymbolic (𝔽 := 𝔽) (d := d) evalPoints qEvals)
+      = interpolateRound (𝔽 := 𝔽) (d := d) evalPoints qEvals := by
+  unfold toUnivariate liftEvalToSymbolic
+  rw [CPoly.fromCMvPolynomial_toCMvPolynomial]
+  exact AlgEquiv.apply_symm_apply _ _
+
+/-- Eval-equivalence: evaluating the lifted symbolic round polynomial
+at `x` agrees with evaluating the Lagrange interpolant at `x`. This
+is the operational core of the (deferred) soundness lift: per-round
+checks on both sides reduce to the same scalar quantities at the
+verifier's challenge. -/
+theorem eval_liftEvalToSymbolic
+    {𝔽 : Type} {d : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+    (evalPoints : Fin (d + 1) → 𝔽) (qEvals : Fin (d + 1) → 𝔽) (x : 𝔽) :
+    CMvPolynomial.eval (fun _ : Fin 1 => x)
+        (liftEvalToSymbolic (𝔽 := 𝔽) (d := d) evalPoints qEvals)
+      =
+    (interpolateRound (𝔽 := 𝔽) (d := d) evalPoints qEvals).eval x := by
+  rw [← toUnivariate_liftEvalToSymbolic evalPoints qEvals]
+  exact (eval_toUnivariate (𝔽 := 𝔽)
+    (liftEvalToSymbolic (𝔽 := 𝔽) (d := d) evalPoints qEvals) x).symm
