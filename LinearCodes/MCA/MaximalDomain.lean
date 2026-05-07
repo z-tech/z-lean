@@ -124,9 +124,7 @@ theorem isCADomain_of_all_combines_agree [DecidableEq S]
   let cT : Submodule F (Fin n → F) := c ⊔ vanishingOn (F := F) T
   have h_combines : ∀ j, G.combine (xs j) us ∈ cT := by
     intro j
-    exact (inRestrictedCode_iff_mem_sup_vanishingOn).mp (by
-      change InRestrictedCode c T (G.combine (xs j) us)
-      exact h_agree j)
+    exact (inRestrictedCode_iff_mem_sup_vanishingOn).mp (h_agree j)
   have h_us : ∀ k, us k ∈ cT :=
     all_us_mem_of_combine_at_distinct_seeds G hG_MDS cT us xs h_distinct h_combines
   change ∀ k : Fin ℓ, InRestrictedCode c T (us k)

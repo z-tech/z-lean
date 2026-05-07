@@ -168,7 +168,7 @@ theorem exists_Ttilde_choose_card_large
       (Tx.card : ℚ) ≥ n * (1 - γ) ∧
       ∀ i ∈ Tx, G.combine x us i = G.combine x (cstars_fam choose) i) :
     ∃ choose : Fin ℓ → Fin L,
-      ((Ttilde_choose us cstars_fam choose).card : ℚ) ≥ n * (1 - γ) - 1 := by
+      ((Ttilde_choose us cstars_fam choose).card : ℚ) ≥ n * (1 - γ) := by
   classical
   -- Setup: cast helpers.
   have hℓ_Q : (1 : ℚ) ≤ (ℓ : ℚ) := by exact_mod_cast hℓ
@@ -247,8 +247,8 @@ theorem exists_Ttilde_choose_card_large
     intro i
     rw [hTtilde_def, hcstars_def]
     exact mem_Ttilde_choose us cstars_fam choose₀ i
-  have h_concl :
-      (Ttilde.card : ℚ) ≥ n * (1 - γ) - 1 :=
+  -- `Ttilde_card_gt_of_MDS_aggregate` is paper-tight: `≥ n(1-γ)`.
+  have h_concl : (Ttilde.card : ℚ) ≥ n * (1 - γ) :=
     Ttilde_card_gt_of_MDS_aggregate hG_MDS hℓ us cstars hγ_pos hn B'
       h_agree' hB'_size Ttilde h_Ttilde_def
   exact ⟨choose₀, h_concl⟩

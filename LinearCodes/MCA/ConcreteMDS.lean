@@ -34,7 +34,7 @@ theorem affineLine_dotMap_injective {F : Type*} [Field F] [DecidableEq F]
     intro x
     have hx := congr_fun huv x
     simp [Generator.dotMap_apply, affineLine, Fin.sum_univ_two,
-      Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.head_cons] at hx
+      Matrix.cons_val_zero, Matrix.cons_val_one] at hx
     linear_combination hx
   have h0 : u 0 = v 0 := by
     have h := h_eq 0
@@ -60,8 +60,7 @@ theorem affineLine_inducedCode_minDist {F : Type*} [Field F] [DecidableEq F]
   have hw_eq : ∀ x : F, w x = v 0 + x * v 1 := by
     intro x
     rw [hv x]
-    simp [affineLine, Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one,
-      Matrix.head_cons]
+    simp [affineLine, Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one]
   have hv_ne : v ≠ 0 := by
     intro hv_eq
     apply hw_ne
@@ -149,7 +148,7 @@ theorem univariatePowers_dotMap_injective {F : Type*} [Field F] [DecidableEq F]
         = u i - v i := by
     simp only [Polynomial.finset_sum_coeff]
     rw [Finset.sum_eq_single i]
-    · simp [Polynomial.coeff_monomial]
+    · simp
     · intros j _ hji
       rw [Polynomial.coeff_monomial, if_neg (fun h => hji (Fin.ext h))]
     · intro h; exact absurd (Finset.mem_univ i) h

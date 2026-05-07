@@ -8,9 +8,15 @@ project, and where they live.
 [bcgm25]: https://eprint.iacr.org/2025/2051
 
 **Status:** build clean, **0 sorries**, **0 axioms**. All capstone theorems
-proved end-to-end. One documented `+1` slack vs the paper's tight bound
-(intrinsic to the chosen proof technique for Lemma 5.3; recovery would
-require a Corrádi-grouped-by-codeword reformulation).
+proved end-to-end at the **integer-tight** lossless bound of the literature
+(BCH+25 eprint 2025/2055 Theorem 4.1, with matching adversarial saturation
+in Remark 2.5). What was previously logged as a `+1` slack vs BCGM25's
+informal `n·γ·(ℓ-1)` is in fact the integer-honest form of the same bound
+for the Lean shape of `B_set := {x : Δ_x ≤ nγ}`; a concrete counterexample
+in [`LinearCodes/MCA/Lemma53Examples.lean`](../MCA/Lemma53Examples.lean)
+witnesses that the real-number form is genuinely insufficient for that
+shape. Full details: [`literature-survey-lemma-5-3.md`](literature-survey-lemma-5-3.md)
+and [`lemma-5-3-numerical-analysis.md`](lemma-5-3-numerical-analysis.md).
 
 Files referenced are relative to the repo root
 `/Users/zitek/Documents/LeanStuff/`.
@@ -88,15 +94,28 @@ Files referenced are relative to the repo root
 
 ### Lemma 5.3 (zero-evading aggregate-disagreement bound)
 
-The paper's "tight" Lemma 5.3 says: for the column-difference structure,
-`|T̃| > n(1-γ)` follows from a zero-evading aggregate. Our formalization
-uses a slightly weakened form (with `+1` slack) intrinsic to the chosen
-double-counting proof technique.
+For the column-difference structure, `|T̃| ≥ n(1-γ)` follows from a
+zero-evading aggregate. Our formalization is **integer-tight relative to
+the published lossless bound**: BCH+25 (eprint 2025/2055) Theorem 4.1
+gives `|S| > M·(γn+1)` (with `M = ℓ-1`), matching our hypothesis
+`b > (nγ+1)(ℓ-1)` exactly; BCH+25 Remark 2.5 proves this is tight via an
+explicit adversarial saturation. BCGM25's stated `b > nγ(ℓ-1)` is the
+real-number form, sufficient only for the strict bad-seed shape
+`A_strict := {x : Δ_x = 0}` — for our Lean shape `B_set := {x : Δ_x ≤ nγ}`
+(produced by the Case 2 reduction) the real-number bound is genuinely
+INSUFFICIENT, witnessed by a concrete `n = 5, ℓ = 2, γ = 0.4`
+counterexample in [`MCA/Lemma53Examples.lean`](../MCA/Lemma53Examples.lean).
+
+The conclusion `|T̃| ≥ n(1-γ)` is paper-tight (no `−1` slack) via
+per-seed integer rounding (`Nat.ceil`).
 
 | Paper | Lean | Notes |
 |---|---|---|
-| Lemma 5.3 (specialized to MDS) | `Ttilde_card_gt_of_MDS_aggregate` | [MCA/Case2Subtargets.lean][case2sub] — concl `≥ n(1-γ) - 1` (1-slack) |
-| Slack analysis docstring | (in same file) | Explains why pure double-counting gives `+1` slack |
+| Lemma 5.3 (specialized to MDS) | `Ttilde_card_gt_of_MDS_aggregate` | [MCA/Case2Subtargets.lean][case2sub] — paper-tight at the integer-honest BCH+25 bound |
+| Companion (agreement-set form) | `Ttilde_card_gt_of_MDS_aggregate_via_A` | [MCA/Case2Subtargets.lean][case2sub] |
+| Counterexample for the real-number form | (`#eval`) | [MCA/Lemma53Examples.lean](../MCA/Lemma53Examples.lean) |
+| Literature survey | — | [doc/literature-survey-lemma-5-3.md](literature-survey-lemma-5-3.md) |
+| Numerical analysis | — | [doc/lemma-5-3-numerical-analysis.md](lemma-5-3-numerical-analysis.md) |
 | Helper: column-difference vec | `colDiff us cstars i` | [MCA/Case2Subtargets.lean][case2sub] |
 | Per-coord count bound | `bad_pair_count_per_coord_le` | [MCA/Case2Subtargets.lean][case2sub] |
 
@@ -148,12 +167,16 @@ machinery.
 [maxdom]: ../MCA/MaximalDomain.lean
 
 **Trade-off vs paper.** The capstone bound is
-`(max(n·γ, 1) + 1) · (ℓ - 1) / |S|` whereas BCGM25 has
-`max(n·γ, 1) · (ℓ - 1) / |S|`. The `+1` slack stems from Lemma 5.3's
-double-counting derivation; the rigorous slack analysis is in
-[Case2Subtargets.lean][case2sub] (docstring of `Ttilde_card_gt_of_MDS_aggregate`).
-Recovery requires a Corrádi-grouped-by-codeword proof of Lemma 5.3 — an
-identified future task (~200-300 lines).
+`(max(n·γ, 1) + 1) · (ℓ - 1) / |S|`, the integer-honest form of BCGM25's
+real-number `max(n·γ, 1) · (ℓ - 1) / |S|`. They coincide whenever
+`n·γ ∈ ℤ`; in general the integer-tight form is the one we prove and
+matches BCH+25 (eprint 2025/2055) Theorem 4.1, which is published-tight
+via Remark 2.5. The conclusion `|T̃| ≥ n(1-γ)` is paper-tight via
+per-seed `Nat.ceil` integer rounding. See
+[`literature-survey-lemma-5-3.md`](literature-survey-lemma-5-3.md) and
+[`lemma-5-3-numerical-analysis.md`](lemma-5-3-numerical-analysis.md) for
+the full audit, and the docstring of `Ttilde_card_gt_of_MDS_aggregate`
+in [Case2Subtargets.lean][case2sub] for the in-file analysis.
 
 ---
 
@@ -202,6 +225,10 @@ seed.
 | Theorem 6.2 (list-decoding MCA bound) | `MCA_list_decoding_bound` | [MCA/ListDecodingMCA.lean][lmca] |
 | Small-γ list bound | `MCA_list_decoding_small_gamma_bound` | [MCA/ListDecodingMCA.lean][lmca] |
 | Large-γ list bound | `MCA_list_decoding_large_gamma_bound` | [MCA/ListDecodingMCA.lean][lmca] |
+| Specialization to `L = 1` (unique-decoding shape) | `MCA_list_decoding_bound_L_one` | [MCA/ListDecodingMCA.lean][lmca] |
+| `L = 1` ↔ `MCA_unique_decoding_bound` equivalence | `MCA_list_decoding_bound_L_one_eq_unique`, `MCA_unique_decoding_bound_of_list_one` | [MCA/ListDecodingMCA.lean][lmca] |
+| Asymptotic-friendly `B / |S|` form | `MCA_list_decoding_bound_div` | [MCA/ListDecodingMCA.lean][lmca] |
+| Seed-prob ≤ Johnson list-size / |S| | `seedProb_le_JohnsonListSize_ncard_div` | [MCA/ListDecodingMCA.lean][lmca] |
 | List bad-witness bundle | `MCAListBadWitness` | [MCA/ListDecodingWitness.lean][lwit] |
 | List CA domain (def) | `IsListCADomain` | [MCA/ListDecodingDomains.lean][ldom] |
 | List-CA from combines (L=1 case) | `isListCADomain_of_all_combines_agree_one` | [MCA/ListDecodingDomains.lean][ldom] |
@@ -262,8 +289,10 @@ seed.
 **Note:** The textbook `tensorProduct_IsMDS` (preservation of Singleton-bound MDS)
 is **mathematically false** in general — the tensor of two `[n, n-1, 2]`
 codes has min-distance `4`, but Singleton requires `2n`. The correct
-preservation is the multiplicative `d₁ · d₂` bound above (classical
-result; the only outstanding sorry).
+preservation is the multiplicative `d₁ · d₂` bound above
+(`tensorProduct_inducedCode_minDist_at_least`, fully proved). The
+provably-false `tensorProduct_IsMDS` statement has been deleted entirely
+rather than sorried.
 
 [tens]: ../MCA/Tensor.lean
 
@@ -274,6 +303,73 @@ result; the only outstanding sorry).
 | `IsSTIRGenerator` predicate | `IsSTIRGenerator` | [MCA/Applications/Profile.lean][prof] |
 
 [prof]: ../MCA/Applications/Profile.lean
+
+---
+
+## §9.x — GS-sharpened RS bridge (Guruswami-Sudan track)
+
+This is the bridge between the Array-flavoured Reed-Solomon
+infrastructure (`ReedSolomon.lean`, `ReedSolomonProperties.lean`) and
+the abstract `Submodule F (Fin n → F)`-flavoured MCA framework
+(`MCA/`). It allows the Johnson list-size bound proved abstractly in
+`MCA/JohnsonBound.lean` (the `(ℓ+1)·n²` Cauchy-Schwarz form) to flow
+back into RS-specific case-(a) MCA results.
+
+### Submodule reformulation of RS
+
+| Paper concept | Lean | File |
+|---|---|---|
+| Encoder as `LinearMap` | `reedSolomonLinearMap` | [MCA/RSListDecoding.lean][rsld] |
+| RS code as submodule | `reedSolomonSubmodule` | [MCA/RSListDecoding.lean][rsld] |
+| RS submodule is MDS | `reedSolomonSubmodule_isMDS` | [MCA/RSListDecoding.lean][rsld] |
+| RS submodule Johnson list-decoding | `reedSolomonSubmodule_isListDecodable_johnson` | [MCA/RSListDecoding.lean][rsld] |
+| Array → Fin function lift | `arrayToFun` | [MCA/RSListDecoding.lean][rsld] |
+| Array RS encoder ≡ submodule encoder | `reedSolomonEncode_eq_linearMap` | [MCA/RSListDecoding.lean][rsld] |
+| Array codeword in submodule | `arrayEncoded_mem_reedSolomonSubmodule` | [MCA/RSListDecoding.lean][rsld] |
+
+### RS combination generator (Phase 1)
+
+| Paper concept | Lean | File |
+|---|---|---|
+| RS combination generator `(1, α, …, αˡ)` | `rsGenerator F l` (alias of `Generator.univariatePowers`) | [MCA/RSListDecoding.lean][rsld] |
+| Coordinate evaluation | `rsGenerator_apply` | [MCA/RSListDecoding.lean][rsld] |
+| RS generator is MDS | `rsGenerator_IsMDS` | [MCA/RSListDecoding.lean][rsld] |
+| `combine` ↔ `linComb` (function form) | `combine_eq_linComb_funForm` | [MCA/RSListDecoding.lean][rsld] |
+| `linComb arrayToFun` ↔ `combine` | `linComb_arrayToFun_eq_combine` | [MCA/RSListDecoding.lean][rsld] |
+
+### Submodule reformulation of `mcaGoodScalar` (Phase 2)
+
+| Paper concept | Lean | File |
+|---|---|---|
+| Array-form ↔ submodule-form `mcaGoodScalar` | `mcaGoodScalar_iff_submodule_close` | [MCA/RSListDecoding.lean][rsld] |
+| Universal case-A ⇒ MCA bad event (combine form) | `caseA_implies_bad_event_universal` | [MCA/RSListDecoding.lean][rsld] |
+| Universal case-A ⇒ MCA bad event (linComb form) | `caseA_implies_bad_event_universal_linComb` | [MCA/RSListDecoding.lean][rsld] |
+| Hamming-distance reflection through `arrayToFun` | `hammingDist_eq_hammingDistance_arrayToFun` | [MCA/RSListDecoding.lean][rsld] |
+
+### RS-specialized list-decoding MCA bound (Phase 3)
+
+| Paper concept | Lean | File |
+|---|---|---|
+| RS list-decoding MCA bound | `rs_MCA_list_decoding_bound` | [MCA/RSListDecoding.lean][rsld] |
+| Existence of a good seed | `rs_some_alpha_evades_bad_event` | [MCA/RSListDecoding.lean][rsld] |
+| Field-size ⇒ ∃ α witness (ℚ form) | `field_size_implies_some_alpha_witness` | [MCA/RSListDecoding.lean][rsld] |
+| Field-size ⇒ ∃ α witness (ℕ form) | `field_size_implies_some_alpha_witness_nat` | [MCA/RSListDecoding.lean][rsld] |
+| `seedProb < 1` ↔ ∃ α evading | `seedProb_lt_one_iff_exists_not` | [MCA/RSListDecoding.lean][rsld] |
+| `n*(1−γ) = n−δ` arithmetic | `n_one_minus_gamma_eq_n_sub_delta` | [MCA/RSListDecoding.lean][rsld] |
+| Johnson `τ` ⇒ `k ≤ n` | `rs_messageLength_le_codeLength_of_johnson` | [MCA/RSListDecoding.lean][rsld] |
+| Johnson `δ ≤ n` arithmetic | `rs_delta_le_codeLength` | [MCA/RSListDecoding.lean][rsld] |
+| Johnson γ-threshold derivation | `gamma_johnson_implies_hi`, `rs_gamma_to_agreement_size` | [MCA/RSListDecoding.lean][rsld] |
+
+### Case-(a) RS-MCA (Phase 4 — landed)
+
+| Paper concept | Lean | Status |
+|---|---|---|
+| Case-(a) RS-MCA at the `(ℓ+1)·n²` Johnson field-size threshold | `rs_MCA_caseA` | **Landed** — proved end-to-end in [`MCA/RSListDecoding.lean`][rsld] via the abstract Cauchy-Schwarz Johnson bound |
+
+`rs_MCA_caseA` matches the field-size threshold of BCGM25 Theorem 9.2 /
+BCIKS18 Theorem 1.2. New callers should use `rs_MCA_caseA` directly.
+
+[rsprops]: ../ReedSolomonProperties.lean
 
 ---
 
@@ -290,7 +386,7 @@ result; the only outstanding sorry).
 | seedProb sanity (`True`/`False`) | `example`s | [Tests.lean][tests] |
 
 [excap]: ../MCA/Examples_Capstones.lean
-[tests]: ../../Tests.lean
+[tests]: ../Tests.lean
 
 ---
 
@@ -298,10 +394,13 @@ result; the only outstanding sorry).
 
 | Paper / spec | Status | Where |
 |---|---|---|
-| Lemma 5.3 paper-tight bound (no `+1` slack) | Documented as intrinsic to current technique; needs Corrádi-grouped-by-codeword | [MCA/Case2Subtargets.lean][case2sub] |
 | Bivariate polynomial / Guruswami-Sudan | Skeleton only (3 sorries in `Upstream/Algebra/BivariatePolynomial/Basic.lean`) | [Upstream/...][biv] |
-| Reed-Solomon → `IsListDecodable` bridge | Stub-only; full bridge needs Array↔Fin function plumbing | [MCA/RSListDecoding.lean][rsld] |
 | WHIR MCA bound (multivariate) | Tensor MDS-replacement landed (multiplicative `d₁·d₂` bound); WHIR specialization not yet wired | — |
+
+The Reed-Solomon → `IsListDecodable` bridge (formerly parked here) has
+fully landed across Phases 1–4 in
+[`MCA/RSListDecoding.lean`][rsld]; the complete API is documented in the
+"§9.x — GS-sharpened RS bridge (Guruswami-Sudan track)" section above.
 
 [biv]: ../../Upstream/Algebra/BivariatePolynomial/Basic.lean
 [rsld]: ../MCA/RSListDecoding.lean

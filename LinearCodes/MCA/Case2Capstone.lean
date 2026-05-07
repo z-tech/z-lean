@@ -12,20 +12,24 @@ weakened §6.1 Case 2 capstone:
 seedProb (...) ≤ ((n·γ + 1)·(ℓ-1)) / |S|
 ```
 
-## `+1` additive slack vs the paper
+## Bound: integer-honest form vs BCGM25's real-number form
 
-The original BCGM25 large-γ bound is `n·γ·(ℓ-1)/|S|` (and the unified
-Theorem 6.1 bound is `max{n·γ,1}·(ℓ-1)/|S|`). The Lean statements here have
-an extra `+1` additive slack inside the leading factor, yielding
-`(n·γ + 1)·(ℓ-1)/|S|` and `(max{n·γ,1} + 1)·(ℓ-1)/|S|` respectively.
+The Lean statements here yield `(n·γ + 1)·(ℓ-1)/|S|` (and the unified
+Theorem 6.1 bound `(max{n·γ,1} + 1)·(ℓ-1)/|S|`), which is the
+integer-tight lossless bound `|S| > M·(γn+1)` of BCH+25 (eprint 2025/2055)
+Theorem 4.1 with `M = ℓ-1`; BCH+25 Remark 2.5 proves this matches an
+explicit adversarial saturation. BCGM25's stated `n·γ·(ℓ-1)/|S|` is the
+real-number form, sufficient only for the strict bad-seed shape
+`{x : Δ_x = 0}`; for the Case 2 reduction's `B_set := {x : Δ_x ≤ nγ}`
+it is genuinely insufficient (concrete counterexample in
+`LinearCodes/MCA/Lemma53Examples.lean`).
 
-This slack is introduced by `Ttilde_card_gt_of_MDS_aggregate` (BCGM25
-Lemma 5.3) — see the docstring of that lemma — whose clean ℚ-double-counting
-argument requires the strengthened hypothesis
-`B_set.card > (n·γ + 1)·(ℓ-1)`. The slack is benign: it is absorbed
+The hypothesis-side analysis lives in
+`Ttilde_card_gt_of_MDS_aggregate` (BCGM25 Lemma 5.3) — see its docstring,
+plus `LinearCodes/doc/literature-survey-lemma-5-3.md` and
+`LinearCodes/doc/lemma-5-3-numerical-analysis.md`. The `+1` is absorbed
 identically into both the small-γ and large-γ branches via
-`max_one_nGamma_relax_v2`, and it does not affect the asymptotic regime in
-which the BCGM25 protocols are applied.
+`max_one_nGamma_relax_v2`.
 
 ## Why this file exists separately from `MaximalDomain.lean`
 
@@ -48,14 +52,15 @@ variable {S : Type*} [Fintype S] {n ℓ : ℕ}
 
 /-! ### §6.1 Case 2: γ ≥ 1/n MCA bound -/
 
-/-- **§6.1 Case 2 MCA bound (weakened).** For an MDS generator and
+/-- **§6.1 Case 2 MCA bound.** For an MDS generator and
 γ ∈ [1/n, δ_C/(ℓ+1)), the MCA bad-event probability is bounded by
 `((n·γ + 1)·(ℓ-1))/|S|`.
 
-The original BCGM25 statement has bound `n·γ·(ℓ-1)/|S|`, but the proof
-relies on `Ttilde_card_gt_of_MDS_aggregate` (BCGM25 Lemma 5.3) whose
-clean ℚ-double-counting argument requires the strengthened hypothesis
-`B_set.card > (n·γ + 1)·(ℓ-1)`. We absorb the slack into the bound. -/
+This is the **integer-tight** lossless bound — matching BCH+25 (eprint
+2025/2055) Theorem 4.1 with `M = ℓ-1`, proven tight in Remark 2.5.
+BCGM25's stated `n·γ·(ℓ-1)/|S|` is the real-number form; for the
+Case 2 reduction's bad-seed set `{x : Δ_x ≤ nγ}` it is insufficient
+(see `LinearCodes/MCA/Lemma53Examples.lean`). -/
 theorem MCA_unique_decoding_large_gamma_bound
     [Fintype S] [DecidableEq S] [Nonempty S]
     (G : Generator F S ℓ) (hG_MDS : G.IsMDS) (hℓ : 0 < ℓ)
@@ -199,8 +204,8 @@ theorem MCA_unique_decoding_large_gamma_bound
     -- h_cw_eq : w_x.cw = G.combine x cstars
     have hcw_at_i : w_x.cw i = G.combine x cstars i := by rw [h_cw_eq]
     rw [← hcw_at_i, w_x.agree i hi]
-  -- Apply Lemma 5.3 (strengthened): |Ttilde| ≥ n*(1-γ) - 1.
-  have hTtilde_size : (Ttilde.card : ℚ) ≥ n * (1 - γ) - 1 :=
+  -- Apply Lemma 5.3 (paper-tight via integer rounding): |Ttilde| ≥ n*(1-γ).
+  have hTtilde_size : (Ttilde.card : ℚ) ≥ n * (1 - γ) :=
     Ttilde_card_gt_of_MDS_aggregate hG_MDS hℓ us cstars hγ_pos hn_pos
       B_set h_agree_for_lemma hB_size_q Ttilde hTtilde_iff
   -- For each x ∈ B_set, build Bx (max-agreement domain extension of w_x.T).
@@ -369,11 +374,13 @@ theorem MCA_unique_decoding_large_gamma_bound
       exact_mod_cast h_count
     rw [h_cast_sub, h_cast_lm1] at h_count_Q1
     exact h_count_Q1
-  -- Now: (n - Ttilde.card : ℚ) ≤ n*γ + 1 (from hTtilde_size : Ttilde.card ≥ n*(1-γ) - 1).
+  -- Now: (n - Ttilde.card : ℚ) ≤ n*γ + 1 (from hTtilde_size : Ttilde.card ≥ n*(1-γ)).
+  -- Note: we have the *paper-tight* bound `≥ n*(1-γ)`, but only need
+  -- the weaker `≤ n*γ + 1` form here, retained for compatibility.
   have h_n_minus_T : ((n : ℚ) - Ttilde.card) ≤ (n : ℚ) * γ + 1 := by
-    have : (Ttilde.card : ℚ) ≥ (n : ℚ) * (1 - γ) - 1 := hTtilde_size
+    have h : (Ttilde.card : ℚ) ≥ (n : ℚ) * (1 - γ) - 1 := by linarith [hTtilde_size]
     have h_expand : (n : ℚ) * (1 - γ) - 1 = (n : ℚ) - n * γ - 1 := by ring
-    linarith [h_expand ▸ this]
+    linarith [h_expand ▸ h]
   -- Combine: |B_set| ≤ (ℓ-1)*(n*γ + 1) = (n*γ+1)*(ℓ-1), contradicting hB_size_q.
   have h_final : (B_set.card : ℚ) ≤ ((n : ℚ) * γ + 1) * ((ℓ : ℚ) - 1) := by
     have h_step :
@@ -416,14 +423,17 @@ theorem max_one_nGamma_relax_v2
       linarith
     exact mul_le_mul_of_nonneg_right h_le hℓm1_nn
 
-/-- **BCGM25 Theorem 6.1 (unique-decoding regime, weakened).** For an MDS
+/-- **BCGM25 Theorem 6.1 (unique-decoding regime).** For an MDS
 generator and `γ < δ_C/(n·(ℓ+1))`, the MCA bad-event probability is bounded
 by `(max{n·γ, 1} + 1)·(ℓ-1) / |S|`. The proof case-splits on `γ < 1/n`
 (Case 1, `MCA_unique_decoding_small_gamma_bound`) vs `γ ≥ 1/n` (Case 2,
 `MCA_unique_decoding_large_gamma_bound`).
 
-The "+1" slack relative to the original BCGM25 bound `max{n·γ,1}·(ℓ-1)/|S|`
-absorbs the slack introduced in `Ttilde_card_gt_of_MDS_aggregate`. -/
+This bound is the integer-honest form of BCGM25's `max{n·γ,1}·(ℓ-1)/|S|`,
+matching BCH+25 (eprint 2025/2055) Theorem 4.1 (tight per Remark 2.5).
+For the Case 2 reduction's bad-seed shape, the real-number form is
+genuinely insufficient — see header comment and
+`LinearCodes/MCA/Lemma53Examples.lean`. -/
 theorem MCA_unique_decoding_bound
     [Fintype S] [DecidableEq S] [Nonempty S]
     (G : Generator F S ℓ) (hG_MDS : G.IsMDS) (hℓ : 0 < ℓ)

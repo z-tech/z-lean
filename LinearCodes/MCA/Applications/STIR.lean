@@ -11,6 +11,9 @@ Key contents:
 * `STIR_MCA_unique_decoding_bound` — instance of
   `MCA_unique_decoding_bound` for `Generator.univariatePowers F d`,
   using the Vandermonde / MDS structure of univariate-powers.
+* `STIR_MCA_list_decoding_bound` — instance of `rs_MCA_list_decoding_bound`
+  (case (b), squared-Johnson list size) for the STIR generator on the
+  Reed–Solomon submodule.
 * `STIR_MutualCorrelatedAgreement` — MCA hypothesis (Definition 3.14)
   certified for the STIR generator.
 * `STIR_zeroEvading` — Definition 3.11 zero-evading bound for the
@@ -18,13 +21,15 @@ Key contents:
 * `STIR_uniqueDecoding_via_MCA` — wires the above into a self-contained
   unique-decoding statement for STIR.
 
-Depends on `MaximalDomain`, `Case2Capstone`, `ConcreteMDS`, `ListDecoding`.
+Depends on `MaximalDomain`, `Case2Capstone`, `ConcreteMDS`, `ListDecoding`,
+`RSListDecoding`.
 -/
 
 import LinearCodes.MCA.MaximalDomain
 import LinearCodes.MCA.Case2Capstone
 import LinearCodes.MCA.ConcreteMDS
 import LinearCodes.MCA.ListDecoding
+import LinearCodes.MCA.RSListDecoding
 
 set_option linter.unusedSectionVars false
 
@@ -52,6 +57,71 @@ theorem STIR_MCA_unique_decoding_bound
   have h_ell_cast : (((d + 1 : ℕ) : ℚ) - 1) = (d : ℚ) := by push_cast; ring
   rw [h_ell_cast] at h_main
   exact h_main
+
+/-! ### A1b: STIR MCA list-decoding bound -/
+
+/-- A1b: Specializes `rs_MCA_list_decoding_bound` (which already pins the
+generator to `Generator.univariatePowers F l`) to the STIR setting. The
+RS submodule plays the role of the code `c`; the list-size is the
+squared-Johnson `n²` and the generator-multiplicity factor is
+`l + 1 - 1 = l`, matching the STIR Theorem 6.1 bound for case (b)
+list-decoding. -/
+theorem STIR_MCA_list_decoding_bound
+    {F : Type} [Field F] [DecidableEq F] [Fintype F]
+    (cfg : ReedSolomonConfig F) (h_dom : cfg.domain.size = cfg.codeLength)
+    (h_distinct : ∀ i j : Fin cfg.domain.size, i ≠ j →
+        cfg.domain.getD i.val 0 ≠ cfg.domain.getD j.val 0)
+    (hn : 0 < cfg.codeLength)
+    {l : ℕ} (hl : 0 < l + 1)
+    (h_field : l + 1 ≤ Fintype.card F)
+    (us : Fin (l + 1) → (Fin cfg.codeLength → F))
+    {τ : ℕ} (h_johnson_τ : (cfg.codeLength - τ) * (cfg.codeLength - τ) >
+                          cfg.codeLength * cfg.messageLength)
+    {γ : ℚ} (hγ_pos : 0 ≤ γ)
+    (hγ_hi : γ * (l + 2) <
+             ((cfg.codeLength - cfg.messageLength + 1 : ℕ) : ℚ) /
+               cfg.codeLength) :
+    seedProb (S := F) (fun α =>
+      ∃ T : Finset (Fin cfg.codeLength), (T.card : ℚ) ≥ cfg.codeLength * (1 - γ) ∧
+        InRestrictedCode (reedSolomonSubmodule cfg) T
+          ((Generator.univariatePowers F l).combine α us) ∧
+        ∃ j : Fin (l + 1), ¬ InRestrictedCode
+          (reedSolomonSubmodule cfg) T (us j))
+    ≤ (((cfg.codeLength : ℚ) ^ 2 *
+        (max ((cfg.codeLength : ℚ) * γ) 1 + 1) * ((l + 1 : ℕ) - 1 : ℚ)) /
+          Fintype.card F) :=
+  rs_MCA_list_decoding_bound cfg h_dom h_distinct hn hl h_field us
+    h_johnson_τ hγ_pos hγ_hi
+
+/-- Sanity (A1b): instantiate `STIR_MCA_list_decoding_bound` over `ZMod 7`
+with degree `l = 3`. All the runtime data (a concrete `cfg`, distinctness
+witness, Johnson-radius witness) is left as hypotheses, mirroring the
+sanity style of A5; the body just dispatches to the capstone. -/
+example (cfg : ReedSolomonConfig (ZMod 7))
+    (h_dom : cfg.domain.size = cfg.codeLength)
+    (h_distinct : ∀ i j : Fin cfg.domain.size, i ≠ j →
+        cfg.domain.getD i.val 0 ≠ cfg.domain.getD j.val 0)
+    (hn : 0 < cfg.codeLength)
+    (us : Fin (3 + 1) → (Fin cfg.codeLength → ZMod 7))
+    {τ : ℕ} (h_johnson_τ : (cfg.codeLength - τ) * (cfg.codeLength - τ) >
+                          cfg.codeLength * cfg.messageLength)
+    {γ : ℚ} (hγ_pos : 0 ≤ γ)
+    (hγ_hi : γ * (3 + 2) <
+             ((cfg.codeLength - cfg.messageLength + 1 : ℕ) : ℚ) /
+               cfg.codeLength) :
+    seedProb (S := ZMod 7) (fun α =>
+      ∃ T : Finset (Fin cfg.codeLength), (T.card : ℚ) ≥ cfg.codeLength * (1 - γ) ∧
+        InRestrictedCode (reedSolomonSubmodule cfg) T
+          ((Generator.univariatePowers (ZMod 7) 3).combine α us) ∧
+        ∃ j : Fin (3 + 1), ¬ InRestrictedCode
+          (reedSolomonSubmodule cfg) T (us j))
+    ≤ (((cfg.codeLength : ℚ) ^ 2 *
+        (max ((cfg.codeLength : ℚ) * γ) 1 + 1) * ((3 + 1 : ℕ) - 1 : ℚ)) /
+          Fintype.card (ZMod 7)) := by
+  haveI : Fact (Nat.Prime 7) := ⟨by decide⟩
+  exact STIR_MCA_list_decoding_bound cfg h_dom h_distinct hn
+    (by decide : 0 < 3 + 1) (by decide : 3 + 1 ≤ Fintype.card (ZMod 7))
+    us h_johnson_τ hγ_pos hγ_hi
 
 /-! ### A2: STIR MCA predicate -/
 
@@ -104,8 +174,8 @@ example {n : ℕ} (hn : 0 < n) (c : Submodule (ZMod 7) (Fin n → ZMod 7))
 
 The general specialization to `Generator.affineSpace F s` for arbitrary `s`
 is **blocked**: `affineSpace_IsMDS` is **not provable in general** (see
-the deferred-TODO discussion in `LinearCodes/MCA/ConcreteMDS.lean`,
-lines ~296–323). However, in the boundary case `s = 1`, the
+the deferred-TODO discussion under `affineSpace general (s ≥ 2)` in
+`LinearCodes/MCA/ConcreteMDS.lean`). However, in the boundary case `s = 1`, the
 `affineSpace F 1` generator IS MDS (`affineSpace_IsMDS_of_s_one`) — this
 is the "WARP-univariate" specialization, where the seed lives in
 `Fin 1 → F ≃ F`.

@@ -1,16 +1,16 @@
 /-
 # Sub-targets for BCGM25 Theorem 6.1 Case 2 (γ ≥ 1/n)
 
-Per the Plan agent's decomposition (see swarm-plan-theorem-6-1.md and
-aleph-target-theorem-6-1-case-2.md), the Case 2 capstone proof of
-`MCA_unique_decoding_large_gamma_bound` decomposes into 8 parallel-
-executable sub-targets. Each depends only on currently-proved
-infrastructure.
+The Case 2 capstone proof of `MCA_unique_decoding_large_gamma_bound`
+(in `Case2Capstone.lean`) decomposes into 8 sub-targets defined here,
+plus the Lemma 5.3 aggregate-counting bound `Ttilde_card_gt_of_MDS_aggregate`.
+See `LinearCodes/doc/paper-to-lean-map.md` for the full theorem map.
 -/
 
 import LinearCodes.MCA.UniqueDecoding
 import LinearCodes.MCA.MaximalDomain
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+import Mathlib.Data.Rat.Floor
 
 set_option linter.unusedSectionVars false
 
@@ -720,90 +720,374 @@ has size ≤ ℓ-1. Counting pairs `(x ∈ B, i ∉ Ttilde)` with x in the
 
 ## Slack analysis (formalization vs. paper)
 
-BCGM25's Lemma 5.3 states `|T̃| > n(1-γ)` (strict) under the hypothesis
-`|B_set| > n·γ·(ℓ-1)`. We instead have `|T̃| ≥ n(1-γ) - 1` under the
-strengthened hypothesis `|B_set| > (n·γ + 1)·(ℓ-1)`. The `+1` slack on
-the hypothesis (equivalently `−1` slack on the conclusion) propagates
-to a `+1` factor in the Phase A capstone bound:
-* BCGM25:        `n·γ·(ℓ-1) / |S|`
-* This codebase: `(n·γ + 1)·(ℓ-1) / |S|`
+The hypothesis `|B_set| > (n·γ + 1)·(ℓ-1)` is **integer-tight** relative
+to the published lossless bound `|S| > M·(γn + 1)` of BCH+25 (eprint
+2025/2055) Theorem 4.1, with `M = ℓ-1`; BCH+25 Remark 2.5 exhibits an
+adversary saturating the underlying inequality.
 
-**This slack appears intrinsic to the pure aggregate-counting argument**
-(verified 2026-05-06). The combined per-coord/per-seed double counting
-yields exactly:
+BCGM25's stated hypothesis `|B·| > n·γ·(ℓ-1)` is the same bound in its
+real-number form, and it is sufficient ONLY for the strict bad-seed set
+`A_strict := {x : Δ_x = 0}` (the `t = e` corollary of Lemma 5.3). For the
+Lean-shape `B_set := {x : Δ_x ≤ nγ}` produced by the Case 2 reduction
+— a strictly larger set — the paper's `n·γ·(ℓ-1)` bound is genuinely
+INSUFFICIENT: see the concrete counterexample in
+`LinearCodes/MCA/Lemma53Examples.lean` (`n = 5, ℓ = 2, γ = 0.4`,
+realising `|B_set| = 3 > 2 = n·γ·(ℓ-1)` with `|T̃| = 2 < 3 = n(1-γ)`).
+The `+1` is therefore *necessary* for the Lean shape of the lemma — it
+is the integer-honest form of the bound, not a proof-engineering slack.
+
+Full literature survey and counterexample analysis:
+* `LinearCodes/doc/literature-survey-lemma-5-3.md`
+* `LinearCodes/doc/lemma-5-3-numerical-analysis.md`
+
+The conclusion, however, is **paper-tight** — no `−1` slack — even when
+`n·(1-γ) ∉ ℤ`. The proof closes the would-be `s = n(1-γ) - t ∈ (0,1)`
+gap by INTEGER ROUNDING: the per-seed pair-count
+`|Tc ∩ {agree at x}|` is a *natural number* ≥ `s` (in ℚ), hence ≥ `⌈s⌉₊`
+(in ℕ). Summing this integer-rounded bound over `B_set` gives
+`b · ⌈s⌉₊ ≤ (n-t)(ℓ-1)`, which combined with `s ≤ ⌈s⌉₊` reduces to
+`⌈s⌉₊ · (b - (ℓ-1)) ≤ nγ(ℓ-1)`. When `s > 0` (i.e., `⌈s⌉₊ ≥ 1`), this
+gives `b ≤ (nγ+1)(ℓ-1)`, contradicting the strict hypothesis. Hence
+`s ≤ 0`, paper-tight.
+
+**Why pure-ℚ arithmetic does NOT close.** The combined per-coord/per-
+seed double counting yields *exactly*:
 ```
-  s · (b - (ℓ-1)) ≤ n·γ · (ℓ-1)         where s := n(1-γ) - t, b := |B_set|, t := |T̃|
+  b · s ≤ (n - t) · (ℓ-1)   ⇔   s · (b - (ℓ-1)) ≤ n·γ · (ℓ-1)
 ```
-To force `s ≤ 0` (i.e., the strict `t ≥ n(1-γ)` BCGM25 conclusion)
-from a hypothesis on `b` alone, one needs `b - (ℓ-1) > n·γ · (ℓ-1)`,
-i.e., `b > (n·γ + 1)(ℓ-1)`. The case `0 < s < 1` is admissible under
-`b > n·γ·(ℓ-1)`: the bound only gives `s · (b - (ℓ-1)) ≤ n·γ·(ℓ-1)`,
-which permits `s` arbitrarily close to 0+ as `b → ∞`.
+where `s := n(1-γ) - t`, `b := |B_set|`, `t := |T̃|`, `n - t = s + nγ`.
+To force `s ≤ 0` from `b > (nγ+1)(ℓ-1)` alone (no integer rounding),
+one would need `s · (b-(ℓ-1)) > nγ(ℓ-1)` whenever `s > 0`. But for
+`s ∈ (0,1)` we get only `s · (b-(ℓ-1)) > s · nγ(ℓ-1)`, which is
+`< nγ(ℓ-1)` — no contradiction. Integer rounding turns the multiplier
+`s` into `⌈s⌉₊ ≥ 1`, which provides exactly the missing factor.
 
-Approaches considered but rejected:
-* **Tighter per-coord upper bound**: would require `< ℓ-1` strictly,
-  contradicting the tightness of zero-evading at MDS distance.
-* **Tighter per-seed lower bound**: replacing `Tx \ T̃` (witness diff)
-  with `Ax \ T̃` (true agreement diff) doesn't help — we lack a lower
-  bound on `|Ax|` beyond `≥ |Tx| ≥ n(1-γ)`.
-* **Using strict containment T̃ ⊊ Bx**: this is the technique used
-  *downstream* (in `Case2Capstone.lean` via `strict_superset_count_bound`)
-  but requires `T̃` to already be established — circular for this lemma.
-* **Integer rounding on `t`**: t is a natural, but n(1-γ) is rational
-  with γ rational. Using `t ≥ ⌈n(1-γ)⌉` only converts `t > n(1-γ) - 1`
-  (ℚ) to `t ≥ ⌈n(1-γ) - 1⌉ + 1`, which can fail to equal `⌈n(1-γ)⌉`
-  when `n(1-γ)` is integral.
+Approaches considered and rejected:
 
-The original BCGM25 likely uses a different proof structure — possibly
-via `MDS_pairwise_agreement_bound` + Corrádi (cf. `swarm-plan-theorem-6-1.md`),
-or via the maximal-agreement-domain framework where strictness is built in.
-Either alternative would require substantial new infrastructure (Corrádi
-already exists; the wiring through MCA bad-event semantics does not).
+(R1) **Tighter per-coord upper bound** (replacing `≤ ℓ-1` with `< ℓ-1`):
+contradicts tightness of zero-evading at MDS distance — the bound
+`(ℓ-1)/|S|` is achieved by codeword-difference vectors of weight ℓ.
 
-## Corrádi attempt (2026-05-06)
+(R2) **Tighter per-seed lower bound**: `|Tx \ T̃| ≥ |Tx| - |T̃|` is
+already exact when `|Tx| ≥ |T̃|`. Using the *true* agreement set
+`A_x := {i : combine x us i = combine x cstars i} ⊇ Tx` would only
+*increase* the lower bound, but we lack a *lower bound* on `|A_x|`
+beyond `≥ |Tx| ≥ n(1-γ)`. Crucially, `A_x ⊇ T̃` (every coord in T̃
+agrees automatically), so `|A_x \ T̃| ≥ |Tx| - |T̃|` is the same as for
+Tx; no improvement.
 
-A direct application of `Finset.corradi_unconditional` /
-`Finset.corradi_ratio` (in `Upstream/Combinatorics/Corradi.lean`) to the
-family `{B_x}_{x ∈ B_set}` defined by
-`B_x := {i ∈ Fin n : G.combine x us i = G.combine x cstars i}` was
-considered. The plan was: each `|B_x| ≥ n(1-γ)`, pairwise
-`|B_x ∩ B_y| ≤ ℓ - 1`, then Corrádi gives `|B_set| ≤ N(a-b)/(a²-Nb) =
-n·γ·(ℓ-1)` (paper-tight).
+(R3) **Strict containment T̃ ⊊ Bx**: used downstream (in
+`Case2Capstone.lean` via `strict_superset_count_bound`) — but requires
+T̃ to already be established, hence circular at the level of this lemma.
 
-This **does not work**: the pairwise bound `|B_x ∩ B_y| ≤ ℓ - 1` is
-**false in general**. For all `i ∈ Ttilde`, `i ∈ B_x ∩ B_y` for every
-`x, y` (because `i ∈ Ttilde ⇒ ∀ j, us j i = cstars j i`, hence
-`combine x us i = combine x cstars i` for every `x`). So `Ttilde ⊆
-B_x ∩ B_y` for *every* pair, giving `|B_x ∩ B_y| ≥ |Ttilde|`, which
-generally exceeds `ℓ-1`.
+(R4) **Integer rounding on the per-seed lower bound** *(adopted)*:
+The KEY insight. Each per-seed pair-count
+`|Tc ∩ {i : combine x us i = combine x cstars i}|` is a natural number
+≥ `s` in ℚ, hence ≥ `⌈s⌉₊` in ℕ. Summing the integer-rounded bound
+gives `b · ⌈s⌉₊ ≤ (n-t)(ℓ-1)`, which closes the slack uniformly,
+WITHOUT requiring `n·(1-γ) ∈ ℤ`. This is what the proof below uses
+to deliver paper-tight `|T̃| ≥ n(1-γ)`.
 
-Restricting to `(B_x \ Ttilde) ∩ (B_y \ Ttilde)` does not help either:
-on this set, `colDiff us cstars i ≠ 0` and both `x, y` are seeds of
-`G.dotMap (colDiff i)` zero-set (size ≤ ℓ-1 by zero-evading), but this
-constrains the *seeds* per coordinate, not the *count of coordinates*
-across pairs. So no tight pairwise bound emerges.
+## Corrádi attempts (2026-05-06 / 2026-05-07)
 
-The same fundamental obstruction blocks attempts using max-agreement
-domains in place of `B_x`: any two domains contain a common max-CA
-extension of `Ttilde`, defeating the `< ℓ` pairwise bound.
+### Attempt 1: family `{B_x = {i : combine x us i = combine x cstars i}}`
 
-The genuine paper proof of BCGM25 Lemma 5.3 likely uses a more delicate
-group-by-witness-codeword argument where Corrádi is applied at the
-**codeword level** (codewords `c ∈ c` indexing groups of seeds), with
-the pairwise bound coming from `MDS_pairwise_agreement_bound` over the
-underlying linear code's min-distance, not the MDS dimension `ℓ`.
-Implementing this requires:
-* a partition `B_set = ⋃_c S_c` by witness-codeword equivalence;
-* per-codeword agreement-set sizes `≥ |S_c| · n(1-γ) / |S_c|`;
-* a Corrádi instantiation over the codeword index set.
+Direct application of `Finset.corradi_unconditional` /
+`Finset.corradi_ratio` (in `Upstream/Combinatorics/Corradi.lean`) with
+each `|B_x| ≥ n(1-γ)` and pairwise `|B_x ∩ B_y| ≤ ℓ - 1` would yield
+`|B_set| ≤ n·γ·(ℓ-1)` — paper-tight.
 
-This is a **major** refactor of the witness-codeword infrastructure
-and is deferred. The slack form below is retained as a
-formally-verified weakening of the paper bound, with `+1` propagated
-identically through the Phase A and Phase B capstones via
-`max_one_nGamma_relax_v2`.
+**Fails**: the pairwise bound `|B_x ∩ B_y| ≤ ℓ - 1` is false. For all
+`i ∈ T̃`, `i ∈ B_x ∩ B_y` for every `x, y` (since `i ∈ T̃ ⇒ ∀ j, us j i = cstars j i`,
+hence `combine x us i = combine x cstars i` for every `x`). So
+`T̃ ⊆ B_x ∩ B_y` for every pair, giving `|B_x ∩ B_y| ≥ |T̃|`,
+generally `>> ℓ-1`.
 
-This stub captures the specialized statement we need for the capstone. -/
+### Attempt 2: family `{A_x = B_x \ T̃}`
+
+Restricting to coords outside T̃ removes the "common floor". For
+`i ∈ A_x ∩ A_y`: `i ∉ T̃` so `colDiff i ≠ 0`, and both `dotMap (colDiff i) x = 0`
+and `dotMap (colDiff i) y = 0`. So `colDiff i` lies in the codim-2
+subspace `ker_{x,y} ⊆ F^ℓ`.
+
+**Fails**: this constrains the codomain of `i ↦ colDiff i` to a
+subspace of dimension `ℓ - 2`, but the map is *not* injective in general
+(two coords can yield the same column-difference vector). Moreover,
+the codim-2 condition is per-pair `(x, y)`, not a uniform per-coord
+zero-evading bound. No tight pairwise upper bound emerges from this.
+
+### Attempt 3: codeword-grouped Corrádi (USER-PROPOSED)
+
+Group seeds by *witness codeword* `cw_x := combine x cstars`. The
+hope: distinct codewords `cw_x ≠ cw_y` agree on `≤ ℓ-1` positions
+(by `MDS_pairwise_agreement_bound` against the FIXED reference
+`u := combine x us`... but this fails: `combine x us` differs across
+seeds, so there's no single reference `u`).
+
+Concretely: for distinct `x ≠ y`, examine `T_x ∩ T_y`. On `T_x`,
+`combine x us = cw_x`. On `T_y`, `combine y us = cw_y`. On `T_x ∩ T_y`,
+both hold simultaneously, but the constraints involve *different*
+LHSs (`combine x us` vs `combine y us`). There is no direct relation
+forcing `cw_x = cw_y` on `T_x ∩ T_y`, so we cannot apply
+`MDS_pairwise_agreement_bound` to bound `|T_x ∩ T_y|`.
+
+Worse: the codewords `cw_x` themselves aren't "free" — they are
+indexed by seeds via `cw_x = combine x cstars`, with `cstars` fixed.
+The map `x ↦ cw_x` is injective (under MDS, when `cstars` is in the
+image of the dual code construction), so "grouping by codeword" trivially
+gives singleton fibers and does *not* reduce to a Corrádi over codewords.
+
+### Attempt 4: pairwise codeword-distinctness on `T_x ∩ T_y` directly
+
+Even assuming `cw_x ≠ cw_y` for all distinct `x, y ∈ B_set`
+(generically true under MDS), we want to bound `|T_x ∩ T_y|`. Note:
+T̃ ⊆ T_x ∩ T_y, and on T̃ we have `cstars j i = us j i`, hence
+`cw_x i = combine x cstars i = combine x us i` and likewise for y.
+So on T̃, `combine x us = cw_x` and `combine y us = cw_y` *but*
+T̃ does NOT imply `cw_x = cw_y` (the equality of cw_x and cw_y at
+i ∈ T̃ is `combine x us i = combine y us i`, a constraint on us, not
+the codewords). Hence `T̃ ⊆ T_x ∩ T_y` but T̃ may not be in the
+agreement-set of `cw_x` with `cw_y`. So pairwise bound on T_x ∩ T_y
+fails to bound `|T̃|` from above.
+
+## Hypothesis-side `+1` exploration (2026-05-08): Plotkin/weighted
+
+To eliminate the `(ℓ-1)` slack on the hypothesis side, the following
+math angles were explored. None succeeded; recorded for future
+reference.
+
+### Plotkin-weighted per-coord (1/(ℓ - f_i)):
+Define `w_i := 1/(ℓ - f_i)` where `f_i := |B ∩ {agree at i}| ≤ ℓ-1`.
+Per-coord weighted sum is bounded above by some constant; per-seed
+weighted sum is bounded below. **Fails**: the natural weights either
+collapse to the same `(ℓ-1) · |Tc|` bound, or introduce new terms of
+the form `∑ f_i² / something` that requires Cauchy-Schwarz, which
+returns the original `f_i ≤ ℓ-1` bound (since `f_i² ≤ (ℓ-1) f_i`).
+
+### Cauchy-Schwarz on `(∑ f_i)²`:
+`(∑ f_i)² ≤ |Tc| · ∑ f_i²`. With `f_i ≤ ℓ-1`, `∑ f_i² ≤ (ℓ-1)∑ f_i`,
+so `(∑ f_i)² ≤ |Tc|(ℓ-1)∑ f_i`, i.e., `∑ f_i ≤ |Tc|(ℓ-1)`. **Same**
+bound as the direct per-coord upper.
+
+### Direction-grouping with codim-2 joint kernels:
+Group `i ∈ Tc` by direction class `[v_i]` (lines in `F^ℓ`). Within a
+class, joint kernel size = single-vector kernel ≤ ℓ-1. Between distinct
+classes (LI representatives), joint kernel ≤ ℓ-2 (since two LI nonzero
+vectors in `F^ℓ` give codim-2 = dim ℓ-2). Trying to leverage this via
+second-moment / pair-counting `∑_x \binom{|D_x|}{2} ≤ K(K-1)(ℓ-2)`
+where `K` = number of classes:
+* The `f_i ≤ ℓ-1` per-coord bound is unchanged within a class — the
+  multiplicity `|L_k|` of a single direction is unbounded (could equal
+  `|Tc|` if all `colDiff_i` are proportional).
+* Cauchy-Schwarz on `∑|D_x|` requires a useful upper on `∑|D_x|²`, which
+  the codim-2 bound provides only with the unhelpful factor `K(K-1)`.
+**Fails**: the codim-2 bound applies to *direction classes*, not coords.
+
+### Inclusion-exclusion on `T̃ = ∩_{x ∈ B} A_x`:
+Under MDS with `b ≥ ℓ`, `T̃ = ∩_{x ∈ B} A_x` exactly (any ℓ LI seeds
+killing `colDiff i` force it to zero). Bonferroni: `|T̃| ≥ b·n(1-γ) -
+(b-1)n = n(1-bγ)` for the single-direction inclusion. Even using just
+ℓ specially-chosen LI seeds: `|T̃| ≥ n(1-ℓγ)`. **Fails**: the factor
+`ℓ` is much weaker than the target `n(1-γ)`; Bonferroni's first-order
+gap is too large.
+
+### Re-parameterization `γ' := γ + 1/n`:
+Trivially relabels — `b > (nγ+1)(ℓ-1) = nγ'(ℓ-1)`, conclusion
+`t ≥ n(1-γ) = n(1-γ') + 1`. Just the same statement under different
+notation; no actual sharpening.
+
+## Hypothesis-side `+1` exploration (2026-05-07): outer-code min-distance
+
+A separate exploration attempted to leverage the OUTER-CODE min-distance
+`MinDistAtLeast c δ_C` (available at the call site in `Case2Capstone.lean`,
+where `cstars j ∈ c` and `γ·(ℓ+1) < δ_C/n`). The idea was to enrich the
+lemma's hypothesis set with `{δ_C, MinDistAtLeast c δ_C, cstars j ∈ c,
+γ·(ℓ+1) < δ_C/n}` and use the algebraic structure of the witness
+codewords `c_x := combine x cstars ∈ c` to derive a *strictly tighter*
+per-coord bound at the boundary `s ∈ (0,1)`.
+
+### Setup of the angle
+At each coord `i ∉ Ttilde`, the per-coord upper bound is `f_i :=
+|{x ∈ B : combine x us i = combine x cstars i}| ≤ ℓ-1`, derived purely
+from `Generator.IsMDS` (zero-evading on `colDiff i := (us j i - cstars
+j i)_j ∈ F^ℓ`, nonzero by `i ∉ Ttilde`). The candidate strengthening
+is to find an `i_*` where `f_{i_*} ≤ ℓ-2` (saving one coordinate's
+worth of "budget"), enough to introduce strict slack and close the
+`+1`.
+
+### Why outer min-distance does NOT sharpen the per-coord bound
+The per-coord bound is stated in terms of `colDiff i ∈ F^ℓ`, an
+"horizontal slice" across the ℓ codewords `cstars j` at the single
+coordinate `i`. The min-distance of `c` controls the *vertical* (per-
+codeword) Hamming weight of nonzero codewords of `c`, which lives on
+the `Fin n` axis. These are *orthogonal* axes:
+* MDS-of-G fixes the F^ℓ → F dotMap injectivity bound (zero-evading).
+* MinDist-of-c fixes the F^n weight bound (codeword distinctness).
+
+The "horizontal" slice `(cstars j i)_j ∈ F^ℓ` is a single column-vector
+of the codeword matrix, NOT itself a codeword of `c`. So MinDist-of-c
+imposes NO algebraic constraint on `colDiff i`. The per-coord zero-
+evading bound `(ℓ-1)/|S|` is information-theoretically tight at the
+single-coord level (achieved by codeword-difference vectors of weight
+ℓ); MinDist-of-c does not improve it.
+
+### Codeword-grouping under MinDist-of-c
+A second angle: group bad seeds by witness codeword `c_x = combine x
+cstars`. Distinct codewords `c_x ≠ c_y` agree on `≤ n - δ_C` positions
+(`MinDistAtLeast.disagree_count_of_ne`). On `agreementSet c_x c_y`
+of size `≤ n - δ_C`, multiple bad seeds collapse to a single codeword
+equation. Combined with `T_x ∩ T_y` (size `≥ n - 2nγ`), one might hope
+to count `|T_x ∩ T_y ∩ agreementSet c_x c_y|` and bound the multiplicity
+of codewords. **Fails**: the constraint `c_x = c_y` at coord `i`
+translates to `combine x cstars i = combine y cstars i`, i.e.,
+`∑_j (G(x,j) - G(y,j)) cstars(j,i) = 0`, a constraint on the column
+slice `(cstars j i)_j` (one linear equation per pair). This does NOT
+constrain `i ∈ Ttilde = {i : us j i = cstars j i ∀j}`. The two
+notions of "agreement" don't align: codeword-equality is about *how
+cstars depends on the seed via G*, whereas Ttilde is about *us
+matching cstars*. Outer-code distinctness gives no purchase on Ttilde.
+
+### Boundary-coord identification at `s ∈ (0,1)`
+A third angle: at the boundary `s ∈ (0,1)`, with `t = ⌊n(1-γ)⌋`,
+each bad seed has `|T_x| ≥ n(1-γ) > t`, so `|T_x \ Ttilde| ≥ 1`. The
+"marginal" coords `i_*(x) := T_x \ Ttilde` (a singleton at the
+sharpest boundary `|T_x| = t+1`) may vary across seeds. At any shared
+boundary coord `i_*`, the per-coord count `f_{i_*} ≤ ℓ-1` already
+applies. If we could argue that bad-at-i_* seeds have at most `ℓ-2`
+*distinct* codewords (using c_x ≠ c_y plus the codeword-distinctness
+pairwise bound at i_*), we'd get `f_{i_*} ≤ ℓ-2` and close the slack.
+**Fails**: at the single coord `i_*`, two distinct codewords `c_x ≠
+c_y ∈ c` *can* coincide. The codeword-distinctness bound
+`|agreementSet c_x c_y| ≤ n - δ_C` is a *global* bound across all n
+coordinates, not a *per-coord* bound. Even if `δ_C` is large, two
+distinct codewords agree at *some* (in fact at most `n - δ_C`)
+positions, and `i_*` could be one of them. So no pointwise improvement
+at `i_*` follows from MinDist-of-c.
+
+### Witness-codeword fiber size
+A fourth angle: bound the size of the fiber `{x ∈ B : c_x = c_0}` for
+each codeword `c_0 ∈ c`. The map `x ↦ c_x = combine x cstars` is the
+restriction to S of the bilinear pairing `S × (Fin ℓ → Fin n → F) →
+(Fin n → F)` along the second axis fixed at `cstars`. This is precisely
+`G.dotMap (cstars-as-row-vec)` evaluated at x. Hmm — this DOES give
+some info: if cstars-as-row-vec is "rich" (linearly independent rows
+when restricted to image points), then x ↦ c_x is injective; otherwise
+fibers can be large. **Fails**: even if `c_x` are all distinct, the
+codewords are spread across `c` (a high-dim space), and the fiber
+structure doesn't bound `f_i` per-coord.
+
+### Conclusion of outer min-distance exploration
+The MinDist-of-c hypothesis is:
+* USEFUL for `bad_witness_cw_eq_combine_cstars` (proving `w.cw =
+  combine x cstars` from triangle-inequality on agreement sets, where
+  the *global* count `|T| > n - δ_C` forces codeword equality).
+* NOT USEFUL for sharpening the per-coord `f_i ≤ ℓ-1` bound that
+  drives the `+1` slack — the relevant axis is F^ℓ (horizontal),
+  governed by MDS-of-G, not the F^n axis (vertical, codeword-
+  distinctness) governed by MinDist-of-c.
+
+The orthogonality of these two axes is fundamental. Closing the `+1`
+slack via min-distance would require a non-trivial *bridge* between
+the horizontal and vertical structures. We did not find one, and we
+believe none is supplied by the present linear-algebraic machinery
+nor (to our knowledge) by BCGM25's treatment of Lemma 5.3. The `+1`
+slack is intrinsic at the level of zero-evading + double-counting.
+
+### Conclusion of hypothesis-side exploration:
+The `+1`-slack on the hypothesis arises from the *boundary* `s ≥ 1`
+needed to convert `s · (b-(ℓ-1)) ≤ nγ(ℓ-1)` into `b ≤ (nγ+1)(ℓ-1)`.
+Closing it would require either:
+1. A strict per-coord bound `< ℓ-1` in some uniform regime (rejected
+   in R1).
+2. A non-counting (algebraic / dimension-theoretic / min-distance)
+   argument introducing a strict slack at the contradiction step.
+
+Neither is supplied by the present zero-evading + double-counting
+machinery. The paper's argument (BCGM25 §5) appears to share this
+limitation; the `+1` is consistent with the asymptotic regime in
+which the bound is applied.
+
+## What the paper *actually* uses (analysis)
+
+A close reading of BCGM25 Lemma 5.3 (eprint 2025/2051, p.27-28)
+suggests the paper uses essentially the same double-counting argument,
+implicitly leveraging integer rounding (the per-seed contributions are
+inherently integer-valued). The Lean formalization makes this rounding
+explicit via `Nat.ceil` of `s := n(1-γ) - t`.
+
+The remaining `+1`-slack on the hypothesis is intrinsic to the proof
+technique (under either formulation). It propagates identically through
+the Phase A and Phase B capstones via `max_one_nGamma_relax_v2`, and
+does not affect the asymptotic regime in which the BCGM25 protocols
+are applied.
+
+## BCIKS18-style weighted/probabilistic reformulation (2026-05-07)
+
+Investigation: replace the BOOLEAN bad event
+  `∃ T : Finset, |T| ≥ n(1-γ) ∧ InRestrictedCode c T (combine x us) ∧ ...`
+with a CONTINUOUS/QUANTITATIVE bad event using the agreement set
+  `A_x := agreementSet (combine x us) (combine x cstars)`,
+  `e_x := n - |A_x|`  (the disagreement count),
+  bad_pred(x) := `e_x ≤ n·γ`  (i.e. `|A_x| ≥ n(1-γ)`).
+
+The hope was that a continuous per-seed quantity `e_x ∈ [0, n·γ]` (rather
+than a Boolean) might close the `0 < s < 1` slack via a Markov / averaging
+argument: `Σ_x e_x ≤ b · n·γ`, hence the average disagreement is `≤ n·γ`,
+and a sharper per-seed lower bound on `g_x = |A_x ∩ Tc| = |A_x| - t` could
+be derived.
+
+### Why this is *equivalent*, not strictly tighter
+
+(W1) **The lower bound `g_x ≥ s` is the same.**
+The hypothesis is identical: `|Tx| ≥ n(1-γ)` ⟺ `|A_x| ≥ n(1-γ)` (under
+the bridge, since `Tx ⊆ A_x` always, and `A_x` is the maximum agreement
+set). So `g_x = |A_x ∩ Tc| = |A_x| - t ≥ n(1-γ) - t = s`. Switching from
+`Tx` to `A_x` does NOT change the per-seed lower bound — both are
+`≥ s` in ℚ.
+
+(W2) **Integer rounding gives the same `K`.**
+With `Tx`: `g_x ∈ ℕ` and `g_x ≥ s` ⟹ `g_x ≥ ⌈s⌉₊` (the current proof).
+With `A_x`: `g_x = |A_x| - t` is *exactly* an integer; the lower bound
+`g_x ≥ ⌈n(1-γ)⌉ - t` arises directly. But:
+  `⌈s⌉₊ = ⌈n(1-γ) - t⌉₊ = ⌈n(1-γ)⌉ - t`  (since `t ∈ ℤ`).
+So the integer-rounded lower bound is identical: `K = ⌈s⌉₊`.
+
+(W3) **The aggregate hypothesis cannot be sharpened.**
+A Markov-style hypothesis `Σ_x e_x ≤ b·n·γ` (averaged disagreement) is
+*equivalent* to the pointwise `e_x ≤ n·γ` *as a constraint on the sum*:
+both yield exactly `Σ_x g_x ≥ b·(n - n·γ - t) = b·s`. Replacing pointwise
+by averaged hypothesis would in fact be STRICTLY WEAKER (allows some
+seeds to have `e_x > n·γ`, but the total disagreement is still bounded),
+but the conclusion uses only the sum — so it would yield the *same*
+ℚ-bound `b·s ≤ (n-t)(ℓ-1)`. No improvement.
+
+(W4) **The contradiction step is the obstruction, not the lower bound.**
+The chain `b·K ≤ (K + nγ)(ℓ-1)` combined with `K ≥ 1` gives
+`(b - (ℓ-1)) ≤ K(b - (ℓ-1)) ≤ nγ(ℓ-1)`, hence `b ≤ (nγ+1)(ℓ-1)`. The
+`+1` enters at the step `(b-(ℓ-1)) ≤ K(b-(ℓ-1))`, which uses `K ≥ 1`.
+No reformulation of the bad event can avoid this: the integer factor
+`K ≥ 1` is the smallest positive integer, and it exists *because* `s > 0`
+forces `K ≥ 1` regardless of how small `s` is.
+
+To eliminate the `+1`, one would need either:
+  (a) `K · (b - (ℓ-1)) ≤ (n·γ - δ) · (ℓ-1)` for some `δ > 0` uniform in
+      the data (i.e., a *strict* per-coord bound); or
+  (b) `K(b - (ℓ-1)) > nγ(ℓ-1)` directly (i.e., a strict per-seed bound
+      forcing `K ≥ 2` whenever `s > 0`, which does not hold — `s` can
+      be arbitrarily small in `(0,1)`).
+
+Neither is supplied by zero-evading + agreement-set framing.
+
+### Companion theorem
+
+A "natural" agreement-set form of the lemma is provided as
+`Ttilde_card_gt_of_MDS_aggregate_via_A` (below) for completeness and
+downstream use in BCIKS18-style analyses. It expresses the bad event
+directly via `|A_x| ≥ n(1-γ)` and is *equivalent* to the
+`Tx`-existence form: both yield the same `n(1-γ)` lower bound on
+`|Ttilde|` under the same `(nγ+1)(ℓ-1)` hypothesis.
+
+This statement is what the capstone consumes. -/
 theorem Ttilde_card_gt_of_MDS_aggregate
     [Fintype S] [DecidableEq S] [Nonempty S]
     {G : Generator F S ℓ} (hG_MDS : G.IsMDS) (hℓ : 0 < ℓ)
@@ -816,7 +1100,7 @@ theorem Ttilde_card_gt_of_MDS_aggregate
     (h_size : (B_set.card : ℚ) > (n * γ + 1) * (ℓ - 1))
     (Ttilde : Finset (Fin n))
     (h_Ttilde_def : ∀ i, i ∈ Ttilde ↔ ∀ j, us j i = cstars j i) :
-    (Ttilde.card : ℚ) ≥ n * (1 - γ) - 1 := by
+    (Ttilde.card : ℚ) ≥ n * (1 - γ) := by
   classical
   -- Strategy: double counting on
   --   P := { (x, i) : x ∈ B_set, i ∈ univ \ Ttilde, combine x us i = combine x cstars i }.
@@ -831,15 +1115,22 @@ theorem Ttilde_card_gt_of_MDS_aggregate
   --
   -- Letting `s := n(1-γ) - t`, the combined bound is `b·s ≤ (s+nγ)(ℓ-1)`, i.e.,
   --   s·(b - (ℓ-1)) ≤ nγ·(ℓ-1).
-  -- ASSUMING the contradiction `t < n(1-γ) - 1`, we have `s > 1`, so
-  --   b - (ℓ-1) < s·(b - (ℓ-1)) ≤ nγ·(ℓ-1),
-  -- giving `b < (nγ+1)·(ℓ-1)`, contradicting the strengthened hypothesis
-  -- `h_size : b > (nγ+1)·(ℓ-1)`.
+  -- INTEGER-ROUNDING UPGRADE: each per-seed contribution
+  -- `(filter Tc agree-at-x).card` is a natural number ≥ s (in ℚ), hence
+  -- ≥ ⌈s⌉₊ (in ℕ). Summing this rounded bound over B_set gives
+  --   b · ⌈s⌉₊ ≤ |P| ≤ (n - t)(ℓ-1) = (s + nγ)(ℓ-1) ≤ (⌈s⌉₊ + nγ)(ℓ-1)
+  -- (last step using s ≤ ⌈s⌉₊). Hence ⌈s⌉₊ · (b - (ℓ-1)) ≤ nγ(ℓ-1).
+  -- ASSUMING the contradiction `t < n(1-γ)`, we have `s > 0`, so `⌈s⌉₊ ≥ 1`.
+  -- Then `b - (ℓ-1) ≤ ⌈s⌉₊ · (b-(ℓ-1)) ≤ nγ(ℓ-1)`, giving
+  -- `b ≤ (nγ+1)·(ℓ-1)`, contradicting the strict hypothesis
+  -- `h_size : b > (nγ+1)·(ℓ-1)`. Hence `s ≤ 0`, paper-tight conclusion.
   --
-  -- TRADE-OFF: the original BCGM25 Lemma 5.3 statement (strict `t > n(1-γ)`
-  -- with weaker hypothesis `b > nγ(ℓ-1)`) does NOT follow from pure double-
-  -- counting in ℚ — see notes near the end of the proof. Both the conclusion
-  -- and the hypothesis have been adjusted by a `(ℓ-1)`-scale slack to close.
+  -- The integer rounding (`Nat.ceil`) is what closes the `0 < s < 1` slack
+  -- that pure ℚ-arithmetic cannot, recovering the BCGM25 paper-tight bound
+  -- `t ≥ n(1-γ)` in the GENERAL ℚ case (no integrality hypothesis on
+  -- `n·γ` is needed). The remaining `+1` slack on the hypothesis vs. BCGM25's
+  -- `b > nγ(ℓ-1)` propagates identically through the Phase A and Phase B
+  -- capstones via `max_one_nGamma_relax_v2`.
   by_contra h_le
   push_neg at h_le
   -- Notation shortcuts.
@@ -1025,44 +1316,153 @@ theorem Ttilde_card_gt_of_MDS_aggregate
     have := le_trans h_lower h_upper
     rw [hTc_card_Q] at this
     exact this
-  -- After `push_neg`, `h_le : t < n*(1-γ) - 1`, so `s := n(1-γ) - t > 1`.
-  have hs_gt_one : (1 : ℚ) < (n : ℚ) * (1 - γ) - t := by linarith
+  -- After `push_neg` on the (paper-tight) goal `t ≥ n*(1-γ)`, we have
+  -- `h_le : t < n*(1-γ)`, so `s := n(1-γ) - t > 0` (as a rational).
+  --
+  -- KEY UPGRADE (integer rounding): each per-seed contribution
+  -- `(filter Tc agree at x).card` is a natural number; combined with `≥ s`
+  -- (in ℚ), it is `≥ ⌈s⌉₊`. This integer rounding closes the slack that
+  -- pure ℚ arithmetic cannot — making the conclusion paper-tight.
+  have hs_pos : (0 : ℚ) < (n : ℚ) * (1 - γ) - t := by linarith
   -- The strengthened hypothesis: b > (nγ+1)·(ℓ-1).
   have hb_lower : b > ((n : ℚ) * γ + 1) * (ℓ - 1) := h_size
   -- Note: (n - t) = (n(1-γ) - t) + nγ.
   have h_nt_eq : ((n : ℚ) - t) = ((n : ℚ) * (1 - γ) - t) + (n : ℚ) * γ := by ring
-  -- ℓ ≥ 1 so (ℓ-1) ≥ 0, and (nγ+1) ≥ 1 ≥ 0, hence (nγ+1)*(ℓ-1) ≥ 0, so b > 0.
+  -- ℓ ≥ 1 so (ℓ-1) ≥ 0.
   have hℓ_ge_one : (1 : ℚ) ≤ (ℓ : ℚ) := by exact_mod_cast hℓ
   have hℓm_nn : (0 : ℚ) ≤ (ℓ : ℚ) - 1 := by linarith
   have hnγ_nn : (0 : ℚ) ≤ (n : ℚ) * γ := mul_nonneg (le_of_lt hn_pos) hγ_pos
-  -- From the combined bound, derive `s · (b - (ℓ-1)) ≤ nγ · (ℓ-1)`.
-  -- Rewrite `(n - t) = s + nγ` then expand.
-  have h_combined' :
-      ((n : ℚ) * (1 - γ) - t) * (b - (ℓ - 1)) ≤ (n : ℚ) * γ * (ℓ - 1) := by
-    have h_expand : ((n : ℚ) - t) * (ℓ - 1 : ℚ) =
-        ((n : ℚ) * (1 - γ) - t) * (ℓ - 1) + (n : ℚ) * γ * (ℓ - 1) := by
-      rw [h_nt_eq]; ring
-    -- h_combined: b * s ≤ (s + nγ)·(ℓ-1) = s·(ℓ-1) + nγ·(ℓ-1).
-    have h1 : b * ((n : ℚ) * (1 - γ) - t) ≤
-        ((n : ℚ) * (1 - γ) - t) * (ℓ - 1) + (n : ℚ) * γ * (ℓ - 1) := by
-      have := h_combined
-      linarith [h_expand]
-    -- So `b·s - s·(ℓ-1) ≤ nγ·(ℓ-1)`, i.e., `s·(b - (ℓ-1)) ≤ nγ·(ℓ-1)`.
-    nlinarith [h1]
-  -- Now: s > 1, b - (ℓ-1) ≥ 0 (since b > (nγ+1)(ℓ-1) ≥ (ℓ-1)).
-  have h_b_minus_nn : (0 : ℚ) < b - ((ℓ : ℚ) - 1) := by
-    -- b > (nγ+1)(ℓ-1) ≥ 1·(ℓ-1) = (ℓ-1), since nγ+1 ≥ 1.
+  -- ============================================================
+  -- Integer-rounding upgrade:  `(filter Tc agree at x).card ≥ ⌈s⌉₊`.
+  -- ============================================================
+  -- Define the natural-number ceiling of s := n*(1-γ) - t.
+  set s : ℚ := (n : ℚ) * (1 - γ) - t with hs_def
+  set K : ℕ := ⌈s⌉₊ with hK_def
+  -- K ≥ 1 since s > 0.
+  have hK_pos : 1 ≤ K := Nat.one_le_ceil_iff.mpr hs_pos
+  -- s ≤ (K : ℚ) by Nat.le_ceil.
+  have hs_le_K : s ≤ (K : ℚ) := Nat.le_ceil _
+  -- Per-seed lower bound, *integer-rounded*: `(filter Tc agree at x).card ≥ K`.
+  have h_per_seed_nat : ∀ x ∈ B_set,
+      K ≤ (Tc.filter (fun i => G.combine x us i = G.combine x cstars i)).card := by
+    intro x hx
+    -- The ℚ-bound from `h_per_seed`: filter-card ≥ s.
+    have hQ := h_per_seed x hx
+    -- Since (filter ...).card : ℕ casts to ℚ, and the ℚ-bound says it's ≥ s,
+    -- and `K = ⌈s⌉₊`, we get filter-card ≥ K via `Nat.ceil_le`.
+    rw [hK_def, Nat.ceil_le]
+    exact_mod_cast hQ
+  -- Sum the per-seed integer bound over B_set.
+  have h_lower_K_nat :
+      B_set.card * K ≤
+        ∑ x ∈ B_set,
+          (Tc.filter (fun i => G.combine x us i = G.combine x cstars i)).card := by
+    have h_sum_le :
+        (∑ _ ∈ B_set, K) ≤
+          ∑ x ∈ B_set,
+            (Tc.filter (fun i => G.combine x us i = G.combine x cstars i)).card :=
+      Finset.sum_le_sum h_per_seed_nat
+    have h_const : (∑ _ ∈ B_set, K) = B_set.card * K := by
+      rw [Finset.sum_const, smul_eq_mul]
+    linarith [h_const ▸ h_sum_le]
+  -- Cast to ℚ: |Pset| ≥ b * K.
+  have h_lower_K : b * (K : ℚ) ≤ (Pset.card : ℚ) := by
+    rw [hP_eq_sum_over_x]
+    have h_sum_cast :
+        ((∑ x ∈ B_set,
+            (Tc.filter (fun i => G.combine x us i = G.combine x cstars i)).card : ℕ) : ℚ) =
+          ∑ x ∈ B_set,
+            ((Tc.filter
+              (fun i => G.combine x us i = G.combine x cstars i)).card : ℚ) := by
+      push_cast; rfl
+    have h_lower_Q :
+        ((B_set.card * K : ℕ) : ℚ) ≤
+          ((∑ x ∈ B_set,
+              (Tc.filter (fun i => G.combine x us i = G.combine x cstars i)).card : ℕ) : ℚ) := by
+      exact_mod_cast h_lower_K_nat
+    have h_b_K : ((B_set.card * K : ℕ) : ℚ) = b * (K : ℚ) := by
+      push_cast; rfl
+    linarith [h_b_K ▸ h_lower_Q, h_sum_cast]
+  -- Combine the integer-rounded lower bound with the per-coord upper bound.
+  have h_combined_K : b * (K : ℚ) ≤ ((n : ℚ) - t) * (ℓ - 1 : ℚ) := by
+    have := le_trans h_lower_K h_upper
+    rw [hTc_card_Q] at this
+    exact this
+  -- Use `(n - t) = s + nγ ≤ K + nγ` to bound the RHS.
+  have h_rhs_le : ((n : ℚ) - t) * (ℓ - 1 : ℚ) ≤ ((K : ℚ) + (n : ℚ) * γ) * (ℓ - 1) := by
+    rw [h_nt_eq]
+    have h_add_le : ((n : ℚ) * (1 - γ) - t) + (n : ℚ) * γ ≤ (K : ℚ) + (n : ℚ) * γ := by
+      linarith
+    exact mul_le_mul_of_nonneg_right h_add_le hℓm_nn
+  -- So `b·K ≤ (K + nγ)(ℓ-1) = K(ℓ-1) + nγ(ℓ-1)`, hence `K(b - (ℓ-1)) ≤ nγ(ℓ-1)`.
+  have h_K_b_minus : (K : ℚ) * (b - (ℓ - 1)) ≤ (n : ℚ) * γ * (ℓ - 1) := by
+    have h_chain : b * (K : ℚ) ≤ ((K : ℚ) + (n : ℚ) * γ) * (ℓ - 1) :=
+      le_trans h_combined_K h_rhs_le
+    nlinarith [h_chain]
+  -- b - (ℓ-1) > 0 (since b > (nγ+1)(ℓ-1) ≥ (ℓ-1)).
+  have h_b_minus_pos : (0 : ℚ) < b - ((ℓ : ℚ) - 1) := by
     have h_nγ1 : (1 : ℚ) ≤ (n : ℚ) * γ + 1 := by linarith
     have h_step : ((n : ℚ) * γ + 1) * (ℓ - 1) ≥ 1 * ((ℓ : ℚ) - 1) :=
       mul_le_mul_of_nonneg_right h_nγ1 hℓm_nn
     have : (1 : ℚ) * ((ℓ : ℚ) - 1) = (ℓ : ℚ) - 1 := by ring
     linarith
-  -- From s > 1 and s·(b - (ℓ-1)) ≤ nγ·(ℓ-1): (b - (ℓ-1)) < s·(b - (ℓ-1)) ≤ nγ·(ℓ-1).
-  have h_step1 : b - ((ℓ : ℚ) - 1) < ((n : ℚ) * (1 - γ) - t) * (b - ((ℓ : ℚ) - 1)) := by
-    nlinarith [hs_gt_one, h_b_minus_nn]
-  have h_step2 : b - ((ℓ : ℚ) - 1) < (n : ℚ) * γ * (ℓ - 1) := lt_of_lt_of_le h_step1 h_combined'
-  -- So b < nγ·(ℓ-1) + (ℓ-1) = (nγ+1)·(ℓ-1), contradicting `b > (nγ+1)·(ℓ-1)`.
-  have h_contra : b < ((n : ℚ) * γ + 1) * ((ℓ : ℚ) - 1) := by nlinarith
-  exact absurd hb_lower (not_lt.mpr (le_of_lt h_contra))
+  -- (K : ℚ) ≥ 1 from `K ≥ 1` in ℕ.
+  have hK_one_Q : (1 : ℚ) ≤ (K : ℚ) := by exact_mod_cast hK_pos
+  -- From `K ≥ 1` and `b - (ℓ-1) > 0`: `(b - (ℓ-1)) ≤ K·(b - (ℓ-1)) ≤ nγ·(ℓ-1)`.
+  have h_step1 : b - ((ℓ : ℚ) - 1) ≤ (K : ℚ) * (b - ((ℓ : ℚ) - 1)) := by
+    nlinarith [hK_one_Q, h_b_minus_pos]
+  have h_step2 : b - ((ℓ : ℚ) - 1) ≤ (n : ℚ) * γ * (ℓ - 1) :=
+    le_trans h_step1 h_K_b_minus
+  -- So b ≤ nγ·(ℓ-1) + (ℓ-1) = (nγ+1)·(ℓ-1), contradicting strict `b > (nγ+1)·(ℓ-1)`.
+  have h_contra : b ≤ ((n : ℚ) * γ + 1) * ((ℓ : ℚ) - 1) := by nlinarith
+  exact absurd hb_lower (not_lt.mpr h_contra)
+
+/-! ### Companion: agreement-set form of `Ttilde_card_gt_of_MDS_aggregate`
+
+This is the BCIKS18-style "weighted/probabilistic" reformulation of
+the bad event explored in 2026-05-07. Instead of the Boolean
+`∃ T, |T| ≥ n(1-γ) ∧ combine-equality on T`, the per-seed hypothesis
+is the *quantitative* statement `|A_x| ≥ n(1-γ)` where
+`A_x := {i : combine x us i = combine x cstars i}` is the actual
+combine-equality set.
+
+The two formulations are *equivalent* (under the standing MDS / `cstars`
+construction):
+  `(∃ T : Finset, |T| ≥ n(1-γ) ∧ ∀ i ∈ T, combine x us i = combine x cstars i)`
+  ⟺ `|A_x| ≥ n(1-γ)`,
+since one direction is immediate (take `T := A_x`) and the other follows
+from `T ⊆ A_x`.
+
+The point of this companion form is *not* a tighter bound — see the
+slack analysis above (sections W1-W4): the `+1`-slack on the hypothesis
+is intrinsic to the contradiction step `K(b-(ℓ-1)) ≤ nγ(ℓ-1)` with
+`K ≥ 1`, not to the choice of bad-event predicate. This form may
+nonetheless be more convenient downstream when the agreement set is
+the natural primitive (e.g. in BCIKS18-style proximity gap analyses).
+-/
+theorem Ttilde_card_gt_of_MDS_aggregate_via_A
+    [Fintype S] [DecidableEq S] [Nonempty S]
+    {G : Generator F S ℓ} (hG_MDS : G.IsMDS) (hℓ : 0 < ℓ)
+    (us cstars : Fin ℓ → (Fin n → F))
+    {γ : ℚ} (hγ_pos : 0 ≤ γ) (hn : 0 < n)
+    (B_set : Finset S)
+    (h_agree_A : ∀ x ∈ B_set,
+      (((Finset.univ : Finset (Fin n)).filter
+        (fun i => G.combine x us i = G.combine x cstars i)).card : ℚ)
+        ≥ n * (1 - γ))
+    (h_size : (B_set.card : ℚ) > (n * γ + 1) * (ℓ - 1))
+    (Ttilde : Finset (Fin n))
+    (h_Ttilde_def : ∀ i, i ∈ Ttilde ↔ ∀ j, us j i = cstars j i) :
+    (Ttilde.card : ℚ) ≥ n * (1 - γ) := by
+  classical
+  -- Reduce to the existential form by taking the witness `Tx := A_x`.
+  apply Ttilde_card_gt_of_MDS_aggregate hG_MDS hℓ us cstars hγ_pos hn
+    B_set ?_ h_size Ttilde h_Ttilde_def
+  intro x hx
+  refine ⟨(Finset.univ : Finset (Fin n)).filter
+    (fun i => G.combine x us i = G.combine x cstars i),
+    h_agree_A x hx, ?_⟩
+  intro i hi
+  exact (Finset.mem_filter.mp hi).2
 
 end LinearCodes

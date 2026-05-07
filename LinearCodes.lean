@@ -5,6 +5,7 @@ import LinearCodes.MCA.Definitions
 import LinearCodes.MCA.Properties
 import LinearCodes.MCA.SeedProbLemmas
 import LinearCodes.MCA.Examples
+import LinearCodes.MCA.Lemma53Examples
 import LinearCodes.MCA.InducedCode
 import LinearCodes.MCA.CAImplications
 import LinearCodes.MCA.UniqueDecoding
@@ -12,7 +13,7 @@ import LinearCodes.MCA.MaximalDomain
 import LinearCodes.MCA.Case2Subtargets
 import LinearCodes.MCA.Case2Capstone
 import LinearCodes.MCA.ConcreteMDS
--- import LinearCodes.MCA.Tensor  -- TEMPORARILY DISABLED: build errors, fix in flight
+import LinearCodes.MCA.Tensor
 import LinearCodes.MCA.ListDecoding
 import LinearCodes.MCA.JohnsonBound
 import LinearCodes.MCA.ListDecodingWitness

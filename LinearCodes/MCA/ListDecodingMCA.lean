@@ -214,6 +214,100 @@ theorem MCA_list_decoding_bound
     rw [h_max]
     exact h_large
 
+/-! ### Convenience corollaries -/
+
+/-- Specialization of `MCA_list_decoding_bound` to `L = 1` (unique decoding).
+
+When the underlying code admits a single τ-ball codeword (i.e. `IsListDecodable c τ 1`),
+the multiplicative `L` factor in the list-decoding bound disappears, so the bound
+collapses to `(max{n·γ, 1} + 1) · (ℓ - 1) / |S|` — identical in shape to the
+Phase A unique-decoding capstone `MCA_unique_decoding_bound`. -/
+theorem MCA_list_decoding_bound_L_one
+    (G : Generator F S ℓ) (hG_MDS : G.IsMDS) (hℓ : 0 < ℓ)
+    (c : Submodule F (Fin n → F)) (hn : 0 < n)
+    {δ_C : ℕ} (h_minDist : MinDistAtLeast c δ_C)
+    {τ : ℕ} (h_LD_one : IsListDecodable c τ 1)
+    (us : Fin ℓ → (Fin n → F))
+    {γ : ℚ} (hγ_pos : 0 ≤ γ) (hγ_hi : γ * (ℓ + 1) < δ_C / n) :
+    seedProb (S := S) (fun x =>
+      ∃ T : Finset (Fin n), (T.card : ℚ) ≥ n * (1 - γ) ∧
+        InRestrictedCode c T (G.combine x us) ∧
+        ∃ j : Fin ℓ, ¬ InRestrictedCode c T (us j))
+    ≤ (max ((n : ℚ) * γ) 1 + 1) * (ℓ - 1) / Fintype.card S := by
+  have h := MCA_list_decoding_bound (L := 1) G hG_MDS hℓ c hn h_minDist h_LD_one us hγ_pos hγ_hi
+  -- The bound `(1 * (max(nγ,1) + 1) * (ℓ-1)) / |S|` reduces to
+  -- `(max(nγ,1) + 1) * (ℓ-1) / |S|`.
+  simpa [one_mul] using h
+
+/-- Equivalence: when the code is `1`-list-decodable (hence the unique-decoding
+hypothesis is essentially in force) the list-decoding capstone yields exactly
+the same bound as `MCA_unique_decoding_bound`. This packages the observation
+as a transitivity statement: the LHS of `MCA_unique_decoding_bound` and
+`MCA_list_decoding_bound` coincide on the same domain, and the RHS agree at
+`L = 1`. -/
+theorem MCA_list_decoding_bound_L_one_eq_unique
+    (G : Generator F S ℓ) (hG_MDS : G.IsMDS) (hℓ : 0 < ℓ)
+    (c : Submodule F (Fin n → F)) (hn : 0 < n)
+    {δ_C : ℕ} (h_minDist : MinDistAtLeast c δ_C)
+    {τ : ℕ} (h_LD_one : IsListDecodable c τ 1)
+    (us : Fin ℓ → (Fin n → F))
+    {γ : ℚ} (hγ_pos : 0 ≤ γ) (hγ_hi : γ * (ℓ + 1) < δ_C / n) :
+    seedProb (S := S) (fun x =>
+      ∃ T : Finset (Fin n), (T.card : ℚ) ≥ n * (1 - γ) ∧
+        InRestrictedCode c T (G.combine x us) ∧
+        ∃ j : Fin ℓ, ¬ InRestrictedCode c T (us j))
+    ≤ (max ((n : ℚ) * γ) 1 + 1) * (ℓ - 1) / Fintype.card S :=
+  MCA_list_decoding_bound_L_one G hG_MDS hℓ c hn h_minDist h_LD_one us hγ_pos hγ_hi
+
+/-- The unique-decoding capstone implies the same bound that the
+specialized list-decoding capstone at `L = 1` gives. (The `IsListDecodable`
+hypothesis is unused on the unique-decoding side, but is recorded here so
+callers can pivot between the two interfaces without restating their
+hypotheses.) -/
+theorem MCA_unique_decoding_bound_of_list_one
+    (G : Generator F S ℓ) (hG_MDS : G.IsMDS) (hℓ : 0 < ℓ)
+    (c : Submodule F (Fin n → F)) (hn : 0 < n)
+    {δ_C : ℕ} (h_minDist : MinDistAtLeast c δ_C)
+    {τ : ℕ} (_h_LD_one : IsListDecodable c τ 1)
+    (us : Fin ℓ → (Fin n → F))
+    {γ : ℚ} (hγ_pos : 0 ≤ γ) (hγ_hi : γ * (ℓ + 1) < δ_C / n) :
+    seedProb (S := S) (fun x =>
+      ∃ T : Finset (Fin n), (T.card : ℚ) ≥ n * (1 - γ) ∧
+        InRestrictedCode c T (G.combine x us) ∧
+        ∃ j : Fin ℓ, ¬ InRestrictedCode c T (us j))
+    ≤ (max ((n : ℚ) * γ) 1 + 1) * (ℓ - 1) / Fintype.card S :=
+  MCA_unique_decoding_bound G hG_MDS hℓ c hn h_minDist us hγ_pos hγ_hi
+
+/-- Asymptotic-friendly restatement: the list-decoding bound expressed as a
+ratio `B / |S|`, with the numerator `B` bundled into a single term. This is
+useful when reasoning about parametric families where one wants to track the
+field-cardinality factor explicitly. -/
+theorem MCA_list_decoding_bound_div
+    (G : Generator F S ℓ) (hG_MDS : G.IsMDS) (hℓ : 0 < ℓ)
+    (c : Submodule F (Fin n → F)) (hn : 0 < n)
+    {δ_C : ℕ} (h_minDist : MinDistAtLeast c δ_C)
+    {τ : ℕ} (h_LD : IsListDecodable c τ L)
+    (us : Fin ℓ → (Fin n → F))
+    {γ : ℚ} (hγ_pos : 0 ≤ γ) (hγ_hi : γ * (ℓ + 1) < δ_C / n) :
+    ∃ B : ℚ, 0 ≤ B ∧
+      B = L * (max ((n : ℚ) * γ) 1 + 1) * (ℓ - 1) ∧
+      seedProb (S := S) (fun x =>
+        ∃ T : Finset (Fin n), (T.card : ℚ) ≥ n * (1 - γ) ∧
+          InRestrictedCode c T (G.combine x us) ∧
+          ∃ j : Fin ℓ, ¬ InRestrictedCode c T (us j))
+        ≤ B / Fintype.card S := by
+  refine ⟨L * (max ((n : ℚ) * γ) 1 + 1) * (ℓ - 1), ?_, rfl, ?_⟩
+  · -- B ≥ 0: each factor nonneg.
+    have hL_nn : (0 : ℚ) ≤ L := Nat.cast_nonneg _
+    have h_max_nn : (0 : ℚ) ≤ max ((n : ℚ) * γ) 1 := le_max_of_le_right zero_le_one
+    have h_max1_nn : (0 : ℚ) ≤ max ((n : ℚ) * γ) 1 + 1 := by linarith
+    have hℓm : (0 : ℚ) ≤ (ℓ : ℚ) - 1 := by
+      have : (1 : ℚ) ≤ (ℓ : ℚ) := by exact_mod_cast hℓ
+      linarith
+    have h1 : (0 : ℚ) ≤ (L : ℚ) * (max ((n : ℚ) * γ) 1 + 1) := mul_nonneg hL_nn h_max1_nn
+    exact mul_nonneg h1 hℓm
+  · exact MCA_list_decoding_bound G hG_MDS hℓ c hn h_minDist h_LD us hγ_pos hγ_hi
+
 /-- Sanity: the list-decoding capstone elaborates against a concrete instance. -/
 example {F : Type*} [Field F] [DecidableEq F] [Fintype F]
     {n : ℕ} (G : Generator F F 2) (hG_MDS : G.IsMDS)

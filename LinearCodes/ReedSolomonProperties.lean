@@ -4,7 +4,7 @@ import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.Polynomial.Basic
 import Mathlib.Algebra.Polynomial.BigOperators
 import Mathlib.Algebra.Polynomial.Coeff
-import Mathlib.Algebra.Polynomial.Degree.Definitions
+import Mathlib.Algebra.Polynomial.Degree.Defs
 import Mathlib.Algebra.Polynomial.Eval.Defs
 import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.Combinatorics.Pigeonhole
@@ -41,36 +41,44 @@ evaluate, STIR / WHIR proximity tests, …) can rely on.
 * `reedSolomonEncode_eq_polynomial_eval` — the verified-oracle keystone:
   `reedSolomonEncode` agrees with Mathlib's canonical `Polynomial.eval`
   at every domain point.
-* `mca_correlated_agreement` — Maximum Correlated Agreement, **case-(a)
-  form** (Johnson regime). See note below.
 
-## Note on `mca_correlated_agreement`: case-(a) form vs BCGM25 quantitative bound
+## Note on Maximum Correlated Agreement (case-(a) form)
 
-The published statement (BCIKS18 Theorem 1.2 / BCGM25 Theorem 9.2)
-bounds the *fraction of bad seeds* by `O((l + 1) · n² / |𝔽|)` via a
-Guruswami-Sudan polynomial construction (formal element analysis on
-rational function fields). That gives the tight threshold
-`(l + 1) · n²` on the number of "good" α's required to deduce MCA.
+BCIKS18 Theorem 1.2 / BCGM25 Theorem 9.2 give two equivalent views of
+RS-MCA: a *quantitative* seed-probability rate `O((l + 1) · n² / |𝔽|)`,
+and a *structural* case-(a) form which takes the pointwise hypothesis
+"every `α ∈ 𝔽` gives a δ-close combination" and concludes MCA.
+Downstream proximity-test protocols (FRI / STIR / WHIR / WARP)
+discharge the pointwise hypothesis from their own soundness analysis,
+so the case-(a) form is what they directly consume.
 
-We do **not** prove that quantitative form, because the proof technique
-relies on machinery (rational function fields with polynomial
-discriminants, Guruswami-Sudan list-decoding interpolation, formal
-element analysis) that is not yet present in Mathlib. Porting that
-infrastructure is a months-long research-formalisation project.
+Both forms are formalized in `LinearCodes/MCA/RSListDecoding.lean`:
 
-Instead, we prove the **case-(a) form**: assume directly that *every*
-`α ∈ 𝔽` gives a δ-close combination, conclude MCA. This is the
-structural implication that downstream protocols actually use; the
-BCGM25 quantitative threshold becomes an **external runtime check**
-documented in `LinearCodes/doc/correctness-oracle.md`.
+* `rs_MCA_list_decoding_bound` — the **quantitative** RS-MCA bound, with
+  the `(l + 1) · n²` Johnson list-size baked in (concrete
+  `O((l + 1) · n² / |𝔽|)` seed-probability rate).
+* `rs_MCA_caseA` — the **case-(a) structural**
+  form, with the integer-honest `O((l + 1) · n²)` Johnson field-size
+  threshold (the field-size requirement is an explicit hypothesis, not
+  an external check).
 
-The case-(a) proof goes through `2^n` pigeonhole on the codomain
-`Finset (Fin domain.size)` of the per-α support map, requiring the
-field-size hypothesis `|𝔽| > (l + 1) · 2^n`. For practical RS
-instances (`n ≤ 60` and Goldilocks-class fields) this is satisfied
-comfortably; closing the gap to BCGM25's tighter `(l + 1) · n²`
-threshold is future work conditional on Mathlib gaining the GS
-infrastructure.
+The underlying Johnson list-size bound
+(`IsListDecodable_squared_johnson_MDS` in `MCA/JohnsonBound.lean`) is
+proved via Cauchy-Schwarz double-counting — no Guruswami-Sudan
+infrastructure is required. `MCA/RSListDecoding.lean` plumbs that
+abstract bound down to the `Array F` RS layer and seals case-(a)
+end-to-end. Highlights:
+
+* `reedSolomonSubmodule` — the RS code as a `Submodule F (Fin n → F)`.
+* `reedSolomonSubmodule_isMDS` — MDS structure of the submodule.
+* `reedSolomonSubmodule_isListDecodable_johnson` — squared-Johnson
+  list-decoding for the RS code at the submodule layer.
+* `arrayEncoded_mem_reedSolomonSubmodule` — Array ↔ submodule bridge.
+* `rsGenerator F l` — RS-named alias of `Generator.univariatePowers`.
+* `rs_MCA_list_decoding_bound` — RS-specialized list-decoding MCA bound.
+* `rs_some_alpha_evades_bad_event` — RS existence-of-good-seed lemma.
+* `rs_MCA_caseA` — the case-(a) MCA theorem
+  with the `O((l + 1) · n²)` field-size threshold.
 
 ## Conventions
 
@@ -285,8 +293,7 @@ theorem hammingDist_eq_codeLength_sub_agreements [DecidableEq F] (a b : Array F)
         cases x
         rfl }
   rw [Fintype.card_congr e]
-  simpa [Fintype.card_fin] using
-    (Fintype.card_subtype_compl (p := fun i : Fin n => a.getD i.val 0 = b.getD i.val 0))
+  simp [Fintype.card_fin]
 
 open scoped BigOperators in
 noncomputable def messagePoly (msg : Array F) : Polynomial F :=
@@ -317,7 +324,7 @@ theorem messagePoly_natDegree_lt_of_nonzero (msg : Array F) (hmsg : messagePoly 
 theorem reedSolomonEncode_getD (cfg : ReedSolomonConfig F) (msg : Array F) (i : Fin cfg.domain.size) :
   (reedSolomonEncode cfg msg).getD i.val 0 = evalPoly msg (cfg.domain.getD i.val 0) := by
   unfold reedSolomonEncode
-  rw [← Array.getElem_eq_getD (xs := cfg.domain.map (fun x => evalPoly msg x)) (i := i.val) (h := by simpa using i.isLt) (fallback := 0)]
+  rw [← Array.getElem_eq_getD (xs := cfg.domain.map (fun x => evalPoly msg x)) (i := i.val) (h := by simp [i.isLt]) (fallback := 0)]
   rw [Array.getElem_map]
   rw [Array.getElem_eq_getD (xs := cfg.domain) (i := i.val) (h := i.isLt) (fallback := 0)]
 
@@ -338,12 +345,9 @@ theorem agreement_card_lt_messageLength [DecidableEq F] (cfg : ReedSolomonConfig
   have hΔsize : Δ.size = cfg.messageLength := by
     simp [Δ, h1, h2]
   rcases array_exists_ne_index_of_ne m1 m2 cfg.messageLength h1 h2 h_neq with ⟨i, hi_ne⟩
-  have hi1 : i.val < m1.size := by
-    simpa [h1] using i.isLt
-  have hi2 : i.val < m2.size := by
-    simpa [h2] using i.isLt
-  have hiΔ : i.val < Δ.size := by
-    simpa [hΔsize] using i.isLt
+  have hi1 : i.val < m1.size := by simp [h1]
+  have hi2 : i.val < m2.size := by simp [h2]
+  have hiΔ : i.val < Δ.size := by simp [hΔsize]
   let iΔ : Fin Δ.size := ⟨i.val, hiΔ⟩
   have hΔget : Δ.getD i.val 0 = m1.getD i.val 0 - m2.getD i.val 0 := by
     rw [← Array.getElem_eq_getD (xs := Δ) (i := i.val) (h := hiΔ) (fallback := 0)]
@@ -367,7 +371,7 @@ theorem agreement_card_lt_messageLength [DecidableEq F] (cfg : ReedSolomonConfig
   have hq_ne : q ≠ 0 := by
     intro hq0
     apply hcoeff_nz
-    simpa [hq0]
+    simp [hq0]
   have hq_deg : q.natDegree < cfg.messageLength := by
     simpa [q, hΔsize] using messagePoly_natDegree_lt_of_nonzero Δ (by simpa [q] using hq_ne)
   let Sidx : Finset (Fin cfg.domain.size) :=
@@ -434,7 +438,7 @@ theorem encode_min_distance [DecidableEq F] (cfg : ReedSolomonConfig F)
   cases hm : cfg.messageLength with
   | zero =>
       exfalso
-      simpa [hm] using hagree
+      simp [hm] at hagree
   | succ k =>
       rw [hm] at hagree h_le
       have hA_le :
@@ -586,7 +590,7 @@ theorem johnson_list_decoding_radius [DecidableEq F]
     have hsmall : (johnsonAgreementPositions cfg y m1).card < cfg.messageLength :=
       lt_of_le_of_lt hcard_le hcommon_lt
     omega
-  · simpa using (finite_univ : (Set.univ : Set (Finset (Fin cfg.domain.size))).Finite)
+  · simp
 
 
 /-! ### Maximum Correlated Agreement (proximity gap) -/
@@ -611,7 +615,7 @@ noncomputable def linCombCoordPoly (n : ℕ) {l : ℕ}
 theorem linCombCoordPoly_coeff (n : ℕ) {l : ℕ} (fs : Fin l → Array F) (j : Fin n) (i : Fin l) :
     (linCombCoordPoly n fs j).coeff i.val = (fs i).getD j.val 0 := by
   let arr : Array F := Array.ofFn fun r : Fin l => (fs r).getD j.val 0
-  let k : Fin arr.size := ⟨i.val, by simpa [arr] using i.isLt⟩
+  let k : Fin arr.size := ⟨i.val, by simp [arr, i.isLt]⟩
   have h := messagePoly_coeff_fin arr k
   simpa [linCombCoordPoly, arr, k] using h
 
@@ -631,8 +635,8 @@ theorem linComb_getD (n : ℕ) {l : ℕ} (fs : Fin l → Array F) (α : F) (j : 
     (xs := Array.ofFn (n := n) fun j : Fin n =>
       (List.finRange l).foldl
         (fun acc i => acc + α ^ i.val * (fs i).getD j.val 0) 0)
-    (i := j.val) (h := by simpa using j.isLt) (fallback := 0)]
-  simp only [Array.getElem_ofFn, Array.size_ofFn]
+    (i := j.val) (h := by simp [j.isLt]) (fallback := 0)]
+  simp only [Array.getElem_ofFn]
 
 theorem linCombCoordPoly_eval (n : ℕ) {l : ℕ} (fs : Fin l → Array F) (j : Fin n) (α : F) :
     (linCombCoordPoly n fs j).eval α = (linComb n fs α).getD j.val 0 := by
@@ -640,7 +644,7 @@ theorem linCombCoordPoly_eval (n : ℕ) {l : ℕ} (fs : Fin l → Array F) (j : 
   rw [messagePoly_eval, evalPoly_eq_sum_fin, linComb_getD, finRange_foldl_eq_sum]
   let e : Fin (Array.ofFn fun i : Fin l => (fs i).getD j.val 0).size ≃ Fin l :=
     { toFun := fun x => ⟨x.val, by simpa [Array.size_ofFn] using x.isLt⟩
-      invFun := fun i => ⟨i.val, by simpa [Array.size_ofFn] using i.isLt⟩
+      invFun := fun i => ⟨i.val, by simp [Array.size_ofFn, i.isLt]⟩
       left_inv := by intro x; apply Fin.ext; rfl
       right_inv := by intro i; apply Fin.ext; rfl }
   simpa [e, mul_comm] using
@@ -653,7 +657,7 @@ theorem linCombCoordPoly_eval (n : ℕ) {l : ℕ} (fs : Fin l → Array F) (j : 
         have hraw :=
           Array.getElem_ofFn (f := fun i : Fin l => (fs i).getD j.val 0) (i := x.val)
             (h := by simpa [Array.size_ofFn] using x.isLt)
-        simpa [e] using congrArg (fun a => a * α ^ ((e x : Fin l) : ℕ)) hraw))
+        simp [e]))
 
 def mcaAgreementWitness (cfg : ReedSolomonConfig F) {l : ℕ}
     (fs : Fin l → Array F) (δ : ℕ) : Prop :=
@@ -780,297 +784,16 @@ theorem mcaGoodScalar_choice [DecidableEq F]
     Classical.choose_spec (And.right (Classical.choose_spec hAG))
   exact ⟨hmsg, hsupp.1, hsupp.2.1, hsupp.2.2⟩
 
-open scoped BigOperators in
-theorem mca_commonSupport_manyScalars_implies_domainWitness [DecidableEq F] [Fintype F]
-    (cfg : ReedSolomonConfig F)
-    (h_dom_size : cfg.domain.size = cfg.codeLength)
-    {l : ℕ} (fs : Fin l → Array F)
-    (h_sizes : ∀ i : Fin l, (fs i).size = cfg.codeLength)
-    (S : Finset (Fin cfg.domain.size))
-    (hSlarge : cfg.messageLength < S.card)
-    (A : Finset F)
-    (hAcard : A.card > l + 1)
-    (hAprop : ∀ α ∈ A, ∃ m : Array F, m.size = cfg.messageLength ∧
-      ∀ j : Fin cfg.domain.size, j ∈ S →
-        (linComb cfg.codeLength fs α).getD j.val 0 =
-          (reedSolomonEncode cfg m).getD j.val 0) :
-    ∀ i : Fin l, ∃ m : Array F, m.size = cfg.messageLength ∧
-      ∀ j : Fin cfg.domain.size, j ∈ S →
-        (fs i).getD j.val 0 = (reedSolomonEncode cfg m).getD j.val 0 := by
-  classical
-  by_cases hl0 : l = 0
-  · subst hl0
-    intro i
-    exact False.elim (Fin.elim0 i)
-  · have hlpos : 0 < l := Nat.pos_of_ne_zero hl0
-    obtain ⟨B, hBA, hBcard⟩ := Finset.exists_subset_card_eq (s := A) (n := l) (by omega)
-    let mOf : F → Array F := fun α => if hα : α ∈ A then Classical.choose (hAprop α hα) else #[]
-    have hmOf_size : ∀ α ∈ B, (mOf α).size = cfg.messageLength := by
-      intro α hαB
-      have hchoose := Classical.choose_spec (hAprop α (hBA hαB))
-      simpa [mOf, hBA hαB] using hchoose.1
-    have hmOf_agree : ∀ α ∈ B, ∀ j : Fin cfg.domain.size, j ∈ S →
-        (linComb cfg.codeLength fs α).getD j.val 0 =
-          (reedSolomonEncode cfg (mOf α)).getD j.val 0 := by
-      intro α hαB j hjS
-      have hchoose := Classical.choose_spec (hAprop α (hBA hαB))
-      simpa [mOf, hBA hαB] using hchoose.2 j hjS
-    intro i
-    let c : F → F := fun α => (Lagrange.basis B id α).coeff i.val
-    let mi : Array F := Array.ofFn (fun t : Fin cfg.messageLength =>
-      ∑ α ∈ B, c α * (mOf α).getD t.val 0)
-    have hmi_size : mi.size = cfg.messageLength := by
-      simp [mi, Array.size_ofFn]
-    refine ⟨mi, hmi_size, ?_⟩
-    intro j hjS
-    let j' : Fin cfg.codeLength := ⟨j.val, by simpa [h_dom_size] using j.isLt⟩
-    let Pj : Polynomial F := linCombCoordPoly cfg.codeLength fs j'
-    have hPj_eval_eq : ∀ α ∈ B, Pj.eval α = (reedSolomonEncode cfg (mOf α)).getD j.val 0 := by
-      intro α hαB
-      change (linCombCoordPoly cfg.codeLength fs j').eval α =
-        (reedSolomonEncode cfg (mOf α)).getD j.val 0
-      rw [linCombCoordPoly_eval]
-      simpa [j'] using hmOf_agree α hαB j hjS
-    have hPj_deg : Pj.degree < B.card := by
-      by_cases hPj0 : Pj = 0
-      · simp [hPj0]
-      · rw [hBcard]
-        exact (Polynomial.natDegree_lt_iff_degree_lt hPj0).1
-          (linCombCoordPoly_natDegree_lt_of_nonzero cfg.codeLength (fs := fs) (j := j') hPj0)
-    have hcoeff_interp :
-        (∑ α ∈ B, Polynomial.C (Pj.eval α) * Lagrange.basis B id α).coeff i.val = Pj.coeff i.val := by
-      have hinterp : Lagrange.interpolate B id (fun α => Pj.eval α) = Pj := by
-        exact Lagrange.interpolate_poly_eq_self (v := id) Function.injective_id.injOn hPj_deg
-      simpa [Lagrange.interpolate_apply] using congrArg (fun p : Polynomial F => p.coeff i.val) hinterp
-    have hcoeff_sum : ∑ α ∈ B, c α * Pj.eval α = Pj.coeff i.val := by
-      calc
-        ∑ α ∈ B, c α * Pj.eval α
-            = ∑ α ∈ B, (Polynomial.C (Pj.eval α) * Lagrange.basis B id α).coeff i.val := by
-                refine Finset.sum_congr rfl ?_
-                intro α hα
-                simp [c, Polynomial.coeff_C_mul, mul_comm]
-        _ = (∑ α ∈ B, Polynomial.C (Pj.eval α) * Lagrange.basis B id α).coeff i.val := by
-              symm
-              exact Polynomial.finset_sum_coeff B (fun α => Polynomial.C (Pj.eval α) * Lagrange.basis B id α) i.val
-        _ = Pj.coeff i.val := hcoeff_interp
-    let x : F := cfg.domain.getD j.val 0
-    have hmEq : ∀ α ∈ B,
-        Array.ofFn (fun t : Fin cfg.messageLength => (mOf α).getD t.val 0) = mOf α := by
-      intro α hαB
-      apply Array.ext
-      · simp [hmOf_size α hαB, Array.size_ofFn]
-      · intro t ht1 ht2
-        rw [Array.getElem_ofFn]
-        rw [Array.getElem_eq_getD (xs := mOf α) (i := t)
-          (h := by simpa [hmOf_size α hαB] using ht1) (fallback := 0)]
-    have hinner_range : ∀ α ∈ B,
-        (∑ t ∈ Finset.range cfg.messageLength, (mOf α).getD t 0 * x ^ t) = evalPoly (mOf α) x := by
-      intro α hαB
-      rw [← hmEq α hαB]
-      rw [evalPoly_eq_sum_fin]
-      rw [Finset.sum_fin_eq_sum_range]
-      simp [Array.size_ofFn]
-      refine Finset.sum_congr rfl ?_
-      intro t ht
-      have htlt : t < cfg.messageLength := Finset.mem_range.mp ht
-      simp [Array.getElem?_ofFn, htlt]
-    have hmi_eval : evalPoly mi x = ∑ α ∈ B, c α * evalPoly (mOf α) x := by
-      calc
-        evalPoly mi x
-            = ∑ t ∈ Finset.range cfg.messageLength,
-                (∑ α ∈ B, c α * (mOf α).getD t 0) * x ^ t := by
-                  rw [evalPoly_eq_sum_fin]
-                  rw [Finset.sum_fin_eq_sum_range]
-                  simp [mi, Array.size_ofFn]
-                  refine Finset.sum_congr rfl ?_
-                  intro t ht
-                  have htlt : t < cfg.messageLength := Finset.mem_range.mp ht
-                  simp [mi, Array.getElem?_ofFn, htlt]
-        _ = ∑ t ∈ Finset.range cfg.messageLength,
-              ∑ α ∈ B, (c α * (mOf α).getD t 0) * x ^ t := by
-                refine Finset.sum_congr rfl ?_
-                intro t ht
-                rw [Finset.sum_mul]
-        _ = ∑ α ∈ B,
-              ∑ t ∈ Finset.range cfg.messageLength, (c α * (mOf α).getD t 0) * x ^ t := by
-                simpa using
-                  (Finset.sum_comm (s := Finset.range cfg.messageLength) (t := B)
-                    (f := fun t α => (c α * (mOf α).getD t 0) * x ^ t))
-        _ = ∑ α ∈ B, c α * ∑ t ∈ Finset.range cfg.messageLength, (mOf α).getD t 0 * x ^ t := by
-              refine Finset.sum_congr rfl ?_
-              intro α hα
-              simp_rw [mul_assoc]
-              rw [← Finset.mul_sum]
-        _ = ∑ α ∈ B, c α * evalPoly (mOf α) x := by
-              refine Finset.sum_congr rfl ?_
-              intro α hα
-              rw [hinner_range α hα]
-    have hencode : (reedSolomonEncode cfg mi).getD j.val 0 = ∑ α ∈ B, c α * (reedSolomonEncode cfg (mOf α)).getD j.val 0 := by
-      rw [reedSolomonEncode_getD (cfg := cfg) (msg := mi) (i := j)]
-      rw [show cfg.domain.getD j.val 0 = x by rfl]
-      rw [hmi_eval]
-      refine Finset.sum_congr rfl ?_
-      intro α hα
-      simpa [x] using congrArg (fun y : F => c α * y)
-        ((reedSolomonEncode_getD (cfg := cfg) (msg := mOf α) (i := j)).symm)
-    have hencode' : (reedSolomonEncode cfg mi).getD j.val 0 = ∑ α ∈ B, c α * Pj.eval α := by
-      rw [hencode]
-      refine Finset.sum_congr rfl ?_
-      intro α hα
-      rw [← hPj_eval_eq α hα]
-    calc
-      (fs i).getD j.val 0 = Pj.coeff i.val := by
-        simpa [Pj, j'] using (linCombCoordPoly_coeff cfg.codeLength (fs := fs) (j := j') i).symm
-      _ = ∑ α ∈ B, c α * Pj.eval α := by
-        symm
-        exact hcoeff_sum
-      _ = (reedSolomonEncode cfg mi).getD j.val 0 := by
-        symm
-        exact hencode'
+/-! ### Case-(a) form of MCA — see `MCA/RSListDecoding.lean`
 
-/-! ### Case-(a) form of MCA
+The case-(a) MCA theorem for Reed-Solomon now lives downstream as
+`rs_MCA_caseA` in `LinearCodes/MCA/RSListDecoding.lean`.
+It uses the asymptotically optimal `O((l + 1) · n²)` Johnson threshold
+matching BCGM25 Theorem 9.2 / BCIKS18 Theorem 1.2 — bridged via the
+abstract Cauchy-Schwarz Johnson bound (no Guruswami-Sudan infrastructure).
 
-The published BCGM25 / BCIKS18 quantitative form bounds the *number of bad
-seeds* by `O(d · n²)` via a Guruswami-Sudan polynomial construction —
-machinery (rational function fields, GS interpolation) that is not yet
-in Mathlib. Without that infrastructure, the threshold-style theorem
-("more than `(l+1)·n²` good α's implies MCA") cannot be machine-checked.
-
-We instead prove the **case-(a) form**: assume directly that every
-`α ∈ 𝔽` gives a δ-close combination, conclude MCA. This is the
-structural consequence used by downstream protocols and avoids the
-quantitative trichotomy. The case-(a) hypothesis itself is what
-practitioners verify via BCGM25's runtime bound (an external trust
-assumption documented in `LinearCodes/doc/correctness-oracle.md`).
-
-The proof goes through `2^n` pigeonhole on the codomain
-`Finset (Fin n)` of `suppOf`, requiring the field-size hypothesis
-`|𝔽| > (l + 1) · 2^n`. This is satisfied for any practical RS instance
-with a moderately-sized field (e.g. Goldilocks `|𝔽| ≈ 2^64` covers
-`n ≤ 60` comfortably).
-
-**Trade-off vs the published form**: the BCGM25 threshold `(l+1)·n²`
-is tighter than ours `(l+1)·2^n` when `2^n > n²` (i.e., `n ≥ 5`).
-Closing the gap to BCGM25's quantitative bound requires either (a)
-formalising Guruswami-Sudan list decoding in Mathlib or (b) accepting
-the BCGM25 bound as an axiom citing the paper. -/
-
-open scoped BigOperators in
-theorem mca_correlated_agreement_caseA [DecidableEq F] [Fintype F]
-    (cfg : ReedSolomonConfig F)
-    (h_dom_size : cfg.domain.size = cfg.codeLength)
-    {l : ℕ} (fs : Fin l → Array F)
-    (h_sizes : ∀ i : Fin l, (fs i).size = cfg.codeLength)
-    (δ : ℕ)
-    (h_johnson : (cfg.codeLength - δ) * (cfg.codeLength - δ) >
-                 cfg.codeLength * cfg.messageLength)
-    (h_field_size :
-      Fintype.card F > (l + 1) * 2 ^ cfg.domain.size)
-    (h_caseA : ∀ α : F, mcaGoodScalar cfg fs δ α) :
-    mcaAgreementWitness cfg fs δ := by
-  classical
-  -- Extract per-α witnesses via Aleph's choice lemma.
-  obtain ⟨msgOf, suppOf, hchoose_global⟩ :=
-    mcaGoodScalar_choice (F := F) cfg h_dom_size fs δ h_johnson
-  -- Every α is good by hypothesis, so hchoose applies universally.
-  have hchoose : ∀ α : F,
-      (msgOf α).size = cfg.messageLength ∧
-      cfg.codeLength - (suppOf α).card ≤ δ ∧
-      cfg.messageLength < (suppOf α).card ∧
-      ∀ j : Fin cfg.domain.size, j ∈ suppOf α →
-        (linComb cfg.codeLength fs α).getD j.val 0 =
-          (reedSolomonEncode cfg (msgOf α)).getD j.val 0 :=
-    fun α => hchoose_global α (h_caseA α)
-  -- Pigeonhole on `suppOf` over the codomain `Finset (Fin domain.size)`.
-  -- |codomain| = 2^domain.size; |F| > (l+1) · 2^domain.size by hypothesis.
-  let codomain : Finset (Finset (Fin cfg.domain.size)) := Finset.univ
-  have hmaps : ∀ α ∈ (Finset.univ : Finset F), suppOf α ∈ codomain :=
-    fun α _ => Finset.mem_univ _
-  have hcard_codomain : codomain.card = 2 ^ cfg.domain.size := by
-    simp [codomain, Finset.card_univ, Fintype.card_finset, Fintype.card_fin]
-  have hmul : codomain.card * (l + 1) < (Finset.univ : Finset F).card := by
-    rw [hcard_codomain, Finset.card_univ, mul_comm]
-    exact h_field_size
-  obtain ⟨S, _, hSfiber⟩ :=
-    Finset.exists_lt_card_fiber_of_mul_lt_card_of_maps_to hmaps hmul
-  -- The fiber B = {α : suppOf α = S} has size > l + 1.
-  let B : Finset F := Finset.univ.filter (fun α => suppOf α = S)
-  have hBcard : B.card > l + 1 := hSfiber
-  have hBnonempty : B.Nonempty := Finset.card_pos.mp (lt_trans (Nat.succ_pos l) hBcard)
-  rcases hBnonempty with ⟨α0, hα0B⟩
-  have hα0_supp : suppOf α0 = S := (Finset.mem_filter.mp hα0B).2
-  -- Properties of S derived from α0's witness.
-  have hSδ : cfg.codeLength - S.card ≤ δ := by
-    have := (hchoose α0).2.1
-    rw [hα0_supp] at this
-    exact this
-  have hSlarge : cfg.messageLength < S.card := by
-    have := (hchoose α0).2.2.1
-    rw [hα0_supp] at this
-    exact this
-  -- Each α ∈ B gives a witness (msgOf α, S).
-  have hBprop : ∀ α ∈ B, ∃ m : Array F, m.size = cfg.messageLength ∧
-      ∀ j : Fin cfg.domain.size, j ∈ S →
-        (linComb cfg.codeLength fs α).getD j.val 0 =
-          (reedSolomonEncode cfg m).getD j.val 0 := by
-    intro α hαB
-    have hα_supp : suppOf α = S := (Finset.mem_filter.mp hαB).2
-    refine ⟨msgOf α, (hchoose α).1, ?_⟩
-    intro j hjS
-    rw [← hα_supp] at hjS
-    exact (hchoose α).2.2.2 j hjS
-  -- Apply Aleph's interpolation lemma to extract per-row witnesses on S.
-  have hperRow : ∀ i : Fin l, ∃ m : Array F, m.size = cfg.messageLength ∧
-      ∀ j : Fin cfg.domain.size, j ∈ S →
-        (fs i).getD j.val 0 = (reedSolomonEncode cfg m).getD j.val 0 :=
-    mca_commonSupport_manyScalars_implies_domainWitness
-      cfg h_dom_size fs h_sizes S hSlarge B hBcard hBprop
-  -- Package as a domain witness, then convert to codeLength witness.
-  have hdom : mcaDomainWitness cfg fs δ := ⟨S, hSδ, hperRow⟩
-  exact mcaAgreementWitness_of_domainWitness cfg h_dom_size fs δ hdom
-
-open scoped BigOperators in
-/-- **Maximum Correlated Agreement (case-(a) form for Reed-Solomon).**
-
-Restated equivalent of `mca_correlated_agreement_caseA` with the
-hypothesis unfolded to the explicit "every α gives a δ-close combination"
-form, mirroring the conclusion shape downstream protocols expect. -/
-theorem mca_correlated_agreement [DecidableEq F] [Fintype F]
-    (cfg : ReedSolomonConfig F)
-    (h_dom_size : cfg.domain.size = cfg.codeLength)
-    {l : ℕ} (fs : Fin l → Array F)
-    (h_sizes : ∀ i : Fin l, (fs i).size = cfg.codeLength)
-    (δ : ℕ)
-    (h_johnson : (cfg.codeLength - δ) * (cfg.codeLength - δ) >
-                 cfg.codeLength * cfg.messageLength)
-    (h_field_size :
-      Fintype.card F > (l + 1) * 2 ^ cfg.domain.size)
-    (h_caseA : ∀ α : F, ∃ m : Array F, m.size = cfg.messageLength ∧
-      hammingDist (linComb cfg.codeLength fs α)
-                  (reedSolomonEncode cfg m) ≤ δ) :
-    ∃ S : Finset (Fin cfg.codeLength),
-      cfg.codeLength - S.card ≤ δ ∧
-      ∀ i : Fin l, ∃ m : Array F, m.size = cfg.messageLength ∧
-        ∀ j : Fin cfg.codeLength, j ∈ S →
-          (fs i).getD j.val 0 = (reedSolomonEncode cfg m).getD j.val 0 := by
-  have h_caseA' : ∀ α : F, mcaGoodScalar cfg fs δ α := h_caseA
-  have hwit : mcaAgreementWitness cfg fs δ :=
-    mca_correlated_agreement_caseA cfg h_dom_size fs h_sizes δ h_johnson
-      h_field_size h_caseA'
-  exact hwit
-
-/-! ### Removed (formerly threshold-form chain)
-
-The following theorems formerly lived here and depended on a stub
-`mca_local_blocks` that targeted an `n²`-classification of distinct
-agreement supports. That target requires Guruswami-Sudan list-decoding
-infrastructure not yet present in Mathlib (see comments above on the
-case-(a) form). The chain has been removed in favour of the case-(a)
-formulation: `mca_local_blocks`, `mca_largeGoodSet_implies_commonSupport`,
-`mca_many_good_scalars_implies_commonSupport`,
-`mca_many_good_scalars_implies_domainWitness`. The intermediate helpers
-`mcaGoodScalar`, `mcaGoodScalar_largeAgreement`, `mcaGoodScalar_choice`,
-and `mca_commonSupport_manyScalars_implies_domainWitness` are retained
-since they're used in the case-(a) proof. -/
+The intermediate helpers `mcaGoodScalar`, `mcaGoodScalar_largeAgreement`,
+`mcaGoodScalar_choice` defined here are used by the tight variant via
+`mcaGoodScalar_iff_submodule_close` in `MCA/RSListDecoding.lean`. -/
 
 end LinearCodes

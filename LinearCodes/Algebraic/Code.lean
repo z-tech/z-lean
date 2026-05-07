@@ -1,11 +1,10 @@
 /-
 # Linear-code basics
 
-A linear code is an `F`-linear subspace of `Fⁿ`. The plan in
-`bcgm25-formalization-plan.md` initially called for a wrapping
-`LinearCodeStruct` record, but on inspection the standard Mathlib
-idiom — predicates on `Submodule F (Fin n → F)` — is lighter and
-just as expressive for our needs.
+A linear code is an `F`-linear subspace of `Fⁿ`. Throughout the
+BCGM25 formalization, codes are represented as predicates on
+`Submodule F (Fin n → F)` rather than wrapped records — lighter and
+fully expressive for our needs.
 
 Definitions in this file:
 * `hammingWeight v` — the count of nonzero coordinates.
