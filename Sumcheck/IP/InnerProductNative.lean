@@ -274,4 +274,73 @@ def NativeStatement.toEvalFormStatement {n : ℕ}
     (S : NativeStatement 𝔽 n) :
     S.toEvalFormStatement.evalPoints = S.evalPoints := rfl
 
+/-! ## Native completeness via Phase 4 ext
+
+The IP framework's `Prover` is statement-keyed by `SumcheckStatementEvalForm`,
+which carries a single `polynomial`. The "native" two-oracle algorithm is
+therefore an *implementation* of the same mathematical object —
+`sumcheckHonestProverEvalForm` applied to `S.toEvalFormStatement` produces
+the same eval-form values as `nativeHonestMessageEvalsAt` on `(S.f, S.g)`,
+without ever materialising `S.f * S.g` in the prover hot path. We pin
+this equivalence and use Phase 4 ext's
+`sumcheck_hasPerfectCompleteness_evalForm` to lift native completeness.
+
+Soundness is **not** lifted here for the same reason Phase 4 ext deferred
+its own soundness lift: the eval-form verifier's degree bound is uniform
+`d`, while the symbolic verifier's bound is per-round `indDegreeK p i`,
+and the lift through `liftEvalProverToSymbolic` loses information when
+those differ. -/
+
+/-- Validity in the native bundle implies validity of the lifted
+`SumcheckStatementEvalForm`. By construction this is just `rfl` modulo
+the simp lemmas on `toEvalFormStatement`. -/
+theorem NativeStatement.toEvalFormStatement_claim_isCorrect
+    {n : ℕ} [Fintype 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+    (S : NativeStatement 𝔽 n) (h : S.Valid) :
+    sumcheckClaimIsCorrectEvalForm S.toEvalFormStatement := by
+  -- `sumcheckClaimIsCorrectEvalForm S.toEvalFormStatement` unfolds to
+  -- `S.toEvalFormStatement.claim = honestClaim … S.toEvalFormStatement.polynomial`
+  -- which by the simp lemmas equals `S.claim = honestClaim S.domain (S.f * S.g)`,
+  -- which is definitionally `S.toInnerProduct.Valid = S.Valid`.
+  exact h
+
+/-- The IP-framework honest prover, evaluated on a native-derived
+statement, agrees pointwise with the native algorithm. The only "work"
+is `nativeHonestMessageEvalsAt_eq_thinWrapper` plus the simp lemmas on
+`toEvalFormStatement`. -/
+theorem sumcheckHonestProverEvalForm_respond_native
+    {n : ℕ} [Fintype 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+    (S : NativeStatement 𝔽 n) (i : Fin n) (chs : Fin i.val → 𝔽)
+    (k : Fin 3) :
+    (sumcheckHonestProverEvalForm (𝔽 := 𝔽) (n := n) (d := 2)).respond
+        S.toEvalFormStatement i chs k
+      =
+    nativeHonestMessageEvalsAt (𝔽 := 𝔽) S.domain S.f S.g i chs (S.evalPoints k) := by
+  show honestProverMessageEvalsAt S.toEvalFormStatement.domain
+        S.toEvalFormStatement.polynomial i chs (S.toEvalFormStatement.evalPoints k)
+      = nativeHonestMessageEvalsAt S.domain S.f S.g i chs (S.evalPoints k)
+  rw [NativeStatement.toEvalFormStatement_domain,
+      NativeStatement.toEvalFormStatement_polynomial,
+      NativeStatement.toEvalFormStatement_evalPoints]
+  exact (nativeHonestMessageEvalsAt_eq_thinWrapper
+    (𝔽 := 𝔽) S.domain S.f S.g i chs (S.evalPoints k)).symm
+
+/-- **Native two-oracle inner-product completeness.** For every valid
+`NativeStatement`, the eval-form sumcheck (running on the bridged
+`SumcheckStatementEvalForm` over `f * g`) accepts the honest prover with
+probability 1.
+
+Proof: direct lift through `sumcheck_hasPerfectCompleteness_evalForm`
+from Phase 4 ext, using `toEvalFormStatement_claim_isCorrect` to turn
+the native validity into eval-form correctness. -/
+theorem nativeInnerProduct_perfectCompleteness
+    {n : ℕ} [Fintype 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+    (S : NativeStatement 𝔽 n) (h : S.Valid) :
+    probAccept
+      (sumcheckProtocolEvalForm (𝔽 := 𝔽) (n := n) (d := 2))
+      S.toEvalFormStatement
+      sumcheckHonestProverEvalForm = 1 :=
+  sumcheck_hasPerfectCompleteness_evalForm S.toEvalFormStatement
+    (S.toEvalFormStatement_claim_isCorrect h)
+
 end InnerProduct
