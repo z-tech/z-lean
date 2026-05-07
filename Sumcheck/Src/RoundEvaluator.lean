@@ -63,3 +63,36 @@ exactly this function on each summand.
   CMvPolynomial.eval point E.virtualPolynomial
 
 end RoundPolyEvaluator
+
+/-! ## Concrete instances
+
+Two evaluator constructions used elsewhere in the codebase:
+
+* `multilinearEvaluator p hp` — `d = 1` evaluator backed by an explicit
+  multilinearity hypothesis. Used by Phase 2's multilinear sumcheck.
+* `innerProductEvaluator f g hf hg` — `d = 2` evaluator backed by the
+  symbolic product `f * g` of two multilinears. The degree bound is
+  closed by `degreeOf_mul_le_c` from `Sumcheck/IP/SharpSAT/Degree.lean`,
+  threaded through `Nat.add_le_add hf hg`. Mirrors the Phase 5(a)
+  `InnerProduct.NativeStatement.toEvalFormStatement` bridge but
+  packaged as a generic `RoundPolyEvaluator`.
+
+Higher-arity instances (e.g. arithmetised 3-CNF, GKR layers) follow the
+same pattern: provide a polynomial and a per-variable degree bound.
+-/
+
+/--
+Multilinear evaluator: `d = 1`. Direct from a polynomial `p` together
+with the per-variable degree bound `hp`. -/
+def multilinearEvaluator {𝔽 : Type} [Field 𝔽] [DecidableEq 𝔽] {n : ℕ}
+    (p : CMvPolynomial n 𝔽)
+    (hp : ∀ i : Fin n, indDegreeK p i ≤ 1) :
+    RoundPolyEvaluator 𝔽 n 1 where
+  virtualPolynomial := p
+  virtualPolynomial_degree_le := hp
+
+@[simp] lemma multilinearEvaluator_virtualPolynomial
+    {𝔽 : Type} [Field 𝔽] [DecidableEq 𝔽] {n : ℕ}
+    (p : CMvPolynomial n 𝔽) (hp : ∀ i : Fin n, indDegreeK p i ≤ 1) :
+    (multilinearEvaluator p hp).virtualPolynomial = p := rfl
+
