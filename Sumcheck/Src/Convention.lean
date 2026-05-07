@@ -5,6 +5,7 @@ import CompPoly.Multivariate.MvPolyEquiv
 import Sumcheck.Src.CMvPolynomial
 import Sumcheck.Src.Hypercube
 import Sumcheck.Src.Prover
+import Sumcheck.Src.EvalForm
 
 /-!
 # Variable-ordering convention layer for sumcheck
@@ -159,6 +160,73 @@ theorem honestProverMessageAtConv_LSB_eq_MSB_rename
         = honestProverMessageAt domain
             (CPoly.CMvPolynomial.rename reverseFin
               (CPoly.CMvPolynomial.rename reverseFin p)) i challenges
+  rw [CPoly.rename_rename]
+  have hcomp : (reverseFin (n := n)) ∘ (reverseFin (n := n)) = id := by
+    funext i; exact reverseFin_reverseFin i
+  rw [hcomp, CPoly.rename_id]
+
+/-! ### Convention-parameterised eval-form prover message.
+
+Mirror of `honestProverMessageAtConv` for the eval-form prover. Lets the
+multilinear evaluation-table prover (which is natively MSB, matching
+`effsc`'s `MultilinearProver`) bridge to the symbolic spec without
+ad-hoc renaming at every call site. -/
+
+/-- Eval-form honest prover round-`i` message at point `c`, parameterised
+    by convention. Same dispatch logic as `honestProverMessageAtConv`. -/
+def honestProverMessageEvalsAtConv
+    {𝔽 : Type} [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+    {n : ℕ}
+    (conv : Convention)
+    (domain : List 𝔽)
+    (p : CPoly.CMvPolynomial n 𝔽)
+    (i : Fin n)
+    (challenges : Fin i.val → 𝔽)
+    (c : 𝔽) : 𝔽 :=
+  match conv with
+  | Convention.LSB =>
+      honestProverMessageEvalsAt (𝔽 := 𝔽) domain p i challenges c
+  | Convention.MSB =>
+      honestProverMessageEvalsAt (𝔽 := 𝔽) domain
+        (CPoly.CMvPolynomial.rename reverseFin p) i challenges c
+
+@[simp] lemma honestProverMessageEvalsAtConv_LSB
+    {𝔽 : Type} [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+    {n : ℕ} (domain : List 𝔽) (p : CPoly.CMvPolynomial n 𝔽)
+    (i : Fin n) (challenges : Fin i.val → 𝔽) (c : 𝔽) :
+    honestProverMessageEvalsAtConv Convention.LSB domain p i challenges c
+      = honestProverMessageEvalsAt domain p i challenges c := rfl
+
+@[simp] lemma honestProverMessageEvalsAtConv_MSB
+    {𝔽 : Type} [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+    {n : ℕ} (domain : List 𝔽) (p : CPoly.CMvPolynomial n 𝔽)
+    (i : Fin n) (challenges : Fin i.val → 𝔽) (c : 𝔽) :
+    honestProverMessageEvalsAtConv Convention.MSB domain p i challenges c
+      = honestProverMessageEvalsAt domain
+          (CPoly.CMvPolynomial.rename reverseFin p) i challenges c := rfl
+
+/-- **Eval-form convention equivalence.** MSB at round `i` on `p` equals
+    LSB at round `i` on `rename reverseFin p`. -/
+theorem honestProverMessageEvalsAtConv_MSB_eq_LSB_rename
+    {𝔽 : Type} [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+    {n : ℕ} (domain : List 𝔽) (p : CPoly.CMvPolynomial n 𝔽)
+    (i : Fin n) (challenges : Fin i.val → 𝔽) (c : 𝔽) :
+    honestProverMessageEvalsAtConv Convention.MSB domain p i challenges c
+      = honestProverMessageEvalsAtConv Convention.LSB domain
+          (CPoly.CMvPolynomial.rename reverseFin p) i challenges c := rfl
+
+/-- Symmetric form via involutivity of `reverseFin`. -/
+theorem honestProverMessageEvalsAtConv_LSB_eq_MSB_rename
+    {𝔽 : Type} [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+    {n : ℕ} (domain : List 𝔽) (p : CPoly.CMvPolynomial n 𝔽)
+    (i : Fin n) (challenges : Fin i.val → 𝔽) (c : 𝔽) :
+    honestProverMessageEvalsAtConv Convention.LSB domain p i challenges c
+      = honestProverMessageEvalsAtConv Convention.MSB domain
+          (CPoly.CMvPolynomial.rename reverseFin p) i challenges c := by
+  show honestProverMessageEvalsAt domain p i challenges c
+        = honestProverMessageEvalsAt domain
+            (CPoly.CMvPolynomial.rename reverseFin
+              (CPoly.CMvPolynomial.rename reverseFin p)) i challenges c
   rw [CPoly.rename_rename]
   have hcomp : (reverseFin (n := n)) ∘ (reverseFin (n := n)) = id := by
     funext i; exact reverseFin_reverseFin i
