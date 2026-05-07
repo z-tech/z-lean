@@ -343,4 +343,55 @@ theorem nativeInnerProduct_perfectCompleteness
   sumcheck_hasPerfectCompleteness_evalForm S.toEvalFormStatement
     (S.toEvalFormStatement_claim_isCorrect h)
 
+/-! ## Native soundness via Phase 4 conditional soundness
+
+Phase 4 ext provides `sumcheck_hasSoundnessError_evalForm_uniform`:
+under `UniformDegreePoly d st.polynomial` (every variable's individual
+degree of the statement polynomial equals `d`), any eval-form adversary's
+accept probability is bounded by `d·n/|𝔽|`. For native two-oracle
+inner-product the statement polynomial is `f * g` and `d = 2`, so the
+hypothesis becomes `∀ i, (f*g).degreeOf i = 2`.
+
+**Caveat on applicability**: the uniform hypothesis is restrictive — it
+requires every variable to appear non-trivially in *both* `f` and `g`
+(so that `(f*g).degreeOf i = f.degreeOf i + g.degreeOf i = 2`). The
+caller must establish this; we provide the lifted statement and let the
+caller discharge `UniformDegreeMul` for the specific `(f, g)` pair at
+hand. For arbitrary multilinear `(f, g)` without the uniform property,
+soundness still holds with the looser symbolic bound
+`maxIndDegree (f * g) · n / |𝔽| ≤ 2 · n / |𝔽|`, but the lift through
+the IP-framework eval-form instance requires this hypothesis. -/
+
+/-- **Native two-oracle inner-product soundness.** Under uniform-d=2 on
+`f * g`, every prover (honest or adversarial) is bounded by `2·n/|𝔽|`. -/
+theorem nativeInnerProduct_soundness
+    {n : ℕ} [Fintype 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+    (S : NativeStatement 𝔽 n)
+    (hUniMul : UniformDegreePoly 2 (S.f * S.g))
+    (P : Prover (sumcheckProtocolEvalForm (𝔽 := 𝔽) (n := n) (d := 2)))
+    (hFalse : ¬ S.Valid) :
+    probAccept
+      (sumcheckProtocolEvalForm (𝔽 := 𝔽) (n := n) (d := 2))
+      S.toEvalFormStatement
+      P
+      ≤ (n : ℚ) * 2 / (fieldSize (𝔽 := 𝔽) : ℚ) := by
+  -- `S.toEvalFormStatement.polynomial = S.f * S.g`, so uniform-d on the
+  -- product transports directly. `hFalse` (¬ S.Valid) transports to
+  -- (¬ sumcheckClaimIsCorrectEvalForm S.toEvalFormStatement) by the
+  -- definitional bridge in `toEvalFormStatement_claim_isCorrect` (modus
+  -- tollens of its forward direction).
+  have hUni : UniformDegreePoly 2 S.toEvalFormStatement.polynomial := by
+    intro i
+    rw [NativeStatement.toEvalFormStatement_polynomial]
+    exact hUniMul i
+  have hClaim_false : ¬ sumcheckClaimIsCorrectEvalForm S.toEvalFormStatement := by
+    intro hC
+    -- sumcheckClaimIsCorrectEvalForm S.toEvalFormStatement is definitionally S.Valid
+    exact hFalse hC
+  have hbnd := sumcheck_hasSoundnessError_evalForm_uniform
+    (𝔽 := 𝔽) (n := n) (d := 2)
+    S.toEvalFormStatement hUni P hClaim_false
+  -- The Phase 4 bound is `(n : ℚ) * (d : ℚ) / |𝔽|` with `d = 2`; same shape.
+  simpa using hbnd
+
 end InnerProduct
