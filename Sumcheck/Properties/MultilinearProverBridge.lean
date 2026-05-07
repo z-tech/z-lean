@@ -676,6 +676,7 @@ private lemma Fin_cons_one_boolFromFin_msb_eq [Zero 𝔽] [One 𝔽]
       omega
     rw [Nat.testBit_two_pow_add_gt hjlt]
 
+omit [BEq 𝔽] [LawfulBEq 𝔽] in
 /-- **Task 3 — Final bridge: `s0` matches the symbolic eval-form spec at round 0
     on input `c = 0`.** -/
 theorem compute_correctness_at_zero
@@ -704,6 +705,7 @@ theorem compute_correctness_at_zero
   -- boolPoint_msb of ⟨k.val, _⟩ by Fin_cons_zero_boolFromFin_msb_eq.
   rw [Fin_cons_zero_boolFromFin_msb_eq]
 
+omit [BEq 𝔽] [LawfulBEq 𝔽] in
 /-- **Task 4 — Companion: `s1` matches the symbolic eval-form spec at round 0
     on input `c = 1`.** -/
 theorem compute_correctness_at_one
@@ -727,6 +729,7 @@ theorem compute_correctness_at_one
   intro k _
   rw [Fin_cons_one_boolFromFin_msb_eq]
 
+omit [BEq 𝔽] [LawfulBEq 𝔽] in
 /-- **Task 4 (bundled): full round-0 correctness.** -/
 theorem compute_correctness
     {n : ℕ} (p : CPoly.CMvPolynomial (n+1) 𝔽) :
