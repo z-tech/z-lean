@@ -1,0 +1,277 @@
+import Sumcheck.IP.InnerProduct
+import Sumcheck.IP.EvalForm
+import Sumcheck.Properties.EvalForm
+import Sumcheck.Properties.Lemmas.Hypercube
+
+/-!
+# Native two-oracle inner-product sumcheck (Phase 5(a))
+
+A *native* eval-form inner-product sumcheck: at round `i`, with prior
+challenges `chs`, the prover sends a tuple `Fin 3 → 𝔽` whose `k`-th
+entry is
+
+```
+qEvals k = ∑_{x ∈ domain^(numOpenVars i)} f(point) · g(point)
+```
+
+where `point` extends `Fin.snoc chs (evalPoints k)` over the hypercube
+`x`. Crucially this is `Σ a · b`, **not** `(Σ a) · (Σ b)` — the two
+disagree in general, so we walk the hypercube once and multiply
+*inside* the sum.
+
+The point of going native is to avoid materialising the (potentially
+huge) symbolic product `f * g` in the prover's hot path. The verifier
+side and the corresponding instance plumbing are free to reuse the
+existing eval-form infrastructure (Phase 4) on the symbolic product;
+the equivalence proven here lets us swap the prover at will without
+disturbing the surrounding protocol.
+
+## Key declarations
+
+* `residualSumPair` — hypercube walker that multiplies `f.eval pt` by
+  `g.eval pt` per summand.
+* `nativeHonestMessageEvalsAt` — the native prover's per-round value at
+  a single field point `c`.
+* `InnerProduct.NativeStatement` — bundle of `f`, `g`, a domain, the
+  three evaluation nodes, multilinearity, and `Valid`.
+* `nativeHonestMessageEvalsAt_eq_thinWrapper` — the equivalence to the
+  thin-wrapper honest prover applied to `f * g`. The proof uses
+  `CMvPolynomial.eval_mul` per summand, then `sum_over_domain_recursive_congr`.
+-/
+
+open CPoly
+
+namespace InnerProduct
+
+/--
+Two-oracle hypercube walker. Same shape as `residualSumWithOpenVars`,
+except each summand is the **product** `f.eval point · g.eval point`,
+not the value of a single polynomial.
+
+This is the prover's native primitive: it never materialises `f * g` as
+a `CMvPolynomial`. Definitionally
+`Σ_{x} f(point(x)) · g(point(x))`.
+-/
+def residualSumPair
+  {𝔽 : Type} [Field 𝔽] [DecidableEq 𝔽]
+  {k n : ℕ}
+  (domain : List 𝔽)
+  (openVars : ℕ)
+  (hn : k + openVars = n)
+  (ch : Fin k → 𝔽)
+  (f g : CPoly.CMvPolynomial n 𝔽) : 𝔽 :=
+  sumOverDomainRecursive (𝔽 := 𝔽) (β := 𝔽)
+    domain (· + ·) 0 (m := openVars)
+    (fun x =>
+      let point : Fin n → 𝔽 := fun i => addCasesFun ch x (Fin.cast hn.symm i)
+      CPoly.CMvPolynomial.eval point f * CPoly.CMvPolynomial.eval point g)
+
+/--
+Native eval-form honest prover message for the inner-product sumcheck.
+
+At round `i` with prior challenges `challenges`, the value of the round
+polynomial at field point `c` is
+`Σ_{x ∈ domain^(numOpenVars i)} f(point(x)) · g(point(x))`,
+where `point` fixes positions `0..i-1` to `challenges`, position `i` to
+`c`, and lets positions `i+1..n-1` range over `domain`.
+
+Mirror of `honestProverMessageEvalsAt` but for the inner-product sum
+without materialising `f * g`.
+-/
+def nativeHonestMessageEvalsAt
+  {𝔽 : Type} [Field 𝔽] [DecidableEq 𝔽]
+  {n : ℕ}
+  (domain : List 𝔽)
+  (f g : CPoly.CMvPolynomial n 𝔽)
+  (i : Fin n)
+  (challenges : Fin i.val → 𝔽)
+  (c : 𝔽) : 𝔽 :=
+  residualSumPair (𝔽 := 𝔽)
+    (k := i.val + 1) (n := n)
+    domain
+    (openVars := numOpenVars (n := n) i)
+    (hn := snoc_split_eq (n := n) i)
+    (ch := Fin.snoc challenges c)
+    (f := f) (g := g)
+
+/-! ## Native statement -/
+
+/-- Native two-oracle inner-product statement.
+
+Bundles the two polynomials `f, g`, the summation domain, the claim,
+and the three eval-form nodes used by the eval-form verifier. The
+multilinearity bounds `f.degreeOf i ≤ 1` and `g.degreeOf i ≤ 1` make
+the product `f * g` have individual degree `≤ 2`, matching the
+`Fin 3` (i.e. `Fin (2 + 1)`) eval-tuple width. -/
+structure NativeStatement
+    (𝔽 : Type) [Field 𝔽] [DecidableEq 𝔽] (n : ℕ) where
+  domain          : List 𝔽
+  claim           : 𝔽
+  f               : CMvPolynomial n 𝔽
+  g               : CMvPolynomial n 𝔽
+  evalPoints      : Fin 3 → 𝔽
+  evalPoints_inj  : Function.Injective evalPoints
+  domain_sub      : ∀ x ∈ domain, ∃ k, evalPoints k = x
+  f_multilinear   : ∀ i : Fin n, f.degreeOf i ≤ 1
+  g_multilinear   : ∀ i : Fin n, g.degreeOf i ≤ 1
+
+variable {𝔽 : Type} [Field 𝔽] [DecidableEq 𝔽]
+
+/-- Forget the multilinearity / eval-points data and view the native
+statement as a thin-wrapper inner-product statement. -/
+def NativeStatement.toInnerProduct {n : ℕ}
+    (S : NativeStatement 𝔽 n) : InnerProductStatement 𝔽 n :=
+  { domain := S.domain
+    claim := S.claim
+    f := S.f
+    g := S.g }
+
+/-- A native statement is *valid* exactly when its thin-wrapper image
+is — i.e. the claim equals the honest inner-product sum. -/
+def NativeStatement.Valid {n : ℕ} [BEq 𝔽] [LawfulBEq 𝔽]
+    (S : NativeStatement 𝔽 n) : Prop :=
+  S.toInnerProduct.Valid
+
+/-! ## Per-summand and per-round equivalence to the thin wrapper -/
+
+omit [DecidableEq 𝔽] in
+/-- Per-point identity: `(f * g).eval pt = f.eval pt · g.eval pt`.
+A direct restatement of `CMvPolynomial.eval_mul`, used internally by
+the sum-level equivalence proof. -/
+private lemma eval_mul_pt {n : ℕ} [BEq 𝔽] [LawfulBEq 𝔽]
+    (f g : CMvPolynomial n 𝔽) (pt : Fin n → 𝔽) :
+    CMvPolynomial.eval pt (f * g)
+      = CMvPolynomial.eval pt f * CMvPolynomial.eval pt g :=
+  CPoly.eval_mul (p := f) (q := g) (vals := pt)
+
+/-- `residualSumPair` agrees with `residualSumWithOpenVars` on the
+product polynomial: walking the hypercube while multiplying inside
+gives the same value as walking it on the symbolic product. -/
+lemma residualSumPair_eq_residualSumWithOpenVars_mul
+    {k n : ℕ} [BEq 𝔽] [LawfulBEq 𝔽]
+    (domain : List 𝔽)
+    (openVars : ℕ)
+    (hn : k + openVars = n)
+    (ch : Fin k → 𝔽)
+    (f g : CMvPolynomial n 𝔽) :
+    residualSumPair (𝔽 := 𝔽) (k := k) (n := n)
+        domain openVars hn ch f g
+      =
+    residualSumWithOpenVars (𝔽 := 𝔽) (k := k) (n := n)
+        domain openVars hn ch (f * g) := by
+  classical
+  unfold residualSumPair residualSumWithOpenVars
+  apply sum_over_domain_recursive_congr
+  intro x
+  exact (eval_mul_pt (n := n) f g
+    (fun i => addCasesFun ch x (Fin.cast hn.symm i))).symm
+
+/-- **Native ↔ thin-wrapper equivalence.**
+
+The native eval-form prover message at round `i` and field point `c`
+agrees with the thin-wrapper eval-form prover message obtained by
+running `honestProverMessageEvalsAt` on the symbolic product `f * g`.
+
+The proof folds through `residualSumPair_eq_residualSumWithOpenVars_mul`
+followed by the definitional `honestProverMessageEvalsAt = residualSumWithOpenVars`.
+-/
+theorem nativeHonestMessageEvalsAt_eq_thinWrapper
+    {n : ℕ} [BEq 𝔽] [LawfulBEq 𝔽]
+    (domain : List 𝔽)
+    (f g : CMvPolynomial n 𝔽)
+    (i : Fin n)
+    (challenges : Fin i.val → 𝔽)
+    (c : 𝔽) :
+    nativeHonestMessageEvalsAt (𝔽 := 𝔽)
+        domain f g i challenges c
+      =
+    honestProverMessageEvalsAt (𝔽 := 𝔽)
+        domain (f * g) i challenges c := by
+  unfold nativeHonestMessageEvalsAt honestProverMessageEvalsAt
+  exact residualSumPair_eq_residualSumWithOpenVars_mul
+    (𝔽 := 𝔽) (k := i.val + 1) (n := n)
+    domain (numOpenVars (n := n) i)
+    (snoc_split_eq (n := n) i)
+    (Fin.snoc challenges c) f g
+
+/-- Per-eval-node corollary: the three-tuple `qEvals` produced natively
+agrees pointwise with the thin-wrapper eval tuple. -/
+theorem nativeHonestMessageEvalsAt_tuple_eq_thinWrapper
+    {n : ℕ} [BEq 𝔽] [LawfulBEq 𝔽]
+    (domain : List 𝔽)
+    (f g : CMvPolynomial n 𝔽)
+    (i : Fin n)
+    (challenges : Fin i.val → 𝔽)
+    (evalPoints : Fin 3 → 𝔽) :
+    (fun k =>
+      nativeHonestMessageEvalsAt (𝔽 := 𝔽)
+        domain f g i challenges (evalPoints k))
+      =
+    (fun k =>
+      honestProverMessageEvalsAt (𝔽 := 𝔽)
+        domain (f * g) i challenges (evalPoints k)) := by
+  funext k
+  exact nativeHonestMessageEvalsAt_eq_thinWrapper
+    (𝔽 := 𝔽) domain f g i challenges (evalPoints k)
+
+/-! ## Eval-form bridge
+
+When we want to plug a native statement into the eval-form
+`PublicCoinProtocol`, we compose with `(f * g)` and feed the
+multilinearity bounds through `degreeOf_mul_le_c` to discharge the
+`degree_le` field for `d := 2`.
+-/
+
+omit [DecidableEq 𝔽] in
+/-- Product of two multilinears has individual degree `≤ 2` in every
+variable: `(f * g).degreeOf i ≤ f.degreeOf i + g.degreeOf i ≤ 1 + 1`. -/
+private lemma indDegreeK_mul_multilinear_le
+    {n : ℕ} [BEq 𝔽] [LawfulBEq 𝔽]
+    (f g : CMvPolynomial n 𝔽)
+    (hf : ∀ i : Fin n, f.degreeOf i ≤ 1)
+    (hg : ∀ i : Fin n, g.degreeOf i ≤ 1)
+    (i : Fin n) :
+    indDegreeK (f * g) i ≤ 2 := by
+  have hmul : (f * g).degreeOf i ≤ f.degreeOf i + g.degreeOf i :=
+    SharpSAT.degreeOf_mul_le_c f g i
+  exact le_trans hmul (Nat.add_le_add (hf i) (hg i))
+
+/-- Lift a native inner-product statement to a `SumcheckStatementEvalForm`
+on the symbolic product `f * g` with global degree bound `d := 2`. The
+multilinearity bounds discharge `degree_le` via
+`indDegreeK_mul_multilinear_le`. -/
+def NativeStatement.toEvalFormStatement {n : ℕ}
+    [Fintype 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+    (S : NativeStatement 𝔽 n) :
+    SumcheckStatementEvalForm 𝔽 n 2 :=
+  { domain := S.domain
+    claim := S.claim
+    polynomial := S.f * S.g
+    evalPoints := S.evalPoints
+    evalPoints_inj := S.evalPoints_inj
+    domain_sub := S.domain_sub
+    degree_le :=
+      indDegreeK_mul_multilinear_le
+        (𝔽 := 𝔽) (n := n) S.f S.g S.f_multilinear S.g_multilinear }
+
+@[simp] lemma NativeStatement.toEvalFormStatement_domain
+    {n : ℕ} [Fintype 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+    (S : NativeStatement 𝔽 n) :
+    S.toEvalFormStatement.domain = S.domain := rfl
+
+@[simp] lemma NativeStatement.toEvalFormStatement_claim
+    {n : ℕ} [Fintype 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+    (S : NativeStatement 𝔽 n) :
+    S.toEvalFormStatement.claim = S.claim := rfl
+
+@[simp] lemma NativeStatement.toEvalFormStatement_polynomial
+    {n : ℕ} [Fintype 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+    (S : NativeStatement 𝔽 n) :
+    S.toEvalFormStatement.polynomial = S.f * S.g := rfl
+
+@[simp] lemma NativeStatement.toEvalFormStatement_evalPoints
+    {n : ℕ} [Fintype 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+    (S : NativeStatement 𝔽 n) :
+    S.toEvalFormStatement.evalPoints = S.evalPoints := rfl
+
+end InnerProduct
