@@ -252,4 +252,196 @@ theorem sumOverDomainRecursive_bool_eq_finSum
         intro k' _
         rw [boolFromFin_lsb_pack_one]
 
+/-! ### Task 2: Bit-reversal bijection on `Fin (2^n)`
+
+We define the bit-reversal map recursively on `n`. The natural induction
+structure matches `lsbEquiv`: split off the LSB via `(b, k') ↦ b + 2*k'`,
+recurse on `k' : Fin (2^n)`, then reattach `b` as the **highest** bit.
+
+Concretely, on `Fin (2^(n+1))`:
+
+  `bitReverseFin (packLsb b k') = packMsb b (bitReverseFin k')`
+
+where `packMsb b k' = b * 2^n + k'.val` is the "high-bit" encoding into
+`Fin (2^(n+1))`. That makes the involutivity `bitReverseFin ∘ bitReverseFin = id`
+direct: peeling LSB on the inside corresponds to peeling MSB on the outside,
+and on the recursion the IH applies.
+
+Crucially, the relationship to `boolFromFin_lsb / boolFromFin_msb` is:
+
+  `boolFromFin_lsb (bitReverseFin k) = boolFromFin_msb k`
+
+This makes Task 2 a one-line `Equiv.sum_comp`.
+-/
+
+/-- The "high-bit" pairing dual to `packLsb`: `(b, k') ↦ b * 2^n + k'.val`.
+    The MSB (bit `n`) of the result is `b`, and the lower `n` bits are `k'`. -/
+private def packMsb {n : ℕ} (b : Fin 2) (k' : Fin (2^n)) : Fin (2^(n+1)) :=
+  ⟨b.val * 2^n + k'.val, by
+    have hb : b.val < 2 := b.isLt
+    have hk : k'.val < 2^n := k'.isLt
+    have hpow : (2:ℕ) * 2^n = 2^(n+1) := by rw [pow_succ]; ring
+    have : b.val * 2^n + k'.val < 2 * 2^n := by
+      cases hb_eq : b.val with
+      | zero => simp; exact lt_of_lt_of_le hk (by omega)
+      | succ b' =>
+          have : b' = 0 := by omega
+          subst this
+          show 1 * 2^n + k'.val < 2 * 2^n
+          omega
+    omega⟩
+
+/-- `packMsb` is the same family but on the dual side: it encodes
+    `(b, k') ↦ b * 2^n + k'.val` into `Fin (2^(n+1))`. The inverse is
+    `k ↦ (k.val / 2^n, k.val % 2^n)`. -/
+private def msbEquiv (n : ℕ) : Fin 2 × Fin (2^n) ≃ Fin (2^(n+1)) where
+  toFun p := packMsb p.1 p.2
+  invFun k :=
+    (⟨k.val / 2^n, by
+       have hk : k.val < 2^(n+1) := k.isLt
+       have hpow : (2:ℕ)^n * 2 = 2^(n+1) := by rw [pow_succ]
+       have hk2 : k.val < 2 * 2^n := by
+         rw [show (2:ℕ) * 2^n = 2^n * 2 from by ring]
+         omega
+       exact Nat.div_lt_iff_lt_mul (Nat.two_pow_pos n) |>.mpr hk2⟩,
+     ⟨k.val % 2^n, Nat.mod_lt _ (Nat.two_pow_pos n)⟩)
+  left_inv := by
+    rintro ⟨b, k'⟩
+    have hb : b.val < 2 := b.isLt
+    have hk : k'.val < 2^n := k'.isLt
+    have hpos : 0 < 2^n := Nat.two_pow_pos n
+    ext
+    · show (b.val * 2^n + k'.val) / 2^n = b.val
+      rw [show b.val * 2^n + k'.val = 2^n * b.val + k'.val from by ring,
+          Nat.mul_add_div hpos]
+      have : k'.val / 2^n = 0 := Nat.div_eq_of_lt hk
+      omega
+    · show (b.val * 2^n + k'.val) % 2^n = k'.val
+      rw [show b.val * 2^n + k'.val = 2^n * b.val + k'.val from by ring,
+          Nat.mul_add_mod]
+      exact Nat.mod_eq_of_lt hk
+  right_inv := by
+    intro k
+    apply Fin.ext
+    show (k.val / 2^n) * 2^n + k.val % 2^n = k.val
+    have h := Nat.div_add_mod k.val (2^n)
+    -- h : 2 ^ n * (↑k / 2 ^ n) + ↑k % 2 ^ n = ↑k
+    linarith [h, Nat.mul_comm (2^n) (k.val / 2^n)]
+
+/-- The bit-reversal equivalence on `Fin (2^n)`, defined by recursion on `n`.
+
+    On `Fin (2^(n+1))`: split the LSB off via `lsbEquiv⁻¹`, recurse the rest
+    via the inductively defined bit-reversal, and reassemble with the LSB
+    becoming the new high bit via `msbEquiv`. -/
+def bitReverseEquiv : (n : ℕ) → Fin (2^n) ≃ Fin (2^n)
+  | 0     => Equiv.refl _
+  | n + 1 =>
+      ((lsbEquiv n).symm.trans
+        ((Equiv.refl (Fin 2)).prodCongr (bitReverseEquiv n))).trans (msbEquiv n)
+
+/-- Computational unfolding of `bitReverseEquiv` at `n+1` on a `packLsb`
+    decomposition. -/
+private lemma bitReverseEquiv_packLsb {n : ℕ} (b : Fin 2) (k' : Fin (2^n)) :
+    bitReverseEquiv (n+1) (packLsb b k') = packMsb b (bitReverseEquiv n k') := by
+  show msbEquiv n
+        (((Equiv.refl (Fin 2)).prodCongr (bitReverseEquiv n))
+          ((lsbEquiv n).symm (packLsb b k'))) = _
+  have h1 : (lsbEquiv n).symm (packLsb b k') = (b, k') :=
+    (lsbEquiv n).symm_apply_apply (b, k')
+  rw [h1]
+  rfl
+
+/-! ### bridging boolFromFin_msb to boolFromFin_lsb via bitReverseEquiv -/
+
+/-- The numeric content of bit-reversal: bit `j` of the reversed index
+    equals bit `n-1-j` of the original index, for `j < n`. We prove this by
+    induction on `n` using the recursive structure of `bitReverseEquiv`. -/
+private lemma bitReverseEquiv_testBit :
+    ∀ (n : ℕ) (k : Fin (2^n)) (j : ℕ), j < n →
+      (bitReverseEquiv n k).val.testBit j = k.val.testBit (n - 1 - j) := by
+  intro n
+  induction n with
+  | zero => intro k j hj; exact absurd hj (by omega)
+  | succ m ih =>
+      intro k j hj
+      -- Decompose k = packLsb b k' via lsbEquiv⁻¹.
+      set bk' := (lsbEquiv m).symm k with hbk'_def
+      set b : Fin 2 := bk'.1 with hb_def
+      set k' : Fin (2^m) := bk'.2 with hk'_def
+      have hk_eq : k = packLsb b k' := by
+        have h1 : (lsbEquiv m) bk' = k := (lsbEquiv m).apply_symm_apply k
+        show k = packLsb b k'
+        rw [← h1]
+        rfl
+      rw [hk_eq, bitReverseEquiv_packLsb]
+      show (b.val * 2^m + (bitReverseEquiv m k').val).testBit j
+          = (b.val + 2 * k'.val).testBit (m + 1 - 1 - j)
+      have hsub : m + 1 - 1 - j = m - j := by omega
+      rw [hsub]
+      have hb_lt : b.val < 2 := b.isLt
+      have hkr_lt : (bitReverseEquiv m k').val < 2^m := (bitReverseEquiv m k').isLt
+      -- Commute LHS to use Nat.testBit_two_pow_mul_add (which is 2^i * a + b'):
+      have hcomm : b.val * 2^m + (bitReverseEquiv m k').val
+          = 2^m * b.val + (bitReverseEquiv m k').val := by ring
+      rw [hcomm, Nat.testBit_two_pow_mul_add (a := b.val) hkr_lt j]
+      by_cases hjm : j < m
+      · -- j < m: LHS = (br k').val.testBit j, RHS = bit (m - j) of (b + 2*k'.val) = bit (m-j-1) of k'.
+        simp only [hjm, if_true]
+        have hmj_pos : 0 < m - j := by omega
+        have hmj_eq : m - j = (m - j - 1) + 1 := by omega
+        rw [hmj_eq]
+        show (bitReverseEquiv m k').val.testBit j
+            = (b.val + 2 * k'.val).testBit ((m - j - 1) + 1)
+        rw [Nat.testBit_succ]
+        have hdiv : (b.val + 2 * k'.val) / 2 = k'.val := by
+          rw [Nat.add_mul_div_left _ _ (by norm_num : (0:ℕ) < 2)]
+          have hbd : b.val / 2 = 0 := Nat.div_eq_of_lt hb_lt
+          omega
+        rw [hdiv]
+        -- Apply ih
+        rw [ih k' j hjm]
+        congr 1
+        omega
+      · -- j ≥ m, but j < m+1, so j = m. Don't substitute (subst variants
+        -- can confuse the term `m`); just rewrite via the equality.
+        have hj_eq : j = m := by omega
+        -- LHS branch: j < m is false, so the if takes the else branch.
+        -- The goal becomes b.val.testBit (j - m) = (b.val + 2 * k'.val).testBit (m - j).
+        -- With j = m, j - m = 0 and m - j = 0.
+        have hjlt : ¬ j < m := by omega
+        simp only [hjlt, if_false]
+        have hsub1 : j - m = 0 := by omega
+        have hsub2 : m - j = 0 := by omega
+        rw [hsub1, hsub2]
+        rw [Nat.testBit_zero, Nat.testBit_zero]
+        have hmod : (b.val + 2 * k'.val) % 2 = b.val := by
+          rw [Nat.add_mul_mod_self_left]
+          exact Nat.mod_eq_of_lt hb_lt
+        rw [hmod]
+        have : b.val % 2 = b.val := Nat.mod_eq_of_lt hb_lt
+        rw [this]
+
+/-- The bit-reversal equivalence converts MSB-style Boolean points to
+    LSB-style Boolean points. -/
+lemma boolFromFin_lsb_bitReverseEquiv [Zero 𝔽] [One 𝔽]
+    {n : ℕ} (k : Fin (2^n)) :
+    boolFromFin_lsb (𝔽 := 𝔽) (bitReverseEquiv n k)
+      = boolFromFin_msb (𝔽 := 𝔽) k := by
+  funext j
+  show (if (bitReverseEquiv n k).val.testBit j.val then (1 : 𝔽) else 0)
+      = if k.val.testBit (n - 1 - j.val) then (1 : 𝔽) else 0
+  rw [bitReverseEquiv_testBit n k j.val j.isLt]
+
+/-- **Task 2 — Bit-reversal bijection.** The `Finset.sum` over `Fin (2^n)` of
+    `F (boolFromFin_lsb k)` equals the sum of `F (boolFromFin_msb k)`, by
+    reindexing along the bit-reversal equivalence. -/
+theorem finSum_lsb_eq_msb [Zero 𝔽] [One 𝔽] {β : Type _} [AddCommMonoid β]
+    {n : ℕ} (F : (Fin n → 𝔽) → β) :
+    (∑ k : Fin (2^n), F (boolFromFin_lsb (𝔽 := 𝔽) k))
+      = ∑ k : Fin (2^n), F (boolFromFin_msb (𝔽 := 𝔽) k) := by
+  rw [← (bitReverseEquiv n).sum_comp (g := fun k => F (boolFromFin_lsb k))]
+  apply Finset.sum_congr rfl
+  intro k _
+  rw [boolFromFin_lsb_bitReverseEquiv]
+
 end Sumcheck.MultilinearProver
