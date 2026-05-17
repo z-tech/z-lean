@@ -6,7 +6,7 @@ import Sumcheck.Properties.Probability
 
 -- Here we show how sumcheck's completeness and soundness lift into the IP framework
 
-theorem sumcheck_hasSoundnessError {𝔽 : Type} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] :
+theorem sumcheck_hasSoundnessError {𝔽 : Type*} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] :
     hasSoundnessError
       (sumcheckProtocol (𝔽 := 𝔽) (n := n))
       sumcheckClaimIsCorrect
@@ -20,7 +20,7 @@ theorem sumcheck_hasSoundnessError {𝔽 : Type} {n : ℕ} [Field 𝔽] [Fintype
   rw [hEq]
   exact soundness_dishonest st P (by unfold sumcheckClaimIsCorrect at hFalse; exact hFalse)
 
-theorem sumcheck_hasPerfectCompleteness {𝔽 : Type} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] :
+theorem sumcheck_hasPerfectCompleteness {𝔽 : Type*} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] :
     hasPerfectCompleteness
       (sumcheckProtocol (𝔽 := 𝔽) (n := n))
       sumcheckClaimIsCorrect

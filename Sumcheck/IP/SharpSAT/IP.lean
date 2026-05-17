@@ -28,14 +28,14 @@ section Bridge
 
 -- Sum over Bool: with the standard Fintype instance `{true, false}` the sum
 -- unfolds to `g true + g false`.
-lemma sum_univ_bool {β : Type} [AddCommMonoid β] (g : Bool → β) :
+lemma sum_univ_bool {β : Type*} [AddCommMonoid β] (g : Bool → β) :
     (∑ b : Bool, g b) = g true + g false := by
   rw [show (Finset.univ : Finset Bool) = ({true, false} : Finset Bool) from rfl,
       Finset.sum_insert (by decide : (true : Bool) ∉ ({false} : Finset Bool)),
       Finset.sum_singleton]
 
 -- Sum over Fin (n+1) → Bool splits into the false branch plus the true branch.
-lemma sum_bool_succ {β : Type} [AddCommMonoid β] {n : ℕ}
+lemma sum_bool_succ {β : Type*} [AddCommMonoid β] {n : ℕ}
     (F : (Fin (n+1) → Bool) → β) :
     (∑ x : (Fin (n+1) → Bool), F x) =
       (∑ x : (Fin n → Bool), F (Fin.cons false x)) +
@@ -47,21 +47,23 @@ lemma sum_bool_succ {β : Type} [AddCommMonoid β] {n : ℕ}
   rfl
 
 -- Bool-hypercube at n = 0 is a singleton.
-lemma sum_bool_zero {β : Type} [AddCommMonoid β] (F : (Fin 0 → Bool) → β) :
+lemma sum_bool_zero {β : Type*} [AddCommMonoid β] (F : (Fin 0 → Bool) → β) :
     (∑ x : (Fin 0 → Bool), F x) = F Fin.elim0 := by
   rw [Fintype.sum_unique]; congr
 
 -- sumOverDomainRecursive with domain [0,1] equals the Bool-hypercube sum (coerced).
-lemma sumOverDomain_zeroOne_eq_boolSum {𝔽 : Type} [Field 𝔽] {n : ℕ}
+lemma sumOverDomain_zeroOne_eq_boolSum {𝔽 : Type*} [Field 𝔽] {n : ℕ}
     (F : (Fin n → 𝔽) → 𝔽) :
     sumOverDomainRecursive [(0 : 𝔽), 1] (· + ·) 0 F =
       ∑ x : (Fin n → Bool), F (fun i => boolToField (x i)) := by
   induction n with
   | zero =>
-      rw [sum_over_domain_recursive_zero, sum_bool_zero]
+      rw [sum_over_domain_recursive_zero,
+          sum_bool_zero (fun x => F (fun i => boolToField (x i)))]
       congr; funext i; exact i.elim0
   | succ n ih =>
-      rw [sum_over_domain_recursive_succ, sum_bool_succ]
+      rw [sum_over_domain_recursive_succ,
+          sum_bool_succ (fun x => F (fun i => boolToField (x i)))]
       simp only [List.foldl_cons, List.foldl_nil, zero_add]
       rw [ih, ih]
       congr 1
@@ -75,7 +77,7 @@ lemma sumOverDomain_zeroOne_eq_boolSum {𝔽 : Type} [Field 𝔽] {n : ℕ}
 
 -- Unwrap `honestClaim` at domain [0,1] into the Bool-hypercube sum.
 lemma honestClaim_zeroOne_eq_boolSum
-    {𝔽 : Type} [Field 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] [DecidableEq 𝔽] {n : ℕ}
+    {𝔽 : Type*} [Field 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] [DecidableEq 𝔽] {n : ℕ}
     (p : CMvPolynomial n 𝔽) :
     honestClaim [(0 : 𝔽), 1] p =
       ∑ x : (Fin n → Bool), p.eval (fun i => boolToField (x i)) := by
@@ -92,7 +94,7 @@ end Bridge
 
 section
 
-variable {𝔽 : Type} [Field 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] [DecidableEq 𝔽]
+variable {𝔽 : Type*} [Field 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] [DecidableEq 𝔽]
 
 -- Map a #SAT instance into the sumcheck statement over the boolean hypercube {0,1}.
 def SharpSATInstance.toSumcheck {n : ℕ} (I : SharpSATInstance n) :
@@ -124,7 +126,7 @@ end
 
 section
 
-variable {𝔽 : Type} [Field 𝔽] [Fintype 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] [DecidableEq 𝔽]
+variable {𝔽 : Type*} [Field 𝔽] [Fintype 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] [DecidableEq 𝔽]
 
 /-- **#SAT completeness.** For every valid #SAT instance, the sumcheck honest
 prover convinces the verifier with probability 1. -/

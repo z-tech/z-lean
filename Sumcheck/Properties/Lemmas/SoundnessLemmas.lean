@@ -20,7 +20,7 @@ import Sumcheck.Src.Verifier
 
 import Sumcheck.Src.CMvPolynomial
 import Sumcheck.Properties.Probability.Fields
-import ExtTreeMapLemmas.ExtTreeMap
+import CompPoly.Data.ExtTreeMap.ExtTreeMap
 import Std.Data.ExtTreeMap
 import Std.Data.ExtTreeMap.Lemmas
 import Sumcheck.Properties.Lemmas.BadTranscript
@@ -294,8 +294,9 @@ lemma agreement_set_card_le {𝔽 : Type _} [Field 𝔽] [Fintype 𝔽] [Decidab
 
   -- use Schwartz-Zippel to bound the function-space agreement count
   have hAgreeF : agreeF.card = countAssignmentsCausingAgreement g h := by
-    simp [countAssignmentsCausingAgreement, agreeF, allAssignmentsN, AgreementAtEvent, AgreementEvent,
-      -AgreementEvent_eval_equiv]
+    simp [countAssignmentsCausingAgreement, agreeF, allAssignmentsN, allChallenges,
+      AgreementAtEvent, AgreementEvent, -AgreementEvent_eval_equiv]
+    rfl
   have hprob := prob_agreement_le_degree_over_field_size (𝔽 := 𝔽) g h hgh_ne
   have hprob' :
       (countAssignmentsCausingAgreement g h : ℚ) / (countAllAssignmentsN (𝔽 := 𝔽) 1 : ℚ) ≤

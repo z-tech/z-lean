@@ -76,12 +76,12 @@ def sumOverHypercubeRecursive
 attribute [irreducible] sumOverHypercubeRecursive
 
 /-- Non-dependent `Fin.addCases` specialized to functions. Avoids needing to specify `motive`. -/
-def addCasesFun {α : Type} {m n : ℕ}
+def addCasesFun {α : Type*} {m n : ℕ}
   (f : Fin m → α) (g : Fin n → α) : Fin (m + n) → α :=
 fun i => Fin.addCases (m := m) (n := n) (motive := fun _ => α) f g i
 
 def residualSum
-  {𝔽 : Type} [CommRing 𝔽] [DecidableEq 𝔽]
+  {𝔽 : Type*} [CommRing 𝔽] [DecidableEq 𝔽]
   {k numVars : ℕ}
   (domain : List 𝔽)
   (ch : Fin k → 𝔽)
@@ -98,7 +98,7 @@ def residualSum
       CPoly.CMvPolynomial.eval point p)
 
 def residualSumWithOpenVars
-  {𝔽 : Type} [CommRing 𝔽] [DecidableEq 𝔽]
+  {𝔽 : Type*} [CommRing 𝔽] [DecidableEq 𝔽]
   {k n : ℕ}
   (domain : List 𝔽)
   (openVars : ℕ)
@@ -112,7 +112,7 @@ def residualSumWithOpenVars
       CPoly.CMvPolynomial.eval point p)
 
 def roundSum
-  {𝔽 : Type} [CommRing 𝔽] [DecidableEq 𝔽]
+  {𝔽 : Type*} [CommRing 𝔽] [DecidableEq 𝔽]
   {numChallenges numVars : ℕ}
   (domain : List 𝔽)
   (challenges : Fin numChallenges → 𝔽)
@@ -129,7 +129,7 @@ def roundSum
 
 -- The claim the honest prover makes: the sum of p over domain^n
 def honestClaim
-  {n : ℕ} {𝔽 : Type} [CommRing 𝔽] [DecidableEq 𝔽]
+  {n : ℕ} {𝔽 : Type*} [CommRing 𝔽] [DecidableEq 𝔽]
   (domain : List 𝔽)
   (p : CPoly.CMvPolynomial n 𝔽) : 𝔽 :=
   residualSum (𝔽 := 𝔽) domain (k := 0) (numVars := n) Fin.elim0 p (Nat.zero_le n)

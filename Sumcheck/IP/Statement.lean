@@ -2,18 +2,18 @@ import InteractiveProtocol.Src.Protocol
 import Sumcheck.Src
 
 -- this bundles domain, claim and claim_polynomial
-structure SumcheckStatement (𝔽 : Type) [Field 𝔽] [DecidableEq 𝔽] (n : ℕ) where
+structure SumcheckStatement (𝔽 : Type*) [Field 𝔽] [DecidableEq 𝔽] (n : ℕ) where
   domain : List 𝔽
   claim : 𝔽
   polynomial : CPoly.CMvPolynomial n 𝔽
 
 -- need predicate so we can quantify over false/ true statements
-def sumcheckClaimIsCorrect {𝔽 : Type} {n : ℕ} [Field 𝔽] [DecidableEq 𝔽]
+def sumcheckClaimIsCorrect {𝔽 : Type*} {n : ℕ} [Field 𝔽] [DecidableEq 𝔽]
     (st : SumcheckStatement 𝔽 n) : Prop :=
   st.claim = honestClaim st.domain st.polynomial
 
 -- this is the actual mapping into the framework
-def sumcheckProtocol {𝔽 : Type} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] :
+def sumcheckProtocol {𝔽 : Type*} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] :
     PublicCoinProtocol (SumcheckStatement 𝔽 n) 𝔽 n where
   ProverMessage := fun _ => CPoly.CMvPolynomial 1 𝔽
   Transcript := (Fin n → CPoly.CMvPolynomial 1 𝔽) × (Fin n → 𝔽)
@@ -28,14 +28,14 @@ def sumcheckProtocol {𝔽 : Type} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [Decida
   proverMessage_mk := fun _ _ _ => rfl
 
 -- the honest sumcheck prover as a generic Prover
-def sumcheckHonestProver {𝔽 : Type} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] :
+def sumcheckHonestProver {𝔽 : Type*} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] :
     Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n)) where
   respond := fun st i chs =>
     honestProverMessageAt st.domain st.polynomial i chs
 
 -- construct a Transcript from a Prover and challenges
 def proverTranscript
-    {𝔽 : Type} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+    {𝔽 : Type*} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
     (st : SumcheckStatement 𝔽 n)
     (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n)))
     (r : Fin n → 𝔽) : Transcript 𝔽 n :=
@@ -43,14 +43,14 @@ def proverTranscript
     challenges := r }
 
 @[simp] lemma proverTranscript_challenges
-    {𝔽 : Type} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+    {𝔽 : Type*} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
     (st : SumcheckStatement 𝔽 n)
     (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n)))
     (r : Fin n → 𝔽) :
     (proverTranscript st P r).challenges = r := rfl
 
 @[simp] lemma proverTranscript_round_polys
-    {𝔽 : Type} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+    {𝔽 : Type*} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
     (st : SumcheckStatement 𝔽 n)
     (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n)))
     (r : Fin n → 𝔽) (i : Fin n) :

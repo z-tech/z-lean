@@ -1,9 +1,10 @@
 import CompPoly.Multivariate.CMvPolynomial
+import Mathlib.Algebra.Field.ZMod
 
 import Sumcheck.Src.Transcript
 import Sumcheck.Src.Verifier
 
-set_option maxHeartbeats 100000
+set_option maxHeartbeats 800000
 
 instance : Fact (Nat.Prime 19) := ⟨by decide⟩
 

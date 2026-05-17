@@ -1,5 +1,112 @@
 # Changelog
 
+## 2026-05-17 — LinearCodes review fallout
+
+The cumulative result of a council-style review of `LinearCodes/`
+(PR #11): 17 commits consolidating P0/P1/P2 punch-list items across
+`LinearCodes/` and `Upstream/`. **0 `sorry`, 0 user-declared `axiom`**,
+enforced by CI.
+
+### Added
+
+- **RS instance soundness theorem.**
+  `ReedSolomonCode.mcaProximityGapError_proven_sound` in new file
+  `LinearCodes/ReedSolomonSoundness.lean` proves that the
+  `LinearCode` typeclass output upper-bounds the actual MCA bad-event
+  seed-probability, via `rs_MCA_list_decoding_bound`. Profilers
+  chaining `mcaProximityGapError` through per-protocol soundness
+  formulas are now backed by a Lean term, not a docstring promise.
+- **Typeclass range obligation** `mcaProximityGapError_in_unit_interval`
+  in `LinearCode`. Every instance must prove the returned value lives
+  in `[0, 1]`. RS discharges via `rsMCAProximityGapError_in_unit_interval`.
+- **Global `ReedSolomon.MCA.*` namespace** (`caseA`, `listDecodingBound`,
+  `someAlphaEvadesBadEvent`) as `alias`-backed discoverability layer.
+  Four naming surfaces now coexist for the headline capstones:
+  paper-flat `rs_MCA_*`, long-flat `reedSolomon_correlatedAgreement_*`,
+  namespaced `ReedSolomon.MCA.*`. All resolve to the same theorems.
+- **`JohnsonListSize n := n²`** (tight) and
+  **`JohnsonListSizeWithSlack ℓ n := (ℓ+1)·n²`** (caller-supplied
+  slack). Previously the slack form was the only one and was
+  misleadingly called `JohnsonListSize`.
+- **Per-subtree READMEs**: `Sumcheck/README.md`, `LinearCodes/README.md`;
+  top-level `README.md` slimmed to a summary that links to both.
+- **Getting-started doc** at `LinearCodes/doc/getting-started.md` with
+  three runnable snippets (encode, security bounds, STIR profiler).
+- **Stability tiers** documented (stable / recently-landed / research).
+- **CI**: rejects user-declared `axiom` (in addition to the existing
+  `sorry` rejection); builds `LinearCodes`, `Upstream`,
+  `LinearCodes.Research`, `LinearCodes.Examples` as default lake
+  targets (previously CI only built `Sumcheck` — LinearCodes was
+  silently unchecked).
+
+### Changed
+
+- **`Type → Type*`** for `LinearCode` typeclass, `ReedSolomonConfig`,
+  `ReedSolomonCode`, and the `F` variables across `LinearCodes/` and
+  `Upstream/`. No more `Type 0` lockup.
+- **`MCA_list_decoding_bound` carries `h_radius : n·γ ≤ τ`** (BCGM25
+  §6.2 semantic pin). Without it the theorem allowed `τ=0, L=1` to
+  trivially recover the unique-decoding bound dressed as list-decoding.
+  Threaded through all callers (`rs_MCA_list_decoding_bound`,
+  `rs_MCA_caseA`, `STIR_MCA_list_decoding_bound`).
+- **RS instance `mcaProximityGapError .proven`** now returns the
+  integer-tight bound from `rs_MCA_list_decoding_bound`
+  (`n²·(max(δ,1)+1)·(l-1)/q`, clipped to `[0, 1]`). Previously a
+  placeholder `(l-1)·d/q` that didn't match any proven theorem.
+- **File reorganisation**:
+  - `MCA/ListDecoding{,Counting,Domains,MCA,Witness}.lean` →
+    `MCA/ListDecoding/{Core,Counting,Domains,MCA,Witness}.lean`.
+  - `MCA/Case2Subtargets.lean` (1479L) split into
+    `MCA/Case2/{Counting,MDSBridge,Lemma53}.lean`.
+  - `MCA/RSListDecoding.lean` (1419L) split into
+    `MCA/RS/{Submodule,ArrayBridge,MCABound}.lean`.
+  - `MCA/Examples.lean` → `MCA/Generators.lean` (defines real
+    generators, not examples).
+  - `LinearCodes/Tests.lean` → `LinearCodes/Examples/RSSmokeTest.lean`
+    (separate lake target, no longer in public umbrella).
+- **`_implies_` → `_of_`** rename pass (8 names, Mathlib convention).
+- **MCA capstone docstrings** include case-numbering crosswalks
+  distinguishing Lean's "Case 1 / Case 2" (small-γ / large-γ branches
+  of Theorem 6.1) from BCGM25's "case (a) / case (b)" (structural vs
+  quantitative form, Theorem 9.2).
+- **`Generator.IsMDS` vs `IsMDS`** overload documented in both
+  declarations' docstrings to avoid silent confusion.
+- **`MutualCorrelatedAgreement γ ≤ 1`** restriction documented:
+  outside `[0, 1]` the predicate is either trivial or vacuous.
+
+### Removed
+
+- **Dead theorems**: `zeroEvading_implies_list_decodable_johnson`
+  (was `:= True`, no callers) and `bad_witness_list_cw_eq_combine_cstars`
+  (no callers, 9 unused hypotheses).
+- **Dead docs**: `LinearCodes/doc/rs-bridge-followups.md` (items
+  marked DONE) and `LinearCodes/doc/stale-todos-audit.md`
+  (one-shot audit, served its purpose).
+- **Shim modules**: `LinearCodes/MCA/Case2Subtargets.lean` and
+  `LinearCodes/MCA/RSListDecoding.lean` re-export shims (added
+  transiently during the splits) have been deleted; all internal
+  importers point at sub-files directly.
+- **`ListDecodingCstars.lean`** merged into `ListDecoding/Counting.lean`
+  (only consumer); the dead `exists_cstars_list_of_MDS` lift was
+  dropped.
+
+### Fixed
+
+- **CI now actually builds `LinearCodes/`.** Before, only `Sumcheck`
+  was a default lake target; `lake build` (which CI runs) never
+  type-checked the LinearCodes tree.
+- **`private instance Fact (Nat.Prime 7)`** in `MCA/RS/MCABound.lean`
+  changed to `local instance` — `private` doesn't actually hide
+  instances from typeclass unification.
+- **Stale "this theorem is likely FALSE" banner** at the top of
+  `MCA/CAImplications.lean` rewritten — the theorem now carries the
+  `0 < ℓ` hypothesis the banner asked for and has been proved.
+- **Build-time `#eval` info-spam** from `Lemma53Examples.lean`
+  silenced by converting the three `#eval` lines to silent
+  `example := by native_decide` regression tests.
+- **Unused `h_minDist` on small-γ branch of `MCA_unique_decoding_bound`**
+  documented (the hypothesis is only consumed on γ ≥ 1/n).
+
 ## 2026-04-21 — TQBF cleanup
 
 - Removed TQBF scaffolding from the main tree (`Sumcheck/IP/TQBF/`,
