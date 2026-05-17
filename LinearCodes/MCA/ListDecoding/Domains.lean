@@ -15,14 +15,17 @@ Key contents:
 * `isListCADomain_of_all_combines_agree(_one)` — derive an `IsListCADomain`
   from a per-row family of `L` candidates.
 
-Depends on `LinearCodes.MCA.UniqueDecoding`, `LinearCodes.MCA.ListDecoding`,
+Depends on `LinearCodes.MCA.UniqueDecoding`, `LinearCodes.MCA.ListDecoding.Core`,
 and `LinearCodes.MCA.Case2Subtargets`.
 -/
 
 import LinearCodes.MCA.UniqueDecoding
-import LinearCodes.MCA.ListDecoding
+import LinearCodes.MCA.ListDecoding.Core
 import LinearCodes.MCA.Case2Subtargets
 
+
+-- File-level `variable` block is used by most theorems but legitimately
+-- unused in a few. Suppression kept rather than narrowing per-theorem.
 set_option linter.unusedSectionVars false
 
 namespace LinearCodes
@@ -108,14 +111,13 @@ theorem isListCADomain_of_all_combines_agree_one
 
 /-- B4: Analog of `isCADomain_of_all_combines_agree` for list-decoding.
 
-**STRATEGY (not yet formalized — see `LinearCodes/MCA/ListDecodingDomains.lean`).**
+**STRATEGY (not yet formalized — see `LinearCodes/MCA/ListDecoding/Domains.lean`).**
 Let `vs j : Fin L → (Fin n → F)` be the agreement-list witnesses from
 `h_agree j` (codewords agreeing with `G.combine (xs j) us` on `T`, injective in
 `Fin L`).
 
 * **Agreement on `T`.** For each `k : Fin L`, set `cs_k j := vs j k` and apply
-  `exists_cstars_of_MDS` (or `exists_cstars_list_of_MDS` with the constant
-  choice `choose_k j := k`) to obtain `cstars_k : Fin ℓ → (Fin n → F)` with
+  `exists_cstars_of_MDS` to obtain `cstars_k : Fin ℓ → (Fin n → F)` with
   `cstars_k j ∈ c` and `G.combine (xs j) cstars_k = vs j k`. Then on `T`,
   `G.combine (xs j) cstars_k i = vs j k i = G.combine (xs j) us i`, so by MDS
   rigidity (`isCADomain_of_combines_agree`), `cstars_k j i = us j i` for all

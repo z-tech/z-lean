@@ -9,7 +9,6 @@ Lemma 3.16) decompose to this.
 
 import LinearCodes.MCA.Definitions
 
-set_option linter.unusedSectionVars false
 
 namespace LinearCodes
 

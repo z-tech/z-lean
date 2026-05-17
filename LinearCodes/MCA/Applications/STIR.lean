@@ -2,7 +2,7 @@
 # BCGM25 §9 application: STIR (univariate-powers generator)
 
 Specializes the abstract MCA / CA capstones (`Case2Capstone.lean`,
-`ListDecodingMCA.lean`) to the STIR-style generator
+`ListDecoding/MCA.lean`) to the STIR-style generator
 `G(x) = (1, x, x^2, …, x^d) : F → F^{d+1}` over a finite field `F` of
 size `> d`. This is the canonical setting in which the STIR low-degree
 test is analyzed.
@@ -28,10 +28,9 @@ Depends on `MaximalDomain`, `Case2Capstone`, `ConcreteMDS`, `ListDecoding`,
 import LinearCodes.MCA.MaximalDomain
 import LinearCodes.MCA.Case2Capstone
 import LinearCodes.MCA.ConcreteMDS
-import LinearCodes.MCA.ListDecoding
+import LinearCodes.MCA.ListDecoding.Core
 import LinearCodes.MCA.RSListDecoding
 
-set_option linter.unusedSectionVars false
 
 namespace LinearCodes
 

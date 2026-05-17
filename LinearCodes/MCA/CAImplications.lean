@@ -24,7 +24,6 @@ degenerate row-count.
 import LinearCodes.MCA.Definitions
 import LinearCodes.MCA.SeedProbLemmas
 
-set_option linter.unusedSectionVars false
 
 namespace LinearCodes
 

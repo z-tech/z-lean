@@ -15,7 +15,6 @@ import Mathlib.Algebra.Polynomial.BigOperators
 import Mathlib.Algebra.Polynomial.Eval.Defs
 import Mathlib.Algebra.Field.ZMod
 
-set_option linter.unusedSectionVars false
 
 namespace LinearCodes
 namespace Generator

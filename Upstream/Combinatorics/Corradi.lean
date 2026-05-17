@@ -47,6 +47,9 @@ import Mathlib.Data.Fintype.Prod
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
 
+
+-- File-level `variable` block is used by most theorems but legitimately
+-- unused in a few. Suppression kept rather than narrowing per-theorem.
 set_option linter.unusedSectionVars false
 
 namespace Finset

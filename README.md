@@ -79,6 +79,36 @@ where $r_1, \dots, r_{i-1}$ are the verifier's previous challenges. This is impl
 2. Evaluates $p$ under this substitution via `eval₂Poly`, producing a univariate polynomial.
 3. **Sums** these univariates over all $\\{0,1\\}^{n-i-1}$ assignments using `sum_over_hypercube_recursive`.
 
+## Stability (LinearCodes)
+
+The LinearCodes tree is in active development. Stability tiers for
+downstream consumers:
+
+- **Stable** (safe to depend on; breaking changes will be flagged in
+  PRs): the [`LinearCode`](LinearCodes/LinearCode.lean) typeclass
+  interface, the Reed-Solomon encoder (`reedSolomonEncode`), the seven
+  proved RS properties (`encode_size`, `encode_add`, `encode_smul`,
+  `encode_min_distance`, `encode_injective`,
+  `johnson_list_decoding_radius`, plus the encoder ↔ `Polynomial.eval`
+  bridge), and the BCGM25 capstones (`MCA_unique_decoding_bound`,
+  `MCA_list_decoding_bound`, `rs_MCA_caseA`,
+  `rs_MCA_list_decoding_bound`).
+- **Recently landed (may evolve)**: theorem aliases
+  (`correlatedAgreement_*`, `reedSolomon_correlatedAgreement_*`); the
+  GS-sharpened RS-MCA bridge (`MCA/RSListDecoding.lean`); the
+  `JohnsonListSize` vs `JohnsonListSizeWithSlack` split. Public names
+  are unlikely to change but exact theorem locations may move as the
+  tree gets reorganised (P2 work).
+- **Research / not for downstream use**:
+  [`LinearCodes/Research/`](LinearCodes/Research/) (capstone smoke-test
+  scratch); the `.conjectured` branch of `mcaProximityGapError` (a
+  capacity-regime placeholder, **not** machine-checked, gated on the
+  open capacity-achieving proximity-gap conjecture);
+  `Generator.affineSpace` general `s ≥ 2` MDS proofs (the structural
+  special cases for `s ∈ {0, 1}` and `s = 2 ∧ |F| = 2` are landed; the
+  general case is mathematically false in the current
+  parameterisation — see `MCA/ConcreteMDS.lean` for discussion).
+
 ## BCGM25 Mutual Correlated Agreement
 
 The [`LinearCodes/MCA/`](LinearCodes/MCA/) tree formalizes the linear-code
@@ -120,7 +150,7 @@ parameter `γ` and the minimum distance `δ_C` of the underlying linear code.
   and the concrete counterexample
   [`MCA/Lemma53Examples.lean`](LinearCodes/MCA/Lemma53Examples.lean).
 - **Phase B — list-decoding regime (Theorem 6.2)**:
-  [`LinearCodes/MCA/ListDecodingMCA.lean`](LinearCodes/MCA/ListDecodingMCA.lean)
+  [`LinearCodes/MCA/ListDecoding/MCA.lean`](LinearCodes/MCA/ListDecoding/MCA.lean)
   → `MCA_list_decoding_bound`. Strengthens the bound to
   `L · (max{n·γ, 1} + 1)·(ℓ−1) / |S|`, where each bad seed may admit up
   to `L` candidate codewords agreeing on the witness set.
@@ -176,7 +206,7 @@ landed and which are still in progress for the bridge), see
   bounds over uniform seed types).
 - *MDS infrastructure*:
   [`UniqueDecoding.lean`](LinearCodes/MCA/UniqueDecoding.lean),
-  [`Examples.lean`](LinearCodes/MCA/Examples.lean) (Vandermonde and
+  [`Generators.lean`](LinearCodes/MCA/Generators.lean) (Vandermonde and
   univariate-powers generators),
   [`ConcreteMDS.lean`](LinearCodes/MCA/ConcreteMDS.lean) (concrete MDS
   certificates).
@@ -186,12 +216,11 @@ landed and which are still in progress for the bridge), see
   domain `T̃`.
 - *Capstones*:
   [`Case2Capstone.lean`](LinearCodes/MCA/Case2Capstone.lean) (Theorem 6.1),
-  [`ListDecodingMCA.lean`](LinearCodes/MCA/ListDecodingMCA.lean)
+  [`ListDecoding/MCA.lean`](LinearCodes/MCA/ListDecoding/MCA.lean)
   (Theorem 6.2 list-decoding regime), supported by
-  [`ListDecodingWitness.lean`](LinearCodes/MCA/ListDecodingWitness.lean),
-  [`ListDecodingDomains.lean`](LinearCodes/MCA/ListDecodingDomains.lean),
-  [`ListDecodingCstars.lean`](LinearCodes/MCA/ListDecodingCstars.lean),
-  [`ListDecodingCounting.lean`](LinearCodes/MCA/ListDecodingCounting.lean),
+  [`ListDecoding/Witness.lean`](LinearCodes/MCA/ListDecoding/Witness.lean),
+  [`ListDecoding/Domains.lean`](LinearCodes/MCA/ListDecoding/Domains.lean),
+  [`ListDecoding/Counting.lean`](LinearCodes/MCA/ListDecoding/Counting.lean),
   and [`JohnsonBound.lean`](LinearCodes/MCA/JohnsonBound.lean).
 - *Reed-Solomon bridge*:
   [`RSListDecoding.lean`](LinearCodes/MCA/RSListDecoding.lean) — bridge

@@ -176,7 +176,28 @@ def ZeroEvading {F : Type*} [Field F] {S : Type*} [Fintype S] {ℓ : ℕ}
 error function `εMCA` iff, for every collection of vectors `u₁,…,u_ℓ`
 and every `γ ∈ [0,1]`, the bad event has probability at most `εMCA(γ)`.
 The bad event: there exists a shared agreement set `T ⊆ [n]` of size
-`≥ n(1−γ)` such that `(G(x)·U)|T ∈ c|T` while some `uⱼ|T ∉ c|T`. -/
+`≥ n(1−γ)` such that `(G(x)·U)|T ∈ c|T` while some `uⱼ|T ∉ c|T`.
+
+**Why restrict to `γ ≤ 1`?** Outside `[0, 1]` the predicate is either
+trivial or vacuous, so quantifying over `ℚ` adds no content:
+
+* `γ < 0`: agreement size `n·(1−γ) > n` forces `T.card > n`, impossible
+  for `T : Finset (Fin n)`, so the bad event is empty and any `εMCA`
+  works.
+* `γ > 1`: agreement size `n·(1−γ) < 0` is automatically satisfied by
+  `T = ∅`, and the remaining clauses (`InRestrictedCode c ∅ _ = True`,
+  some `uⱼ|∅ ∉ c|∅ = False`) collapse — the bad event reduces to
+  `∃ j, uⱼ ∉ c`, which is *fixed* across seeds, so the seed-probability
+  is either 0 or 1 regardless of `εMCA(γ)`.
+
+Capstone theorems like `MCA_unique_decoding_bound` carry a hypothesis
+`γ * (ℓ + 1) < δ_C / n` that implicitly restricts to a useful regime,
+and they *omit* the `γ ≤ 1` cap in their signatures — both for
+generality and because the integer-tight bound is large enough to be
+trivially valid for `γ > 1`. Converting a capstone-style result to a
+`MutualCorrelatedAgreement` claim is done by `STIR_MutualCorrelatedAgreement`
+in `Applications/STIR.lean` (uses an `if` to set `εMCA γ = 1` outside
+the capstone's range). -/
 def MutualCorrelatedAgreement {F : Type*} [Field F] [DecidableEq F]
     {S : Type*} [Fintype S] {n ℓ : ℕ}
     (G : Generator F S ℓ) (c : Submodule F (Fin n → F))

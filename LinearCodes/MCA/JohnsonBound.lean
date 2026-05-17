@@ -2,7 +2,7 @@
 # Johnson-bound list-decoding for MDS / Reed-Solomon codes
 
 This file packages the squared-form Johnson bound used by the BCGM25 §6.2
-list-decoding capstone (`ListDecodingMCA.lean`). The "squared" form means
+list-decoding capstone (`ListDecoding/MCA.lean`). The "squared" form means
 we avoid `Real.sqrt` on the load-bearing path: list sizes are stated as
 the integer `JohnsonListSize n = n^2`, which plugs cleanly into the
 ℚ-arithmetic of the seed-probability bounds. Callers that pre-multiply
@@ -19,17 +19,16 @@ Key contents:
 * `johnson_squared_iff_real_sqrt` — bridge to the standard `Real.sqrt` form
   for paper fidelity.
 
-Depends on `LinearCodes.MCA.ListDecoding`, `LinearCodes.MCA.ConcreteMDS`,
+Depends on `LinearCodes.MCA.ListDecoding.Core`, `LinearCodes.MCA.ConcreteMDS`,
 and `Mathlib.Analysis.SpecialFunctions.Pow.Real`.
 -/
 
-import LinearCodes.MCA.ListDecoding
+import LinearCodes.MCA.ListDecoding.Core
 import LinearCodes.MCA.ConcreteMDS
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Algebra.Order.Chebyshev
 import Mathlib.LinearAlgebra.Dimension.Finite
 
-set_option linter.unusedSectionVars false
 
 namespace LinearCodes
 

@@ -16,6 +16,10 @@ Lemma 6.6 (`strict_superset_count_bound`) is already proved in
 
 import LinearCodes.MCA.UniqueDecoding
 
+
+-- The file-level variables (`{F} [Field F]` etc.) are used by *most*
+-- theorems but legitimately unused in some. Leaving the section-var
+-- linter suppressed for this file rather than narrowing 14+ theorems.
 set_option linter.unusedSectionVars false
 
 namespace LinearCodes

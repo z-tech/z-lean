@@ -31,7 +31,6 @@ distance bound.
 import LinearCodes.MCA.Generators
 import LinearCodes.MCA.ConcreteMDS
 
-set_option linter.unusedSectionVars false
 
 namespace LinearCodes
 namespace Generator

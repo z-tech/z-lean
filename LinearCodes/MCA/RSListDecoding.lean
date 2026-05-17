@@ -6,7 +6,7 @@ Connects the `Array F`-flavoured Reed-Solomon infrastructure
 to the abstract `Submodule F (Fin n → F)`-flavoured MCA framework
 (`LinearCodes/MCA/`). This is the bridge that lets the Guruswami-Sudan
 sharpened correlated-agreement bounds in `MCA/JohnsonBound.lean` and
-`MCA/ListDecodingMCA.lean` flow back into RS-specific results.
+`MCA/ListDecoding/MCA.lean` flow back into RS-specific results.
 
 ## Submodule reformulation of the RS code
 
@@ -44,7 +44,7 @@ sharpened correlated-agreement bounds in `MCA/JohnsonBound.lean` and
 ## RS-specialized list-decoding MCA bound (GS Phase 3)
 
 * `rs_MCA_list_decoding_bound` — instantiation of the abstract
-  `MCA_list_decoding_bound` (in `MCA/ListDecodingMCA.lean`) with the RS
+  `MCA_list_decoding_bound` (in `MCA/ListDecoding/MCA.lean`) with the RS
   submodule, the squared-Johnson list-size `n²`, and the
   `Generator.univariatePowers F l` generator. The conclusion is the
   RS-flavoured seed-probability bound
@@ -70,8 +70,11 @@ import LinearCodes.ReedSolomonProperties
 import LinearCodes.MCA.JohnsonBound
 import LinearCodes.MCA.Generators
 import LinearCodes.MCA.ConcreteMDS
-import LinearCodes.MCA.ListDecodingMCA
+import LinearCodes.MCA.ListDecoding.MCA
 
+
+-- File-level `variable` block is used by most theorems but legitimately
+-- unused in a few. Suppression kept rather than narrowing per-theorem.
 set_option linter.unusedSectionVars false
 
 namespace LinearCodes
@@ -498,8 +501,8 @@ Sub-target 1.1 (alias), Sub-target 1.2 (`combine` ↔ `linComb`),
 Sub-target 1.3 (`IsMDS` alias). These connect the `Array F`-flavoured
 RS proximity-test infrastructure (`linComb` from
 `ReedSolomonProperties.lean`) with the abstract MCA framework
-(`Generator F F (l+1)` from `MCA/Examples.lean`), so that
-`MCA_list_decoding_bound` (in `MCA/ListDecodingMCA.lean`) can be applied
+(`Generator F F (l+1)` from `MCA/Generators.lean`), so that
+`MCA_list_decoding_bound` (in `MCA/ListDecoding/MCA.lean`) can be applied
 to RS list-decoding situations. -/
 
 /-- The "RS combination generator": `G(α) = (1, α, α², …, αˡ)` viewed as

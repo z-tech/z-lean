@@ -14,7 +14,6 @@ arguments and as sanity checks on the definitions.
 import LinearCodes.MCA.Definitions
 import LinearCodes.MCA.SeedProbLemmas
 
-set_option linter.unusedSectionVars false
 
 namespace LinearCodes
 

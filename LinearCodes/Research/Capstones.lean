@@ -11,7 +11,7 @@ public API doesn't transitively pull in research scratch.
 -/
 
 import LinearCodes.MCA.Case2Capstone
-import LinearCodes.MCA.ListDecodingMCA
+import LinearCodes.MCA.ListDecoding.MCA
 import LinearCodes.MCA.JohnsonBound
 import LinearCodes.MCA.Applications.STIR
 import Mathlib.Data.ZMod.Basic

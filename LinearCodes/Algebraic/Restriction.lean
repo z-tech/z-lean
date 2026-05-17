@@ -13,7 +13,6 @@ The two forms are equivalent for our purposes.
 
 import LinearCodes.Algebraic.Code
 
-set_option linter.unusedSectionVars false
 
 namespace LinearCodes
 

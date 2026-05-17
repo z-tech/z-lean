@@ -28,7 +28,7 @@ import LinearCodes.ReedSolomon     -- the RS instance
 
 The MCA capstones live in `LinearCodes/MCA/`; if you only want the
 abstract bounds (not the RS-specialised ones), import
-`LinearCodes.MCA.Case2Capstone` and `LinearCodes.MCA.ListDecodingMCA`
+`LinearCodes.MCA.Case2Capstone` and `LinearCodes.MCA.ListDecoding.MCA`
 directly.
 
 ## 1. Encode a message

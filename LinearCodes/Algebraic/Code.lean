@@ -24,6 +24,10 @@ import Mathlib.LinearAlgebra.Dimension.Finrank
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.Algebra.Module.Submodule.Basic
 
+
+-- The file-level variables (`{F} [Field F]` etc.) are used by *most*
+-- theorems but legitimately unused in some. Leaving the section-var
+-- linter suppressed for this file rather than narrowing 14+ theorems.
 set_option linter.unusedSectionVars false
 
 namespace LinearCodes
@@ -42,7 +46,26 @@ def MinDistAtLeast [DecidableEq F] (c : Submodule F (Fin n → F)) (d : ℕ) : P
 
 /-- A linear code is **maximum-distance separable** (MDS) iff its dimension
 is `k` and its minimum distance is at least `n − k + 1` (the Singleton
-bound, achieved with equality). -/
+bound, achieved with equality).
+
+**Note on overload.** There is a *second* MDS predicate in the codebase,
+`Generator.IsMDS` (in `LinearCodes/MCA/UniqueDecoding.lean`), defined on
+*generators* rather than submodules. The two are related but distinct:
+
+* `IsMDS c k` (this def) takes an explicit dimension `k` and an
+  ambient block-length `n` (the `Fin n → F` codomain of `c`); the min-
+  distance bound is `n − k + 1`.
+* `Generator.IsMDS G` does not take a dimension parameter — it is
+  implicitly at `ℓ` (the seed-tuple length of the generator) — and the
+  min-distance bound is `|S| − ℓ + 1` over the induced code
+  `G.inducedCode : Submodule F (S → F)`.
+
+Equivalently, `Generator.IsMDS G ↔ IsMDS G.inducedCode ℓ` (with the
+appropriate `|S|`-vs-`n` identification). Adjacent theorem signatures
+sometimes use both predicates side-by-side (e.g. `rs_MCA_caseA` requires
+`Generator.univariatePowers F l |>.IsMDS` *and*
+`MinDistAtLeast (reedSolomonSubmodule cfg) (n - k + 1)`); they are not
+typos for each other. -/
 def IsMDS [DecidableEq F] (c : Submodule F (Fin n → F)) (k : ℕ) : Prop :=
   Module.finrank F c = k ∧ MinDistAtLeast c (n - k + 1)
 

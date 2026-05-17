@@ -33,7 +33,6 @@ formalized.
 
 import LinearCodes.MCA.Applications.STIR
 
-set_option linter.unusedSectionVars false
 
 namespace LinearCodes
 

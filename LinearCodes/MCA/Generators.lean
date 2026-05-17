@@ -19,7 +19,6 @@ identity-lemma machinery that we'll build alongside §6.
 
 import LinearCodes.MCA.Definitions
 
-set_option linter.unusedSectionVars false
 
 namespace LinearCodes
 namespace Generator

@@ -4,7 +4,7 @@
 Phase B foundation: definitions and structural lemmas for the
 list-decoding regime. The list-decoding MCA capstone itself
 (`MCA_list_decoding_bound`, BCGM25 §6.2) is fully proved in
-`LinearCodes/MCA/ListDecodingMCA.lean`; this file supplies the
+`LinearCodes/MCA/ListDecoding/MCA.lean`; this file supplies the
 underlying definitions and the trivial-monotonicity / zero-radius
 properties it consumes.
 
@@ -26,7 +26,6 @@ Guruswami–Sudan infrastructure is required.
 
 import LinearCodes.MCA.MaximalDomain
 
-set_option linter.unusedSectionVars false
 
 namespace LinearCodes
 

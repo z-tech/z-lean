@@ -14,15 +14,18 @@ Key contents:
   witness to a maximal-agreement domain inside the list-decoding ball.
 * `extract_list_bad_witnesses_at_distinct_seeds` — given `ℓ` distinct
   bad seeds, produces a uniform list of `MCAListBadWitness` data,
-  ready to feed into the counting bounds in `ListDecodingCounting.lean`.
+  ready to feed into the counting bounds in `ListDecoding/Counting.lean`.
 
 Depends on `UniqueDecoding`, `ListDecoding`, `Case2Subtargets`.
 -/
 
 import LinearCodes.MCA.UniqueDecoding
-import LinearCodes.MCA.ListDecoding
+import LinearCodes.MCA.ListDecoding.Core
 import LinearCodes.MCA.Case2Subtargets
 
+
+-- File-level `variable` block is used by most theorems but legitimately
+-- unused in a few. Suppression kept rather than narrowing per-theorem.
 set_option linter.unusedSectionVars false
 
 namespace LinearCodes

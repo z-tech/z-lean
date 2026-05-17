@@ -21,6 +21,10 @@ import LinearCodes.MCA.InducedCode
 import LinearCodes.MCA.Properties
 import LinearCodes.Algebraic.Code
 
+
+-- The file-level variables (`{F} [Field F]` etc.) are used by *most*
+-- theorems but legitimately unused in some. Leaving the section-var
+-- linter suppressed for this file rather than narrowing 14+ theorems.
 set_option linter.unusedSectionVars false
 
 namespace LinearCodes
@@ -164,7 +168,15 @@ theorem witness_pairwise_intersection_lt_k_of_distinct_codewords
 
 /-- A generator `G` is **MDS** if its induced code `C_G` is MDS — i.e.
 the dot-map is injective (giving dim `C_G` = `ℓ`) and `C_G` has minimum
-distance `|S| − ℓ + 1` (the Singleton bound). -/
+distance `|S| − ℓ + 1` (the Singleton bound).
+
+**Note on overload.** This is *not* the same predicate as
+`LinearCodes.IsMDS` (in `LinearCodes/Algebraic/Code.lean`), which takes
+a submodule plus an explicit dimension `k`. `Generator.IsMDS G` is
+implicitly at dimension `ℓ` (the seed-tuple length) and the
+min-distance bound is `|S| − ℓ + 1` over the induced code. The two are
+related by `Generator.IsMDS G ↔ IsMDS G.inducedCode ℓ`. See the
+docstring on `LinearCodes.IsMDS` for the full crosswalk. -/
 def Generator.IsMDS [Fintype S]
     (G : Generator F S ℓ) : Prop :=
   Function.Injective G.dotMap ∧

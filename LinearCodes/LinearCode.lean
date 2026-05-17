@@ -32,14 +32,19 @@ the two ways soundness is reported in the FRI / STIR / WHIR family of
 protocols:
 
 * `proven` — uses the **Johnson-regime** proximity gap (`δ < 1 − √ρ`).
-  Proved in BCIKS18 and follow-up papers. Solid pen-and-paper math
-  modulo formalisation.
+  Proved in BCIKS18 and follow-up papers. **Stability: machine-checked**
+  for the Reed-Solomon instance via `rs_MCA_list_decoding_bound`.
 * `conjectured` — uses the **capacity-regime** proximity gap
   (`δ → 1 − ρ`). Believed but not proved, even at the paper level
   ("capacity-achieving proximity gap conjecture"). Yields tighter bounds
   and therefore higher bit-security; used by protocols when stronger
   numbers are desired and the risk of relying on a conjecture is
-  acceptable. -/
+  acceptable. **Stability: research / placeholder** — the formula in
+  the RS instance is illustrative and not backed by a Lean theorem.
+
+This inductive may grow a third variant in future (e.g. a
+BCH+25-strengthened proven mode); downstream pattern matches should
+treat it as open and include a `_` default. -/
 inductive ProximityRegime where
   | proven
   | conjectured

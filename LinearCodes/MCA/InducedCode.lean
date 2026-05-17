@@ -17,7 +17,6 @@ import LinearCodes.MCA.Definitions
 
 import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 import Mathlib.LinearAlgebra.Dimension.Constructions
-set_option linter.unusedSectionVars false
 
 namespace LinearCodes
 namespace Generator

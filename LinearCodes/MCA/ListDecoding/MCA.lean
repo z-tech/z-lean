@@ -15,18 +15,21 @@ Key contents:
 * `MCA_list_decoding_small_gamma_bound` — small-`γ` regime bound.
 * `MCA_list_decoding_large_gamma_bound` — large-`γ` regime bound,
   combining `Case2Subtargets` with the list-aware counting from
-  `ListDecodingCounting.lean`.
+  `ListDecoding/Counting.lean`.
 * `MCA_list_decoding_bound` — the capstone (BCGM25 Theorem 6.2,
   list-decoding regime), unifying the two regimes.
 
-Depends on `ListDecodingWitness`, `ListDecodingCounting`, `MaximalDomain`.
+Depends on `ListDecoding/Witness`, `ListDecoding/Counting`, `MaximalDomain`.
 -/
 
-import LinearCodes.MCA.ListDecodingWitness
-import LinearCodes.MCA.ListDecodingCounting
+import LinearCodes.MCA.ListDecoding.Witness
+import LinearCodes.MCA.ListDecoding.Counting
 import LinearCodes.MCA.MaximalDomain
 import LinearCodes.MCA.Case2Capstone
 
+
+-- File-level `variable` block is used by most theorems but legitimately
+-- unused in a few. Suppression kept rather than narrowing per-theorem.
 set_option linter.unusedSectionVars false
 
 namespace LinearCodes

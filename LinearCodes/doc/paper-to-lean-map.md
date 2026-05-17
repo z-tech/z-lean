@@ -50,12 +50,12 @@ Files referenced are relative to the repo root
 
 | Paper generator | Lean | File |
 |---|---|---|
-| Identity `G(x) = x` | `Generator.identity` | [MCA/Examples.lean][exa] |
-| Univariate powers `G(x) = (1, x, …, x^d)` | `Generator.univariatePowers` | [MCA/Examples.lean][exa] |
-| Affine line `G(x) = (1, x)` | `Generator.affineLine` | [MCA/Examples.lean][exa] |
-| Affine space `G(x) = (1, x₁, …, xₛ)` | `Generator.affineSpace` | [MCA/Examples.lean][exa] |
+| Identity `G(x) = x` | `Generator.identity` | [MCA/Generators.lean][exa] |
+| Univariate powers `G(x) = (1, x, …, x^d)` | `Generator.univariatePowers` | [MCA/Generators.lean][exa] |
+| Affine line `G(x) = (1, x)` | `Generator.affineLine` | [MCA/Generators.lean][exa] |
+| Affine space `G(x) = (1, x₁, …, xₛ)` | `Generator.affineSpace` | [MCA/Generators.lean][exa] |
 
-[exa]: ../MCA/Examples.lean
+[exa]: ../MCA/Generators.lean
 
 ---
 
@@ -222,28 +222,27 @@ seed.
 
 | Paper | Lean | File |
 |---|---|---|
-| Theorem 6.2 (list-decoding MCA bound) | `MCA_list_decoding_bound` | [MCA/ListDecodingMCA.lean][lmca] |
-| Small-γ list bound | `MCA_list_decoding_small_gamma_bound` | [MCA/ListDecodingMCA.lean][lmca] |
-| Large-γ list bound | `MCA_list_decoding_large_gamma_bound` | [MCA/ListDecodingMCA.lean][lmca] |
-| Specialization to `L = 1` (unique-decoding shape) | `MCA_list_decoding_bound_L_one` | [MCA/ListDecodingMCA.lean][lmca] |
-| `L = 1` ↔ `MCA_unique_decoding_bound` equivalence | `MCA_list_decoding_bound_L_one_eq_unique`, `MCA_unique_decoding_bound_of_list_one` | [MCA/ListDecodingMCA.lean][lmca] |
-| Asymptotic-friendly `B / |S|` form | `MCA_list_decoding_bound_div` | [MCA/ListDecodingMCA.lean][lmca] |
-| Seed-prob ≤ Johnson list-size / |S| | `seedProb_le_JohnsonListSize_ncard_div` | [MCA/ListDecodingMCA.lean][lmca] |
-| List bad-witness bundle | `MCAListBadWitness` | [MCA/ListDecodingWitness.lean][lwit] |
-| List CA domain (def) | `IsListCADomain` | [MCA/ListDecodingDomains.lean][ldom] |
-| List-CA from combines (L=1 case) | `isListCADomain_of_all_combines_agree_one` | [MCA/ListDecodingDomains.lean][ldom] |
-| List-CA from combines (general L) | `isListCADomain_of_all_combines_agree` (j₀-trick, ~225 lines) | [MCA/ListDecodingDomains.lean][ldom] |
-| List cstars-family lift | `exists_cstars_list_of_MDS` | [MCA/ListDecodingCstars.lean][lcstars] |
-| List per-coord count | `bad_pair_count_per_coord_le_list` | [MCA/ListDecodingCounting.lean][lcount] |
-| List degree bound | `degree_bound_at_non_Ttilde_list` | [MCA/ListDecodingCounting.lean][lcount] |
-| List-version of Lemma 5.3 (pigeonhole) | `exists_Ttilde_choose_card_large` | [MCA/ListDecodingCounting.lean][lcount] |
-| Multiplicity-aware count bound | `list_strict_superset_count_bound` | [MCA/ListDecodingCounting.lean][lcount] |
+| Theorem 6.2 (list-decoding MCA bound) | `MCA_list_decoding_bound` | [MCA/ListDecoding/MCA.lean][lmca] |
+| Small-γ list bound | `MCA_list_decoding_small_gamma_bound` | [MCA/ListDecoding/MCA.lean][lmca] |
+| Large-γ list bound | `MCA_list_decoding_large_gamma_bound` | [MCA/ListDecoding/MCA.lean][lmca] |
+| Specialization to `L = 1` (unique-decoding shape) | `MCA_list_decoding_bound_L_one` | [MCA/ListDecoding/MCA.lean][lmca] |
+| `L = 1` ↔ `MCA_unique_decoding_bound` equivalence | `MCA_list_decoding_bound_L_one_eq_unique`, `MCA_unique_decoding_bound_of_list_one` | [MCA/ListDecoding/MCA.lean][lmca] |
+| Asymptotic-friendly `B / |S|` form | `MCA_list_decoding_bound_div` | [MCA/ListDecoding/MCA.lean][lmca] |
+| Seed-prob ≤ Johnson list-size / |S| | `seedProb_le_JohnsonListSize_ncard_div` | [MCA/ListDecoding/MCA.lean][lmca] |
+| List bad-witness bundle | `MCAListBadWitness` | [MCA/ListDecoding/Witness.lean][lwit] |
+| List CA domain (def) | `IsListCADomain` | [MCA/ListDecoding/Domains.lean][ldom] |
+| List-CA from combines (L=1 case) | `isListCADomain_of_all_combines_agree_one` | [MCA/ListDecoding/Domains.lean][ldom] |
+| List-CA from combines (general L) | `isListCADomain_of_all_combines_agree` (j₀-trick, ~225 lines) | [MCA/ListDecoding/Domains.lean][ldom] |
+| Per-choice maximal agreement set | `Ttilde_choose` | [MCA/ListDecoding/Counting.lean][lcount] |
+| List per-coord count | `bad_pair_count_per_coord_le_list` | [MCA/ListDecoding/Counting.lean][lcount] |
+| List degree bound | `degree_bound_at_non_Ttilde_list` | [MCA/ListDecoding/Counting.lean][lcount] |
+| List-version of Lemma 5.3 (pigeonhole) | `exists_Ttilde_choose_card_large` | [MCA/ListDecoding/Counting.lean][lcount] |
+| Multiplicity-aware count bound | `list_strict_superset_count_bound` | [MCA/ListDecoding/Counting.lean][lcount] |
 
-[lmca]: ../MCA/ListDecodingMCA.lean
-[lwit]: ../MCA/ListDecodingWitness.lean
-[ldom]: ../MCA/ListDecodingDomains.lean
-[lcstars]: ../MCA/ListDecodingCstars.lean
-[lcount]: ../MCA/ListDecodingCounting.lean
+[lmca]: ../MCA/ListDecoding/MCA.lean
+[lwit]: ../MCA/ListDecoding/Witness.lean
+[ldom]: ../MCA/ListDecoding/Domains.lean
+[lcount]: ../MCA/ListDecoding/Counting.lean
 
 ---
 
@@ -378,7 +377,7 @@ BCIKS18 Theorem 1.2. New callers should use `rs_MCA_caseA` directly.
 | Demonstrates | Lean | File |
 |---|---|---|
 | Theorem 6.1 elaborates concretely | `example` over `Fin 2` seeds | [MCA/Case2Capstone.lean][cap] |
-| Theorem 6.2 elaborates concretely | `example` over `Fin 2` seeds | [MCA/ListDecodingMCA.lean][lmca] |
+| Theorem 6.2 elaborates concretely | `example` over `Fin 2` seeds | [MCA/ListDecoding/MCA.lean][lmca] |
 | `affineLine` MDS over `ZMod 5` | `example` | [MCA/ConcreteMDS.lean][cmds] |
 | `univariatePowers F 3` MDS over `ZMod 7` | `example` | [MCA/ConcreteMDS.lean][cmds] |
 | STIR MutualCorrelatedAgreement over ZMod 7 | `example` | [MCA/Applications/STIR.lean][stir] |

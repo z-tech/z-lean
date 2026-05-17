@@ -60,6 +60,9 @@ has to live strictly above both of them.
 import LinearCodes.MCA.MaximalDomain
 import LinearCodes.MCA.Case2Subtargets
 
+
+-- File-level `variable` block is used by most theorems but legitimately
+-- unused in a few. Suppression kept rather than narrowing per-theorem.
 set_option linter.unusedSectionVars false
 
 namespace LinearCodes

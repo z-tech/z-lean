@@ -18,21 +18,45 @@ Key contents:
 * `degree_bound_at_non_Ttilde_list` — degree bound at coordinates
   outside `T̃`.
 
-Depends on `LinearCodes.MCA.ListDecodingCstars`,
-`LinearCodes.MCA.ListDecodingDomains`, and
+Depends on `LinearCodes.MCA.Case2Subtargets`,
+`LinearCodes.MCA.ListDecoding.Domains`, and
 `Mathlib.Combinatorics.Pigeonhole`.
+
+`Ttilde_choose` was formerly in a standalone `ListDecodingCstars.lean`;
+it lives here now since this file is its only consumer.
 -/
 
-import LinearCodes.MCA.ListDecodingCstars
-import LinearCodes.MCA.ListDecodingDomains
+import LinearCodes.MCA.Case2Subtargets
+import LinearCodes.MCA.ListDecoding.Domains
 import Mathlib.Combinatorics.Pigeonhole
 
+
+-- File-level `variable` block is used by most theorems but legitimately
+-- unused in a few. Suppression kept rather than narrowing per-theorem.
 set_option linter.unusedSectionVars false
 
 namespace LinearCodes
 
 variable {F : Type*} [Field F] [DecidableEq F]
 variable {S : Type*} [Fintype S] {n ℓ L : ℕ}
+
+/-! ### Per-choice maximal agreement set -/
+
+/-- For each "choice function" `Fin ℓ → Fin L` selecting one candidate
+codeword per seed, `Ttilde_choose` is the set of coordinates where every
+`us j` matches the chosen `cstars_fam choose j` simultaneously. -/
+def Ttilde_choose
+    (us : Fin ℓ → (Fin n → F))
+    (cstars_fam : (Fin ℓ → Fin L) → Fin ℓ → (Fin n → F))
+    (choose : Fin ℓ → Fin L) : Finset (Fin n) :=
+  Finset.univ.filter (fun i : Fin n => ∀ j, us j i = cstars_fam choose j i)
+
+@[simp] theorem mem_Ttilde_choose
+    (us : Fin ℓ → (Fin n → F))
+    (cstars_fam : (Fin ℓ → Fin L) → Fin ℓ → (Fin n → F))
+    (choose : Fin ℓ → Fin L) (i : Fin n) :
+    i ∈ Ttilde_choose us cstars_fam choose ↔ ∀ j, us j i = cstars_fam choose j i := by
+  simp [Ttilde_choose]
 
 /-! ### D1: Multiplicity-aware strict_superset_count_bound -/
 

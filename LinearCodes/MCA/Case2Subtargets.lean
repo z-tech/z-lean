@@ -18,6 +18,10 @@ import LinearCodes.MCA.MaximalDomain
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import Mathlib.Data.Rat.Floor
 
+
+-- The file-level variables (`{F} [Field F]` etc.) are used by *most*
+-- theorems but legitimately unused in some. Leaving the section-var
+-- linter suppressed for this file rather than narrowing 14+ theorems.
 set_option linter.unusedSectionVars false
 
 namespace LinearCodes

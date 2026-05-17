@@ -26,7 +26,6 @@ analysis.
 
 import LinearCodes.MCA.Generators
 
-set_option linter.unusedSectionVars false
 
 namespace LinearCodes
 namespace Lemma53Examples
@@ -89,29 +88,41 @@ when `t_param = e`). -/
 def AsetStrict : Finset F :=
   (Finset.univ : Finset F).filter (fun x => 5 ≤ (agreeCoordsFor x).card)
 
-/-! ### Sanity checks via `#eval`. -/
+/-! ### Sanity checks as silent regression tests.
 
-#eval (Ttilde.card, Bset.card, AsetStrict.card)
--- Expected: (2, 3, 0)
+The `#eval` documentation form spammed build output on every CI run.
+Converted to `example := by native_decide` so the cardinalities are
+still pinned (any change to the counter-example breaks the build) but
+the build is quiet. -/
+
+example : (Ttilde.card, Bset.card, AsetStrict.card) = (2, 3, 0) := by
+  native_decide
 
 -- All seven cardinalities together: `Ttilde.card`, `Bset.card`,
 -- `AsetStrict.card`, then `agreeCoordsFor x .card` for `x = 0, 1, 2, 3, 4`.
-#eval ((Ttilde.card, Bset.card, AsetStrict.card),
-       ((agreeCoordsFor 0).card,
-        (agreeCoordsFor 1).card,
-        (agreeCoordsFor 2).card,
-        (agreeCoordsFor 3).card,
-        (agreeCoordsFor 4).card))
--- Expected: ((2, 3, 0), (3, 3, 3, 2, 2))
 -- |Ttilde| = 2, |B_set| = 3 (paper hyp 'b > 2' satisfied),
 -- |Ttilde| = 2 < 3 = n(1-γ): Lean conclusion FAILS.
+example :
+    ((Ttilde.card, Bset.card, AsetStrict.card),
+     ((agreeCoordsFor 0).card,
+      (agreeCoordsFor 1).card,
+      (agreeCoordsFor 2).card,
+      (agreeCoordsFor 3).card,
+      (agreeCoordsFor 4).card))
+    = ((2, 3, 0), (3, 3, 3, 2, 2)) := by
+  native_decide
 
-#eval ((agreeSeedsAt 0).card,   -- coord 0 ∈ Ttilde:  all 5 seeds agree
-       (agreeSeedsAt 1).card,   -- coord 1 ∈ Ttilde:  all 5 seeds agree
-       (agreeSeedsAt 2).card,   -- coord 2 ∉ Ttilde:  ≤ ℓ-1 = 1 seed agrees
-       (agreeSeedsAt 3).card,   -- coord 3 ∉ Ttilde:  ≤ ℓ-1 = 1 seed agrees
-       (agreeSeedsAt 4).card)   -- coord 4 ∉ Ttilde:  ≤ ℓ-1 = 1 seed agrees
--- Expected: (5, 5, 1, 1, 1)
+-- agreeSeedsAt cardinalities per coordinate:
+-- · coord 0, 1 ∈ Ttilde: all 5 seeds agree.
+-- · coord 2, 3, 4 ∉ Ttilde: at most ℓ-1 = 1 seed agrees.
+example :
+    ((agreeSeedsAt 0).card,
+     (agreeSeedsAt 1).card,
+     (agreeSeedsAt 2).card,
+     (agreeSeedsAt 3).card,
+     (agreeSeedsAt 4).card)
+    = (5, 5, 1, 1, 1) := by
+  native_decide
 
 end Lemma53Examples
 end LinearCodes
