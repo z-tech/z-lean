@@ -801,10 +801,20 @@ alias reedSolomon_correlatedAgreement_johnson_regime := rs_MCA_caseA
 alias reedSolomon_correlatedAgreement_listDecoding_bound :=
   rs_MCA_list_decoding_bound
 
-/-! #### Mathlib-style `ReedSolomon.MCA.*` namespace
+end LinearCodes
 
-A discoverability layer for users who prefer namespaced access to the
-RS-MCA capstones. -/
+/-! #### Mathlib-style `ReedSolomon.MCA.*` namespace (global)
+
+A discoverability layer for users who prefer Mathlib-style namespaced
+access to the RS-MCA capstones. These aliases live at the global
+namespace (`ReedSolomon.MCA.*`, not `LinearCodes.ReedSolomon.MCA.*`)
+so they match the Mathlib convention "open `ReedSolomon` to get the
+RS APIs."
+
+All four naming surfaces (`rs_MCA_*`, `reedSolomon_correlatedAgreement_*`,
+`LinearCodes.ReedSolomon.MCA.*` via `open LinearCodes`, and the global
+`ReedSolomon.MCA.*` here) resolve to the same theorems via `alias`.
+Callers pick whichever style fits. -/
 
 namespace ReedSolomon
 namespace MCA
@@ -820,6 +830,8 @@ alias someAlphaEvadesBadEvent := LinearCodes.rs_some_alpha_evades_bad_event
 
 end MCA
 end ReedSolomon
+
+namespace LinearCodes
 
 /-! ### Sanity checks: concrete instances of the new RS-MCA API -/
 
