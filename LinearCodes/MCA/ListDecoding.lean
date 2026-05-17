@@ -1,14 +1,16 @@
 /-
 # List decoding (BCGM25 §6.2 setup)
 
-Phase B foundation: definitions + main theorem statements for the
-list-decoding regime.
+Phase B foundation: definitions and structural lemmas for the
+list-decoding regime. The list-decoding MCA capstone itself
+(`MCA_list_decoding_bound`, BCGM25 §6.2) is fully proved in
+`LinearCodes/MCA/ListDecodingMCA.lean`; this file supplies the
+underlying definitions and the trivial-monotonicity / zero-radius
+properties it consumes.
 
-The bulk of Phase B requires bivariate polynomial machinery
-(Guruswami-Sudan list decoder, weighted degree, multiplicity at a point)
-that doesn't exist in Mathlib yet. But many *definitions* and *theorem
-statements* can be staged now — and some structural lemmas are reachable
-without GS infrastructure.
+The Johnson list-size bound (Cauchy–Schwarz form) used to instantiate
+the capstone for Reed–Solomon is in `MCA/JohnsonBound.lean` — no
+Guruswami–Sudan infrastructure is required.
 
 ## What goes here
 
@@ -16,17 +18,8 @@ without GS infrastructure.
   Hamming distance `τ` of any vector.
 * `JohnsonListSize` — the BCGM25 list-size bound `O((ℓ+1)·n²)` for the
   Johnson-radius regime.
-* Statement of BCGM25 §6.2 main MCA bound for list-decoding regime
-  (sorry; awaits bivariate polynomial machinery).
-
-## What does NOT go here (yet)
-
-* The Guruswami-Sudan algorithm and proof.
-* Bivariate polynomial weighted-degree / multiplicity machinery.
-* §9 RS-specific tighter bounds.
-
-These will live in a future `Upstream/Algebra/BivariatePolynomial/` tree
-once we begin building that infrastructure.
+* Structural properties of `IsListDecodable` (monotonicity in `L`,
+  zero-radius case, etc.).
 -/
 
 import LinearCodes.MCA.MaximalDomain
@@ -334,7 +327,7 @@ theorem IsListDecodable.mono_L_add
 theorem IsListDecodable.shift_within_code
     {F : Type*} [Field F] [DecidableEq F] [Fintype F] {n : ℕ}
     {c : Submodule F (Fin n → F)} {τ L : ℕ}
-    (h : IsListDecodable c τ L) {w : Fin n → F} (hw : w ∈ c) (u : Fin n → F) :
+    (h : IsListDecodable c τ L) {w : Fin n → F} (_hw : w ∈ c) (u : Fin n → F) :
     {v : Fin n → F | v ∈ c ∧ hammingDistance u v ≤ τ}.ncard ≤ L := h u
 
 /-- L9: List-decodability via weight-of-difference form. -/
@@ -396,7 +389,7 @@ theorem IsListDecodable_BDD
 /-- L20: Vacuous radius beyond `n`. -/
 theorem IsListDecodable.of_radius_ge_n
     {F : Type*} [Field F] [DecidableEq F] [Fintype F] {n : ℕ}
-    (c : Submodule F (Fin n → F)) {τ : ℕ} (hτ : n ≤ τ) :
+    (c : Submodule F (Fin n → F)) {τ : ℕ} (_hτ : n ≤ τ) :
     IsListDecodable c τ (Set.ncard (c : Set (Fin n → F))) := by
   intro u
   have h_subset :

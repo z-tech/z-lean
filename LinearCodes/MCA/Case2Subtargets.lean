@@ -232,7 +232,7 @@ Specifically: on `w_xs_k.T`, `w_xs_k.cw = G.combine (xs k) us`. By
 `w.T ∩ ⋂ₖ w_xs_k.T`, of size `> n - δ_C`. Min-dist forces equality. -/
 theorem bad_witness_cw_eq_combine_cstars
     [DecidableEq S]
-    {G : Generator F S ℓ} (hG_MDS : G.IsMDS) (hℓ : 0 < ℓ)
+    {G : Generator F S ℓ} (hG_MDS : G.IsMDS) (_hℓ : 0 < ℓ)
     {c : Submodule F (Fin n → F)} {δ_C : ℕ} (h_minDist : MinDistAtLeast c δ_C)
     (us : Fin ℓ → (Fin n → F))
     {γ : ℚ} (hγ_hi : γ * (ℓ + 1) < δ_C / n) (hn : 0 < n)
@@ -520,6 +520,7 @@ theorem Ttilde_subset_maxAgreementDomain
 
 /-! ### Sub-target E8: degree bound for strict_superset_count_bound -/
 
+set_option linter.unusedVariables false in
 /-- For each coord `j ∉ Ttilde`, at most `ℓ-1` distinct bad seeds `x` have
 `j` in their max-agreement-domain extension `Bₓ`. Proof sketch: if `≥ ℓ`
 such bad seeds existed, take any ℓ distinct of them `y_1,...,y_ℓ`. On each
@@ -530,7 +531,7 @@ applied at this single coord forces `us j vec = cstars j vec` in `F^ℓ`,
 contradicting `j ∉ Ttilde`. -/
 theorem degree_bound_at_non_Ttilde
     [DecidableEq S]
-    {G : Generator F S ℓ} (hG_MDS : G.IsMDS) (hℓ : 0 < ℓ)
+    {G : Generator F S ℓ} (hG_MDS : G.IsMDS) (_hℓ : 0 < ℓ)
     (us cstars : Fin ℓ → (Fin n → F))
     (Ttilde : Finset (Fin n))
     (h_Ttilde_def : ∀ i, i ∈ Ttilde ↔ ∀ j, us j i = cstars j i)
@@ -639,7 +640,7 @@ have combine-equality at `i`. (Direct consequence of zero-evading at the
 nonzero `colDiff i`.) -/
 theorem bad_pair_count_per_coord_le
     [Fintype S] [DecidableEq S] [Nonempty S]
-    {G : Generator F S ℓ} (hG_MDS : G.IsMDS) (hℓ : 0 < ℓ)
+    {G : Generator F S ℓ} (hG_MDS : G.IsMDS) (_hℓ : 0 < ℓ)
     (us cstars : Fin ℓ → (Fin n → F))
     (Ttilde : Finset (Fin n))
     (h_Ttilde_def : ∀ i, i ∈ Ttilde ↔ ∀ j, us j i = cstars j i)

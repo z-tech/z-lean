@@ -38,7 +38,7 @@ variable {S : Type*} [Fintype S] {n ℓ L : ℕ}
 
 /-- D1: Generalize `strict_superset_count_bound` to count seed-list pairs. -/
 theorem list_strict_superset_count_bound {α : Type*} [Fintype α] [DecidableEq α]
-    {ℓ' t L : ℕ} (hℓ : 1 ≤ ℓ')
+    {ℓ' t L : ℕ} (_hℓ : 1 ≤ ℓ')
     (A : Finset α) (Bs : Fin t → Fin L → Finset α)
     (h_strict : ∀ i k, A ⊂ Bs i k)
     (h_degree : ∀ j ∉ A,

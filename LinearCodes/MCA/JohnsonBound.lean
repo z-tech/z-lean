@@ -439,7 +439,7 @@ theorem IsListDecodable_squared_johnson_MDS_explicit
 /-- J8: Squared-Johnson hypothesis is consistent with reaching beyond
 unique-decoding radius. -/
 theorem johnson_squared_implies_above_unique
-    {n k τ : ℕ} (h_johnson : (n - τ) * (n - τ) > n * k) (hk_le : k ≤ n) :
+    {n k τ : ℕ} (h_johnson : (n - τ) * (n - τ) > n * k) (_hk_le : k ≤ n) :
     n - τ > 0 := by
   by_contra h
   push_neg at h
@@ -453,8 +453,8 @@ theorem johnson_squared_implies_above_unique
 theorem zeroEvading_implies_list_decodable_johnson
     {F : Type*} [Field F] [DecidableEq F] [Fintype F]
     {S : Type*} [Fintype S] [Nonempty S] {ℓ : ℕ}
-    (G : Generator F S ℓ) {τ : ℕ}
-    (h_johnson : (Fintype.card S - τ) * (Fintype.card S - τ) > Fintype.card S * ℓ) :
+    (_G : Generator F S ℓ) {τ : ℕ}
+    (_h_johnson : (Fintype.card S - τ) * (Fintype.card S - τ) > Fintype.card S * ℓ) :
     True := by  -- placeholder to avoid Submodule coercion complications
   trivial
 
@@ -462,7 +462,7 @@ theorem zeroEvading_implies_list_decodable_johnson
 
 /-- J10: Squared form is equivalent to the `Real.sqrt` form. Optional bridge. -/
 theorem johnson_squared_iff_real_sqrt
-    {n k τ : ℕ} (hk : k ≤ n) (hτ : τ ≤ n) :
+    {n k τ : ℕ} (_hk : k ≤ n) (hτ : τ ≤ n) :
     ((n : ℝ) - τ) > Real.sqrt ((n : ℝ) * k) ↔ (n - τ) * (n - τ) > n * k := by
   have hk_R : (0 : ℝ) ≤ ((n : ℝ) * k) := by positivity
   have hτ_R : (τ : ℝ) ≤ n := by exact_mod_cast hτ

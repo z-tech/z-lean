@@ -394,7 +394,6 @@ BCIKS18 Theorem 1.2. New callers should use `rs_MCA_caseA` directly.
 
 | Paper / spec | Status | Where |
 |---|---|---|
-| Bivariate polynomial / Guruswami-Sudan | Skeleton only (3 sorries in `Upstream/Algebra/BivariatePolynomial/Basic.lean`) | [Upstream/...][biv] |
 | WHIR MCA bound (multivariate) | Tensor MDS-replacement landed (multiplicative `d₁·d₂` bound); WHIR specialization not yet wired | — |
 
 The Reed-Solomon → `IsListDecodable` bridge (formerly parked here) has
@@ -402,7 +401,6 @@ fully landed across Phases 1–4 in
 [`MCA/RSListDecoding.lean`][rsld]; the complete API is documented in the
 "§9.x — GS-sharpened RS bridge (Guruswami-Sudan track)" section above.
 
-[biv]: ../../Upstream/Algebra/BivariatePolynomial/Basic.lean
 [rsld]: ../MCA/RSListDecoding.lean
 
 ---

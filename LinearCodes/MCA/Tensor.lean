@@ -9,22 +9,19 @@ algebra sense).
 The main results are:
 * `Generator.tensorProduct` — the tensor-product generator.
 * `tensorProduct_dotMap_injective` — injectivity of `dotMap` is preserved
-  under tensor product. (No sorry.)
+  under tensor product.
 * `tensorProduct_finrank_eq` — wrapper packaging the dimension /
-  injectivity preservation in the form expected downstream. (No sorry.)
+  injectivity preservation in the form expected downstream.
 * `tensorProduct_inducedCode_minDist_at_least` — the classical
   multiplicative bound: the tensor product preserves min-distance
-  multiplicatively, `d(G ⊗ H) ≥ d(G) · d(H)`. (Sorry'd; classical proof
-  sketched in its docstring.)
+  multiplicatively, `d(G ⊗ H) ≥ d(G) · d(H)`. Fully proved.
 
 ## Why no MDS-preservation theorem?
 
 The Singleton-bound MDS property is **not** preserved under tensor
 products of arbitrary generators. See the comment block above
 `tensorProduct_inducedCode_minDist_at_least` for a counter-example and
-discussion. Earlier drafts of this file had a sorry'd
-`tensorProduct_IsMDS`; that statement is mathematically false and has
-been removed.
+discussion.
 
 This file unblocks the WHIR application, which only requires the
 injectivity / dimension half of MDS together with the multiplicative
@@ -216,18 +213,17 @@ bound for the tensor product would require min-distance at least
 2. *Minimum-distance multiplicatively*: if the induced code of `G` has
    min-distance `≥ d₁` and that of `H` has min-distance `≥ d₂`, then
    the induced code of `G ⊗ H` has min-distance `≥ d₁ · d₂`. This is
-   `tensorProduct_inducedCode_minDist_at_least`. It is the classical
-   tensor-distance theorem; we leave its (multi-page) proof as a
-   `sorry` with a detailed proof skeleton in the docstring.
+   `tensorProduct_inducedCode_minDist_at_least` (the classical
+   tensor-distance theorem), fully proved below following the
+   row/column decomposition skeleton in the docstring.
 
-**Migration note.** Earlier versions of this file had a sorry'd
-`tensorProduct_IsMDS` theorem. That theorem is provably false; it has
-been replaced by the two correct theorems below. Downstream code that
-needs MDS-flavoured properties of `G ⊗ H` should:
+**Downstream API.** Code that needs MDS-flavoured properties of `G ⊗ H`
+should:
 * use `tensorProduct_dotMap_injective` (or `tensorProduct_finrank_eq`)
   for the dimension half, and
 * use `tensorProduct_inducedCode_minDist_at_least` for the (correct,
-  multiplicative) distance bound — *not* the Singleton bound.
+  multiplicative) distance bound — *not* the Singleton bound, which is
+  mathematically false in this generality.
 -/
 
 /-- The tensor product preserves dimension exactly: if `G.dotMap` and

@@ -162,7 +162,7 @@ theorem univariatePowers_dotMap_injective {F : Type*} [Field F] [DecidableEq F]
 with at least 2 elements. -/
 theorem affineSpace_dotMap_injective
     {F : Type*} [Field F] [DecidableEq F] [Fintype F] {s : ℕ}
-    (h_card : 2 ≤ Fintype.card F) :
+    (_h_card : 2 ≤ Fintype.card F) :
     Function.Injective (Generator.affineSpace F s).dotMap := by
   intro u v huv
   -- The seed type is `Fin s → F`. For each seed `x`, expand `dotMap` via

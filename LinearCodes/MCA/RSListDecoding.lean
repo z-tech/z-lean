@@ -1204,7 +1204,7 @@ theorem rs_MCA_caseA
         cfg.domain.getD i.val 0 ≠ cfg.domain.getD j.val 0)
     (hn : 0 < cfg.codeLength)
     {l : ℕ} (fs : Fin (l + 1) → Array F)
-    (h_sizes : ∀ i : Fin (l + 1), (fs i).size = cfg.codeLength)
+    (_h_sizes : ∀ i : Fin (l + 1), (fs i).size = cfg.codeLength)
     (δ : ℕ) (h_δ_le : δ ≤ cfg.codeLength)
     (h_johnson : (cfg.codeLength - δ) * (cfg.codeLength - δ) >
                  cfg.codeLength * cfg.messageLength)

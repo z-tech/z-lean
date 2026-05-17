@@ -237,7 +237,7 @@ example {F : Type*} [Field F] [DecidableEq F] [Fintype F]
 
 /-- A6: Half-distance unique decoding for STIR-MDS. -/
 theorem STIR_uniqueDecoding_via_MCA
-    {F : Type*} [Field F] [DecidableEq F] [Fintype F] {n d : ℕ}
+    {F : Type*} [Field F] [DecidableEq F] [Fintype F] {n : ℕ}
     (c : Submodule F (Fin n → F)) {k : ℕ} (h_MDS : IsMDS c k)
     {τ : ℕ} (h_τ : 2 * τ < n - k + 1) :
     IsListDecodable c τ 1 := by

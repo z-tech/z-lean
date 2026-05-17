@@ -273,7 +273,7 @@ This is a clean target for a math-expert agent. -/
 /-- Counting bound: if subsets `Bᵢ ⊋ A` and each `j ∈ Bᵢ \ A` belongs
 to at most `ℓ − 1` of the `Bᵢ`'s, then `t ≤ (ℓ − 1) · (n − |A|)`. -/
 theorem strict_superset_count_bound {α : Type*} [Fintype α] [DecidableEq α]
-    {ℓ t : ℕ} (hℓ : 1 ≤ ℓ)
+    {ℓ t : ℕ} (_hℓ : 1 ≤ ℓ)
     (A : Finset α) (Bs : Fin t → Finset α)
     (h_strict : ∀ i, A ⊂ Bs i)
     (h_degree : ∀ j ∉ A, (Finset.univ.filter fun i => j ∈ Bs i).card ≤ ℓ - 1) :
@@ -521,7 +521,7 @@ theorem Generator.IsMDS.inducedCode_finrank_eq
 (the induced code), with the source domain `Fin ℓ → F` having full
 dimension `ℓ`. -/
 theorem Generator.IsMDS.dotMap_range_eq_inducedCode
-    [Fintype S] {G : Generator F S ℓ} (h : G.IsMDS) :
+    [Fintype S] {G : Generator F S ℓ} (_h : G.IsMDS) :
     LinearMap.range G.dotMap = G.inducedCode := rfl
 
 end LinearCodes

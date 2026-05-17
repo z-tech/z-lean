@@ -115,7 +115,7 @@ theorem extract_list_bad_witnesses_at_distinct_seeds
     ∃ xs : Fin ℓ → S,
       Function.Injective xs ∧
       (∀ k, xs k ∈ B_set) ∧
-      ∃ ws : ∀ k, MCAListBadWitness G c us γ L (xs k), True := by
+      ∃ _ws : ∀ k, MCAListBadWitness G c us γ L (xs k), True := by
   classical
   obtain ⟨xs, h_inj, h_in⟩ := exists_distinct_seeds_in_finset B_set hB_card
   refine ⟨xs, h_inj, h_in, ?_, trivial⟩

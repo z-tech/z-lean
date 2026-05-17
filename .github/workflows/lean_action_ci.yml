@@ -11,4 +11,34 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - name: Reject proof-term `sorry` in LinearCodes/ and Upstream/
+        run: |
+          python3 - <<'PY'
+          import pathlib, re, sys
+
+          # Strip Lean `/- ... -/` block comments (non-greedy, DOTALL) and `--` line comments,
+          # then look for a bare `sorry` token. We need a comment-aware pass because Lean
+          # docstrings and header comments legitimately mention the word "sorry".
+          BLOCK = re.compile(r"/-.*?-/", re.DOTALL)
+          LINE  = re.compile(r"--[^\n]*")
+          TOKEN = re.compile(r"(?<![A-Za-z0-9_])sorry(?![A-Za-z0-9_])")
+
+          roots = [pathlib.Path("LinearCodes"), pathlib.Path("Upstream")]
+          offenders = []
+          for root in roots:
+              if not root.exists():
+                  continue
+              for path in root.rglob("*.lean"):
+                  src = path.read_text(encoding="utf-8")
+                  stripped = LINE.sub("", BLOCK.sub("", src))
+                  if TOKEN.search(stripped):
+                      offenders.append(str(path))
+
+          if offenders:
+              print("::error::Proof-term `sorry` found in:")
+              for f in offenders:
+                  print(f"  - {f}")
+              sys.exit(1)
+          print("No proof-term `sorry` in LinearCodes/ or Upstream/.")
+          PY
       - uses: leanprover/lean-action@v1

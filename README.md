@@ -81,9 +81,11 @@ parameter `γ` and the minimum distance `δ_C` of the underlying linear code.
 
 ### Status
 
-- **Core BCGM25:** build clean, **0 sorries**, **0 axioms**. All Phase A
-  (Theorem 6.1) and Phase B (Theorem 6.2) capstones are proved end-to-end.
-- **GS-sharpened Reed-Solomon bridge** (in progress / landed):
+- **Core BCGM25 + RS bridge:** build clean, **0 `sorry`**, **0 axioms**
+  across `LinearCodes/` and `Upstream/`. All Phase A (Theorem 6.1) and
+  Phase B (Theorem 6.2) capstones are proved end-to-end, and the
+  GS-sharpened Reed-Solomon bridge has landed.
+- **GS-sharpened Reed-Solomon bridge** (landed):
   [`LinearCodes/MCA/RSListDecoding.lean`](LinearCodes/MCA/RSListDecoding.lean)
   threads the Johnson list-size `n²` through the abstract list-decoding
   capstone, yielding a sharper concrete bound for Reed-Solomon (see below).
@@ -96,20 +98,21 @@ parameter `γ` and the minimum distance `δ_C` of the underlying linear code.
 - **Phase A — unique-decoding regime (Theorem 6.1)**:
   [`LinearCodes/MCA/Case2Capstone.lean`](LinearCodes/MCA/Case2Capstone.lean) →
   `MCA_unique_decoding_bound`. Bounds the seed probability of the MCA bad
-  event by `((n·γ + 1)·(ℓ−1)) / |S|` for any generator over a code with
-  `MinDistAtLeast c δ_C` and `γ·ℓ < δ_C / n`. This is the **integer-tight**
-  lossless bound of BCH+25 (eprint 2025/2055) Theorem 4.1, which Remark 2.5
-  proves matches an explicit adversarial saturation; BCGM25's stated
-  `n·γ·(ℓ−1) / |S|` is the real-number form (sufficient only for the strict
-  bad-seed shape `Δ_x = 0`, not the Lean shape `Δ_x ≤ nγ`). See
+  event by `(max{n·γ, 1} + 1)·(ℓ−1) / |S|` for any generator over a code
+  with `MinDistAtLeast c δ_C` and `γ·(ℓ+1) < δ_C / n`. This is the
+  **integer-tight** lossless bound of BCH+25 (eprint 2025/2055) Theorem 4.1,
+  which Remark 2.5 proves matches an explicit adversarial saturation;
+  BCGM25's stated `max{n·γ, 1}·(ℓ−1) / |S|` is the real-number form
+  (sufficient only for the strict bad-seed shape `Δ_x = 0`, not the Lean
+  shape `Δ_x ≤ nγ`). See
   [`doc/literature-survey-lemma-5-3.md`](LinearCodes/doc/literature-survey-lemma-5-3.md)
   and the concrete counterexample
   [`MCA/Lemma53Examples.lean`](LinearCodes/MCA/Lemma53Examples.lean).
 - **Phase B — list-decoding regime (Theorem 6.2)**:
   [`LinearCodes/MCA/ListDecodingMCA.lean`](LinearCodes/MCA/ListDecodingMCA.lean)
-  → `MCA_list_decoding_bound`. Strengthens the bound to the list-decoding
-  regime, where each bad seed may admit up to `L` candidate codewords
-  agreeing on the witness set.
+  → `MCA_list_decoding_bound`. Strengthens the bound to
+  `L · (max{n·γ, 1} + 1)·(ℓ−1) / |S|`, where each bad seed may admit up
+  to `L` candidate codewords agreeing on the witness set.
 - **Concrete application — STIR**:
   [`LinearCodes/MCA/Applications/STIR.lean`](LinearCodes/MCA/Applications/STIR.lean)
   → `STIR_MCA_unique_decoding_bound`, `STIR_MutualCorrelatedAgreement`,
