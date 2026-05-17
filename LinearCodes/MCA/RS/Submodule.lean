@@ -295,7 +295,7 @@ theorem reedSolomonLinearMap_injective [DecidableEq F]
     rw [Finset.card_image_of_injective _ h_inj, Finset.card_univ, Fintype.card_fin]
   have h_subset : imgSet.val ⊆ p.roots := by
     intro x hx
-    rcases Finset.mem_image.mp hx with ⟨j, _, hjx⟩
+    rcases Finset.mem_image.mp (Finset.mem_val.mp hx) with ⟨j, _, hjx⟩
     refine (Polynomial.mem_roots hp_ne).2 ?_
     show p.eval x = 0
     rw [← hjx]; exact h_eval_zero j

@@ -12,7 +12,7 @@ open CPoly
 
 section Helpers
 
-variable {𝔽 : Type} [Field 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] {n : ℕ}
+variable {𝔽 : Type*} [Field 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] {n : ℕ}
 
 -- Bridge a CMvPolynomial degree claim to MvPolynomial via `degreeOf_equiv`.
 omit [BEq 𝔽] [LawfulBEq 𝔽] in
@@ -53,7 +53,7 @@ end Helpers
 
 section DegreeBounds
 
-variable {𝔽 : Type} [Field 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] {n : ℕ}
+variable {𝔽 : Type*} [Field 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] {n : ℕ}
 
 lemma degreeOf_arithLit_le (ℓ : Literal n) (i : Fin n) :
     (arithLit (𝔽 := 𝔽) ℓ).degreeOf i ≤ 1 := by
@@ -129,7 +129,7 @@ end DegreeBounds
 
 section SoundnessBound
 
-variable {𝔽 : Type} [Field 𝔽] [Fintype 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] {n : ℕ}
+variable {𝔽 : Type*} [Field 𝔽] [Fintype 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] {n : ℕ}
 
 /-- The #SAT soundness error is bounded by `n · 3·|φ| / |𝔽|` — the standard
 Schwartz–Zippel-style bound with individual degree `3·|φ|` from the arithmetized

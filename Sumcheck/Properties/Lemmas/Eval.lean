@@ -9,7 +9,7 @@ import Sumcheck.Properties.Lemmas.Monomials
 namespace CPoly
 
 @[simp] lemma eval₂_Lawful_C
-  {R S : Type} {n : ℕ}
+  {R S : Type*} {n : ℕ}
   [Semiring R] [CommSemiring S] [DecidableEq S]
   [BEq R] [LawfulBEq R]
   (f : R →+* S) (vs : Fin n → S) (c : R) :
@@ -20,13 +20,9 @@ namespace CPoly
   classical
   by_cases hc : c = 0
   · subst hc
+    -- On Mathlib v4.29.1, `simp` closes the goal alone; the trailing
+    -- `exact Std.ExtTreeMap.foldl_empty` was needed on v4.28.0.
     simp [CPoly.CMvPolynomial.eval₂, CPoly.Lawful.C, CPoly.Unlawful.C]
-    exact
-      Std.ExtTreeMap.foldl_empty
-        (α := CPoly.CMvMonomial n) (β := R) (δ := S)
-        (cmp := Ord.compare (α := CPoly.CMvMonomial n))
-        (f := fun s m a => f a * CPoly.MonoR.evalMonomial vs m + s)
-        (init := (0 : S))
   ·
     simp [CPoly.CMvPolynomial.eval₂, CPoly.Lawful.C, CPoly.Unlawful.C, hc]
 
@@ -91,7 +87,7 @@ lemma eval₂Poly_eq_list_foldl
       (init := c1 (𝔽 := 𝔽) 0))
 
 @[simp] lemma eval₂_add
-  {n : ℕ} {R S : Type}
+  {n : ℕ} {R S : Type*}
   [CommSemiring R] [CommSemiring S]
   [DecidableEq R] [BEq R] [LawfulBEq R]
   (f : R →+* S) (vals : Fin n → S)
@@ -116,7 +112,7 @@ lemma eval₂Poly_eq_list_foldl
                   eval₂_equiv (n := n) (R := R) (S := S) (p := b) (f := f) (vals := vals)]
 
 @[simp] lemma eval₂_mul
-  {n : ℕ} {R S : Type}
+  {n : ℕ} {R S : Type*}
   [CommSemiring R] [CommSemiring S]
   [DecidableEq R] [BEq R] [LawfulBEq R]
   (f : R →+* S) (vals : Fin n → S)
@@ -141,7 +137,7 @@ lemma eval₂Poly_eq_list_foldl
                   eval₂_equiv (n := n) (R := R) (S := S) (p := b) (f := f) (vals := vals)]
 
 @[simp] lemma eval₂_mul_fun
-  {n : ℕ} {R S : Type}
+  {n : ℕ} {R S : Type*}
   [CommSemiring R] [CommSemiring S]
   [DecidableEq R] [BEq R] [LawfulBEq R]
   (f : R →+* S) (vals : Fin n → S)
@@ -173,7 +169,7 @@ lemma eval₂Poly_eq_list_foldl
               eval₂_equiv (n := n) (R := R) (S := S) (p := b) (f := f) (vals := vals)]
 
 lemma eval₂_mul_Mul
-  {n : ℕ} {R S : Type}
+  {n : ℕ} {R S : Type*}
   [CommSemiring R] [CommSemiring S]
   [DecidableEq R] [BEq R] [LawfulBEq R]
   (f : R →+* S) (vals : Fin n → S)
@@ -187,7 +183,7 @@ lemma eval₂_mul_Mul
   exact eval₂_mul_fun (n := n) (R := R) (S := S) f vals a b
 
 lemma eval_pow_univariate
-  {𝔽 : Type} [CommRing 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+  {𝔽 : Type*} [CommRing 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
   (q : CMvPolynomial 1 𝔽) (b : 𝔽) :
   ∀ e : ℕ,
     CMvPolynomial.eval (fun _ : Fin 1 => b) (powUnivariate q e)
@@ -235,7 +231,7 @@ lemma eval_pow_univariate
   exact CPoly.eval_add vs a b
 
 lemma eval_foldl_mul_pow_univariate
-  {𝔽 : Type} [CommRing 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+  {𝔽 : Type*} [CommRing 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
   {n : ℕ}
   (vs : Fin n → CPoly.CMvPolynomial 1 𝔽)
   (m : CPoly.CMvMonomial n)

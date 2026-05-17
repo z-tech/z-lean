@@ -29,5 +29,5 @@ lean_lib «LinearCodes.Research» where
 lean_lib «LinearCodes.Examples» where
   roots := #[`LinearCodes.Examples.RSSmokeTest]
 
-require "leanprover-community" / mathlib @ git "v4.28.0"
-require CompPoly from git "https://github.com/z-tech/CompPoly" @ "z-tech/keep_add_rm_instHAddMaxNat"
+require "leanprover-community" / mathlib @ git "v4.29.1"
+require CompPoly from git "https://github.com/Verified-zkEVM/CompPoly" @ "master"

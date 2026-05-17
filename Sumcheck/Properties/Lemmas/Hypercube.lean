@@ -20,7 +20,7 @@ lemma Fin_cases_eq_cons {α : Type _} {n : ℕ} (a : α) (f : Fin n → α) :
   addCasesFun f g i = Fin.addCases (m:=m) (n:=n) (motive := fun _ => α) f g i := rfl
 
 lemma residual_sum_eq_with_openVars_def
-  {𝔽 : Type} [CommRing 𝔽] [DecidableEq 𝔽]
+  {𝔽 : Type*} [CommRing 𝔽] [DecidableEq 𝔽]
   {k n : ℕ} (domain : List 𝔽) (ch : Fin k → 𝔽) (p : CPoly.CMvPolynomial n 𝔽) (hk : k ≤ n) :
   residualSum (𝔽 := 𝔽) domain (k := k) (numVars := n) ch p hk
     =
@@ -38,7 +38,7 @@ lemma sumcheck_CMvMonomial_zero_get
   simp [CPoly.CMvMonomial.zero]
 
 lemma sumcheck_evalMonomial_zero
-  {S : Type} {n : ℕ} [CommSemiring S]
+  {S : Type*} {n : ℕ} [CommSemiring S]
   (vs : Fin n → S) :
   CPoly.MonoR.evalMonomial (n := n) (R := S) vs (CPoly.CMvMonomial.zero (n := n)) = (1 : S) := by
   classical

@@ -43,14 +43,14 @@ open CPoly
 
 /-- An inner-product sumcheck statement: two polynomials, a summation
 domain, and the claimed value of the inner-product sum. -/
-structure InnerProductStatement (𝔽 : Type) [Field 𝔽] [DecidableEq 𝔽]
+structure InnerProductStatement (𝔽 : Type*) [Field 𝔽] [DecidableEq 𝔽]
     (n : ℕ) where
   domain : List 𝔽
   claim : 𝔽
   f : CMvPolynomial n 𝔽
   g : CMvPolynomial n 𝔽
 
-variable {𝔽 : Type} [Field 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] [DecidableEq 𝔽]
+variable {𝔽 : Type*} [Field 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] [DecidableEq 𝔽]
 
 /-- Reduce an inner-product statement to a sumcheck statement on the product
 polynomial. -/
@@ -79,7 +79,7 @@ to `InnerProductStatement` via `toSumcheck`. -/
 
 namespace InnerProduct
 
-variable {𝔽 : Type} [Field 𝔽] [Fintype 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] [DecidableEq 𝔽]
+variable {𝔽 : Type*} [Field 𝔽] [Fintype 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] [DecidableEq 𝔽]
 
 /-- Honest-prover transcript for an inner-product claim, given the verifier's
 random challenges. -/
@@ -99,7 +99,7 @@ end InnerProduct
 
 namespace InnerProduct
 
-variable {𝔽 : Type} [Field 𝔽] [Fintype 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] [DecidableEq 𝔽]
+variable {𝔽 : Type*} [Field 𝔽] [Fintype 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] [DecidableEq 𝔽]
 
 /-- **Inner-product completeness.** For every valid inner-product statement,
 the sumcheck honest prover (applied to `f * g`) convinces the verifier with
