@@ -9,5 +9,25 @@ lean_lib «Sumcheck» where
 
 lean_lib «InteractiveProtocol» where
 
-require "leanprover-community" / mathlib @ git "v4.28.0"
-require CompPoly from git "https://github.com/z-tech/CompPoly" @ "z-tech/keep_add_rm_instHAddMaxNat"
+@[default_target]
+lean_lib «LinearCodes» where
+
+@[default_target]
+lean_lib «Upstream» where
+
+-- Research-facing scratch (`LinearCodes/Research/`). Built in CI so it
+-- catches API regressions, but excluded from the public umbrella
+-- `LinearCodes.lean` so downstream users don't transitively import it.
+@[default_target]
+lean_lib «LinearCodes.Research» where
+  roots := #[`LinearCodes.Research.Capstones]
+
+-- User-facing examples / smoke tests (`LinearCodes/Examples/`). Same
+-- reasoning as Research above: built in CI to catch encoder regressions,
+-- not pulled in by `import LinearCodes`.
+@[default_target]
+lean_lib «LinearCodes.Examples» where
+  roots := #[`LinearCodes.Examples.RSSmokeTest]
+
+require "leanprover-community" / mathlib @ git "v4.29.1"
+require CompPoly from git "https://github.com/Verified-zkEVM/CompPoly" @ "master"

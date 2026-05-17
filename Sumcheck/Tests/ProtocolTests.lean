@@ -1,8 +1,11 @@
+import Mathlib.Algebra.Field.ZMod
 import Mathlib.Data.ZMod.Basic
 
 import Sumcheck.Properties.Probability.CountingPolynomials
 import Sumcheck.Src.Prover
 import Sumcheck.Src.Verifier
+
+set_option maxHeartbeats 800000
 
 namespace __ProtocolTests__
 

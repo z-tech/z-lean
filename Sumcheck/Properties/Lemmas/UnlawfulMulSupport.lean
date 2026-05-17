@@ -1,6 +1,6 @@
 import CompPoly.Multivariate.Unlawful
 import CompPoly.Multivariate.Lawful
-import ExtTreeMapLemmas.ExtTreeMap
+import CompPoly.Data.ExtTreeMap.ExtTreeMap
 
 namespace Sumcheck
 

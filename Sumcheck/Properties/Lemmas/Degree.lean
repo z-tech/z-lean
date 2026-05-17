@@ -20,10 +20,9 @@ noncomputable def deg1
   CPoly.fromCMvPolynomial (R := 𝔽) (p + q) = CPoly.fromCMvPolynomial (R := 𝔽) p + CPoly.fromCMvPolynomial (R := 𝔽) q := by
   classical
   ext s
-  -- unfold *just enough* that coeff is `toFun`
+  -- unfold *just enough* that coeff is `toFun`. On Mathlib v4.29.1 `simp`
+  -- closes the goal; on older versions a trailing `rfl` was needed.
   simp [CPoly.fromCMvPolynomial, MvPolynomial.coeff]
-  -- if there is still a goal, it should now be literally `rfl` or a `simp` ring goal
-  rfl
 
 lemma degreeOf_add_le_of_le
   {𝔽 : Type _} [CommSemiring 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]

@@ -3,4 +3,6 @@
 .DS_Store
 # Claude
 .claude/
+# Local PDF copies (papers, references) — not tracked in git
+*.pdf
 

@@ -30,10 +30,6 @@ lemma fromCMvPolynomial_c1_eq_C {𝔽 : Type _} [CommSemiring 𝔽] [BEq 𝔽] [
     CPoly.Unlawful.C]
   by_cases hc : c = 0
   · simp [hc]
-    change
-      ((∅ : Std.ExtTreeMap (CPoly.CMvMonomial 1) 𝔽 (Ord.compare (α := CPoly.CMvMonomial 1)))[
-          CPoly.CMvMonomial.ofFinsupp m]?).getD 0 = 0
-    simp
   · simp [hc]
     have hz : ((CPoly.CMvMonomial.zero : CPoly.CMvMonomial 1)).toFinsupp = (0 : Fin 1 →₀ ℕ) := by
       ext

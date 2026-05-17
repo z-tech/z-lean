@@ -1,4 +1,5 @@
-import ExtTreeMapLemmas.ExtTreeMap
+import CompPoly.Data.ExtTreeMap.ExtTreeMap
+import Mathlib.Tactic.Set
 
 lemma Std.ExtTreeMap.foldl_empty
   {α : Type u} {β : Type v} {cmp : α → α → Ordering} {δ : Type w}
