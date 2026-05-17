@@ -458,7 +458,7 @@ theorem IsListDecodable_squared_johnson_MDS_explicit
 
 /-- J8: Squared-Johnson hypothesis is consistent with reaching beyond
 unique-decoding radius. -/
-theorem johnson_squared_implies_above_unique
+theorem pos_n_sub_τ_of_johnson_sq
     {n k τ : ℕ} (h_johnson : (n - τ) * (n - τ) > n * k) (_hk_le : k ≤ n) :
     n - τ > 0 := by
   by_contra h

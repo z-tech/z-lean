@@ -253,7 +253,7 @@ theorem IsListDecodable.shift
 
 /-- D2: Strengthening of `IsListDecodable_zero`: agreement everywhere implies
 equality (regardless of codeword membership). Useful sanity lemma. -/
-theorem agree_everywhere_implies_eq
+theorem eq_of_agree_everywhere
     {F : Type*} [DecidableEq F] {n : ℕ}
     (u v : Fin n → F) (h_agree : ∀ i, u i = v i) : u = v := by
   funext i

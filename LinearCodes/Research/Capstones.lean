@@ -1,8 +1,13 @@
 /-
-# Capstone API examples
+# Capstone API regression scratch (research-facing)
 
 Concrete `example`s exercising the BCGM25 capstone theorems with specific
-fields and parameters. These serve as smoke tests catching API regressions.
+fields and parameters. These serve as smoke tests catching API regressions
+during ongoing research changes; they are not part of the user-facing
+`LinearCodes` umbrella (`LinearCodes.lean` does NOT import this file).
+
+Migrated from `LinearCodes/MCA/Examples_Capstones.lean` so the top-level
+public API doesn't transitively pull in research scratch.
 -/
 
 import LinearCodes.MCA.Case2Capstone

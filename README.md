@@ -2,6 +2,17 @@
 
 The **Sumcheck protocol** written in [Lean 4](https://lean-lang.org/) using [`CMvPolynomial`](https://github.com/Verified-zkEVM/CompPoly).
 
+## What you import
+
+```lean
+import Sumcheck     -- the sumcheck protocol
+import LinearCodes  -- LinearCode typeclass, Reed-Solomon, BCGM25 MCA framework
+```
+
+For the LinearCodes tree specifically, a tour of common usage patterns
+(encoding, security primitives, STIR / WHIR profiler hooks) lives at
+[`LinearCodes/doc/getting-started.md`](LinearCodes/doc/getting-started.md).
+
 ## Key Features
 
 - **Fully Computable**: Transcript generation is provided given a [`CMvPolynomial`](https://github.com/Verified-zkEVM/CompPoly), a claim, and challenge set.

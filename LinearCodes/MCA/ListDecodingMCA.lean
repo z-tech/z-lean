@@ -348,4 +348,9 @@ example {F : Type*} [Field F] [DecidableEq F] [Fintype F]
     ≤ (L * (max ((n : ℚ) * γ) 1 + 1) * (2 - 1)) / Fintype.card F :=
   MCA_list_decoding_bound G hG_MDS (by omega) c hn h_minDist h_LD us hγ_pos hγ_hi h_radius
 
+/-! ### Reader-friendly aliases -/
+
+@[inherit_doc MCA_list_decoding_bound]
+alias correlatedAgreement_listDecoding_error := MCA_list_decoding_bound
+
 end LinearCodes

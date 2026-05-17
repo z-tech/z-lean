@@ -5,6 +5,12 @@ The Case 2 capstone proof of `MCA_unique_decoding_large_gamma_bound`
 (in `Case2Capstone.lean`) decomposes into 8 sub-targets defined here,
 plus the Lemma 5.3 aggregate-counting bound `Ttilde_card_gt_of_MDS_aggregate`.
 See `LinearCodes/doc/paper-to-lean-map.md` for the full theorem map.
+
+**Note on naming.** "Case 2" here is Lean-internal: the `γ ≥ 1/n` branch
+of the Theorem 6.1 proof. It is unrelated to the paper's
+"case (a) / case (b)" (structural vs quantitative MCA, surfaced as
+`rs_MCA_caseA` in `RSListDecoding.lean`) — see the naming-crosswalk
+section in `Case2Capstone.lean` for details.
 -/
 
 import LinearCodes.MCA.UniqueDecoding
@@ -86,7 +92,7 @@ theorem isCADomain_of_combines_agree
         rw [h_split, h_sum_eq, sub_self]
       simpa [Generator.dotMap_apply, hv_def] using h_sub
     have hv_zero : v = 0 :=
-      hG_MDS.dotMap_zero_at_distinct_seeds_implies_zero xs h_distinct h_zero
+      hG_MDS.dotMap_distinct_seeds_eq_zero xs h_distinct h_zero
     have hj : v j = 0 := by simpa using congrFun hv_zero j
     have h_sub_zero : us j i - cstars j i = 0 := by simpa [hv_def] using hj
     exact (sub_eq_zero.mp h_sub_zero).symm
@@ -147,7 +153,7 @@ theorem exists_cstars_of_MDS [DecidableEq S]
   have hM_inj : Function.Injective M.mulVec := by
     intro v w hvw
     have h_diff : v - w = 0 := by
-      apply hG_MDS.dotMap_zero_at_distinct_seeds_implies_zero xs h_distinct
+      apply hG_MDS.dotMap_distinct_seeds_eq_zero xs h_distinct
       intro i
       have hM_diff : M.mulVec (v - w) = 0 := by
         rw [Matrix.mulVec_sub, hvw, sub_self]

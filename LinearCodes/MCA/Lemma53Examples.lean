@@ -24,7 +24,7 @@ See `LinearCodes/doc/lemma-5-3-numerical-analysis.md` for the full
 analysis.
 -/
 
-import LinearCodes.MCA.Examples
+import LinearCodes.MCA.Generators
 
 set_option linter.unusedSectionVars false
 

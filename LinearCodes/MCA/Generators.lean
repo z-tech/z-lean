@@ -1,7 +1,9 @@
 /-
-# Concrete generator examples
+# Concrete generators
 
-The standard generators studied in BCGM25 §2.3:
+The standard generators studied in BCGM25 §2.3 (formerly
+`LinearCodes/MCA/Examples.lean`; this file defines load-bearing
+library content, not examples):
 
 * `Generator.identity` — `G(x) = x`. Used in [RVW13].
 * `Generator.univariatePowers` — `G(x) = (1, x, x², …, x^d)`. Used in

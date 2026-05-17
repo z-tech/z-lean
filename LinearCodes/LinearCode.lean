@@ -46,9 +46,9 @@ inductive ProximityRegime where
   deriving DecidableEq, Repr
 
 /-- A linear-code instance over the field `F`. -/
-class LinearCode (Code : Type) (F : Type) [Field F] where
+class LinearCode (Code : Type*) (F : Type*) [Field F] where
   /-- Configuration type (parameters: message length, code length, domain, …). -/
-  Config : Type
+  Config : Type*
   /-- Construct a code value from a configuration. -/
   new : Config → Code
   /-- Encode a message of length `messageLen` into a codeword of length `codeLen`. -/
@@ -80,7 +80,7 @@ class LinearCode (Code : Type) (F : Type) [Field F] where
 
 Common helpers that don't need per-code customisation. -/
 
-variable {F : Type} [Field F] {Code : Type} [LinearCode Code F]
+variable {F : Type*} [Field F] {Code : Type*} [LinearCode Code F]
 
 /-- Code rate `ρ = k / n`, as a rational. Returns `0` when `n = 0`. -/
 def rate (c : Code) : ℚ :=

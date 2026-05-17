@@ -8,6 +8,23 @@ together the sub-targets from `Case2Subtargets.lean` with the
 maximal-agreement infrastructure from `MaximalDomain.lean` to prove the
 weakened §6.1 Case 2 capstone:
 
+## Naming crosswalk
+
+Two unrelated case-numberings appear in this codebase. They look similar
+but mean different things — don't confuse them.
+
+* **Lean's "Case 1 / Case 2"** (this file, `Case2Subtargets.lean`,
+  `MCA_unique_decoding_small_gamma_bound` vs `_large_gamma_bound`):
+  internal branching by `γ < 1/n` vs `γ ≥ 1/n` in the proof of
+  Theorem 6.1. Both cases prove the *same* statement; the split is
+  purely about which counting argument applies.
+* **BCGM25 / BCIKS18 "case (a) / case (b)"** (in `RSListDecoding.lean`
+  as `rs_MCA_caseA`): the paper-level distinction between the
+  *structural* form of MCA (case (a): "∀ α gives δ-close combination ⇒
+  MCA") and the *quantitative* form (case (b): the seed-probability
+  bound). These are two *equivalent views* of the same theorem
+  (BCIKS18 Thm 1.2 / BCGM25 Thm 9.2), not branches of one proof.
+
 ```
 seedProb (...) ≤ ((n·γ + 1)·(ℓ-1)) / |S|
 ```
@@ -486,5 +503,15 @@ example {F : Type*} [Field F] [DecidableEq F] [Fintype F]
         ∃ j : Fin 2, ¬ InRestrictedCode c T (us j))
     ≤ (max ((n : ℚ) * γ) 1 + 1) * (2 - 1) / Fintype.card F :=
   MCA_unique_decoding_bound G hG_MDS (by omega) c hn h_minDist us hγ_pos hγ_hi
+
+/-! ### Reader-friendly aliases
+
+The paper-faithful `MCA_*` names are convenient for cross-referencing
+BCGM25 / BCIKS18 but opaque to readers who haven't read those papers.
+We expose long-form aliases so external callers can discover the
+theorems via their full natural-language names. -/
+
+@[inherit_doc MCA_unique_decoding_bound]
+alias correlatedAgreement_uniqueDecoding_error := MCA_unique_decoding_bound
 
 end LinearCodes

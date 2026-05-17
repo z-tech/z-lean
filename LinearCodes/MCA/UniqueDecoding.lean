@@ -66,7 +66,7 @@ noncomputable def mkMCABadWitness
 /-- In the unique-decoding regime (tight γ), the witness codeword for a
 given seed is determined by the agreement set: if `cw, cw'` are both
 codewords agreeing with `G.combine x us` on a set `T` of size `≥ k`,
-then `cw = cw'`. Direct from `agreement_implies_eq_of_MDS`. -/
+then `cw = cw'`. Direct from `eq_of_agreement_of_MDS`. -/
 theorem witness_codeword_unique_of_MDS
     {k : ℕ} {c : Submodule F (Fin n → F)}
     (h_MDS : IsMDS c k)
@@ -75,7 +75,7 @@ theorem witness_codeword_unique_of_MDS
     (hcw : cw ∈ c) (hcw' : cw' ∈ c)
     (h_agree : ∀ i ∈ T, cw i = u i) (h_agree' : ∀ i ∈ T, cw' i = u i) :
     cw = cw' := by
-  apply agreement_implies_eq_of_MDS h_MDS hcw hcw' hT
+  apply eq_of_agreement_of_MDS h_MDS hcw hcw' hT
   intros i hi
   rw [h_agree i hi, ← h_agree' i hi]
 
@@ -97,7 +97,7 @@ theorem witness_codewords_eq_of_overlap_MDS
     (h_agree' : ∀ i ∈ T', cw' i = G.combine x' us i)
     (h_combine_eq : ∀ i ∈ T ∩ T', G.combine x us i = G.combine x' us i) :
     cw = cw' := by
-  apply agreement_implies_eq_of_MDS h_MDS hcw hcw' h_overlap
+  apply eq_of_agreement_of_MDS h_MDS hcw hcw' h_overlap
   intros i hi
   rw [Finset.mem_inter] at hi
   calc cw i = G.combine x us i := h_agree i hi.1
@@ -217,7 +217,7 @@ theorem Generator.IsMDS.zeroEvading_bound [Fintype S] [Nonempty S]
 `ℓ` distinct seeds, then `v = 0`. Equivalently, the matrix
 `(G(xs i) j)_{i,j}` is invertible whenever `xs : Fin ℓ → S` is injective.
 This is the algebraic backbone of BCGM25 Theorem 6.1's case `γ < 1/n`. -/
-theorem Generator.IsMDS.dotMap_zero_at_distinct_seeds_implies_zero
+theorem Generator.IsMDS.dotMap_distinct_seeds_eq_zero
     [Fintype S] [DecidableEq S]
     {G : Generator F S ℓ} (hG : G.IsMDS)
     {v : Fin ℓ → F} (xs : Fin ℓ → S) (h_distinct : Function.Injective xs)
@@ -361,7 +361,7 @@ theorem all_us_mem_of_combine_at_distinct_seeds [Fintype S] [DecidableEq S]
     have hf_zero : f (G.combine (xs i) us) = 0 := by
       exact (LinearMap.mem_ker).1 hmem
     simpa [v] using (linearMap_apply_combine_eq_dotMap f G (xs i) us).symm.trans hf_zero
-  have hv : v = 0 := hG_MDS.dotMap_zero_at_distinct_seeds_implies_zero xs h_distinct h_zero
+  have hv : v = 0 := hG_MDS.dotMap_distinct_seeds_eq_zero xs h_distinct h_zero
   exact hf_nonzero (by simpa [v] using congrFun hv j₀)
 
 

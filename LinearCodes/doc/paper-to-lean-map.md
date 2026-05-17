@@ -382,10 +382,10 @@ BCIKS18 Theorem 1.2. New callers should use `rs_MCA_caseA` directly.
 | `affineLine` MDS over `ZMod 5` | `example` | [MCA/ConcreteMDS.lean][cmds] |
 | `univariatePowers F 3` MDS over `ZMod 7` | `example` | [MCA/ConcreteMDS.lean][cmds] |
 | STIR MutualCorrelatedAgreement over ZMod 7 | `example` | [MCA/Applications/STIR.lean][stir] |
-| Curated capstone examples | `Examples_Capstones.lean` | [MCA/Examples_Capstones.lean][excap] |
+| Curated capstone examples (research scratch) | `Research/Capstones.lean` | [Research/Capstones.lean][excap] |
 | seedProb sanity (`True`/`False`) | `example`s | [Tests.lean][tests] |
 
-[excap]: ../MCA/Examples_Capstones.lean
+[excap]: ../Research/Capstones.lean
 [tests]: ../Tests.lean
 
 ---

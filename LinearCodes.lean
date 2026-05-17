@@ -4,7 +4,7 @@ import LinearCodes.Algebraic.Restriction
 import LinearCodes.MCA.Definitions
 import LinearCodes.MCA.Properties
 import LinearCodes.MCA.SeedProbLemmas
-import LinearCodes.MCA.Examples
+import LinearCodes.MCA.Generators
 import LinearCodes.MCA.Lemma53Examples
 import LinearCodes.MCA.InducedCode
 import LinearCodes.MCA.CAImplications
@@ -23,7 +23,6 @@ import LinearCodes.MCA.ListDecodingCounting
 import LinearCodes.MCA.ListDecodingMCA
 import LinearCodes.MCA.Applications.STIR
 import LinearCodes.MCA.Applications.Profile
-import LinearCodes.MCA.Examples_Capstones
 import LinearCodes.LinearCode
 import LinearCodes.ReedSolomon
 import LinearCodes.ReedSolomonProperties

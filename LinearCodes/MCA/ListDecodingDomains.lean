@@ -169,7 +169,7 @@ theorem isListCADomain_of_all_combines_agree
   have hM_inj : Function.Injective M.mulVec := by
     intro v w hvw
     have h_diff : v - w = 0 := by
-      apply hG_MDS.dotMap_zero_at_distinct_seeds_implies_zero xs h_distinct
+      apply hG_MDS.dotMap_distinct_seeds_eq_zero xs h_distinct
       intro i
       have hM_diff : M.mulVec (v - w) = 0 := by
         rw [Matrix.mulVec_sub, hvw, sub_self]
@@ -385,7 +385,7 @@ theorem isListCADomain_of_all_combines_agree
         exact (h (Finset.mem_univ _)).elim
     -- Now: G.combine (xs k') w' = cs k k' = G.combine (xs k') cstars.
     -- By all_us_mem... (MDS injectivity), w' = cstars (as functions Fin ℓ → (Fin n → F)).
-    -- We use `dotMap_zero_at_distinct_seeds_implies_zero` per coordinate i.
+    -- We use `dotMap_distinct_seeds_eq_zero` per coordinate i.
     have hw'_eq_cstars : w' = cstars := by
       funext jᵣ i'
       -- Define z : Fin ℓ → F by z jᵣ := w' jᵣ i' - cstars jᵣ i'.
@@ -412,7 +412,7 @@ theorem isListCADomain_of_all_combines_agree
           rw [h_split, h_sum_eq, sub_self]
         simpa [Generator.dotMap_apply, hz_def] using h_sub
       have hz_zero : z = 0 :=
-        hG_MDS.dotMap_zero_at_distinct_seeds_implies_zero xs h_distinct h_zero
+        hG_MDS.dotMap_distinct_seeds_eq_zero xs h_distinct h_zero
       have : z jᵣ = 0 := by simpa using congrFun hz_zero jᵣ
       have : w' jᵣ i' - cstars jᵣ i' = 0 := by simpa [hz_def] using this
       exact sub_eq_zero.mp this

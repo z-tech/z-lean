@@ -67,7 +67,7 @@ squared-Johnson `n²` and the generator-multiplicity factor is
 `l + 1 - 1 = l`, matching the STIR Theorem 6.1 bound for case (b)
 list-decoding. -/
 theorem STIR_MCA_list_decoding_bound
-    {F : Type} [Field F] [DecidableEq F] [Fintype F]
+    {F : Type*} [Field F] [DecidableEq F] [Fintype F]
     (cfg : ReedSolomonConfig F) (h_dom : cfg.domain.size = cfg.codeLength)
     (h_distinct : ∀ i j : Fin cfg.domain.size, i ≠ j →
         cfg.domain.getD i.val 0 ≠ cfg.domain.getD j.val 0)

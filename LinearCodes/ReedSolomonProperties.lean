@@ -91,7 +91,7 @@ end-to-end. Highlights:
 
 namespace LinearCodes
 
-variable {F : Type} [Field F]
+variable {F : Type*} [Field F]
 
 /-- Hamming distance: number of positions where two equal-size arrays
 disagree. Returns `0` for mismatched sizes (callers should ensure equal

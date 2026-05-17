@@ -51,7 +51,7 @@ sharpened correlated-agreement bounds in `MCA/JohnsonBound.lean` and
   `n² · (max(n·γ, 1) + 1) · l / |F|`.
 * `rs_some_alpha_evades_bad_event` — combines
   `rs_MCA_list_decoding_bound` with the field-size implication
-  (`field_size_implies_some_alpha_witness`) to obtain the existence of a
+  (`exists_alpha_witness_of_field_size`) to obtain the existence of a
   "good" seed `α` for which the MCA bad event fails. This is the
   RS-specific existence-of-good-seed statement consumed by FRI-family
   proximity tests.
@@ -68,7 +68,7 @@ through the submodule infrastructure above.
 
 import LinearCodes.ReedSolomonProperties
 import LinearCodes.MCA.JohnsonBound
-import LinearCodes.MCA.Examples
+import LinearCodes.MCA.Generators
 import LinearCodes.MCA.ConcreteMDS
 import LinearCodes.MCA.ListDecodingMCA
 
@@ -76,7 +76,7 @@ set_option linter.unusedSectionVars false
 
 namespace LinearCodes
 
-variable {F : Type} [Field F]
+variable {F : Type*} [Field F]
 
 /-! ### Step 1: Function-form messagePoly -/
 
@@ -582,10 +582,10 @@ The technical heart of the GS application. Three sub-targets:
 * Sub-target 3.1 (`rs_MCA_list_decoding_bound`) — instantiate
   `MCA_list_decoding_bound` with the RS submodule, recovering the
   RS-flavoured bound `n²·(max(n·γ,1) + 1)·l / |F|`.
-* Sub-target 3.2 (`field_size_implies_some_alpha_witness`) — pass from a
+* Sub-target 3.2 (`exists_alpha_witness_of_field_size`) — pass from a
   `seedProb ≤ B/|F|` bound and `|F| > B` to the existence of a "good"
   seed (one for which the bad event fails).
-* Sub-target 3.3 (`gamma_johnson_implies_hi`,
+* Sub-target 3.3 (`gamma_hi_of_johnson`,
   `n_one_minus_gamma_eq_n_sub_delta`) — γ ↔ δ arithmetic relating the
   list-decoding γ-form to the RS distance δ. -/
 
@@ -649,7 +649,7 @@ submodule with the squared-Johnson list-size `n²` and the
 The conclusion: the MCA bad event has seed-probability at most
 `(n² · (max(n·γ, 1) + 1) · l) / |F|`. -/
 theorem rs_MCA_list_decoding_bound
-    {F : Type} [Field F] [DecidableEq F] [Fintype F]
+    {F : Type*} [Field F] [DecidableEq F] [Fintype F]
     (cfg : ReedSolomonConfig F) (h_dom : cfg.domain.size = cfg.codeLength)
     (h_distinct : ∀ i j : Fin cfg.domain.size, i ≠ j →
         cfg.domain.getD i.val 0 ≠ cfg.domain.getD j.val 0)
@@ -771,7 +771,7 @@ theorem seedProb_lt_one_iff_exists_not
 
 /-- Sub-target 3.2: if `seedProb P ≤ B / |S|` and `|S| > B`, then
 `seedProb P < 1`, hence some seed does not satisfy `P`. -/
-theorem field_size_implies_some_alpha_witness
+theorem exists_alpha_witness_of_field_size
     {S : Type*} [Fintype S] [Nonempty S] (P : S → Prop)
     {B : ℚ} (h_bound : seedProb P ≤ B / Fintype.card S)
     (h_field_large : (B : ℚ) < Fintype.card S) :
@@ -785,12 +785,12 @@ theorem field_size_implies_some_alpha_witness
 
 /-- Sub-target 3.2 (ℕ form): if `seedProb P ≤ N / |S|` for an ℕ bound
 `N` and `|S| > N`, then some seed does not satisfy `P`. -/
-theorem field_size_implies_some_alpha_witness_nat
+theorem exists_alpha_witness_of_field_size_nat
     {S : Type*} [Fintype S] [Nonempty S] (P : S → Prop)
     {N : ℕ} (h_bound : seedProb P ≤ (N : ℚ) / Fintype.card S)
     (h_field_large : N < Fintype.card S) :
     ∃ x : S, ¬ P x :=
-  field_size_implies_some_alpha_witness P h_bound (by exact_mod_cast h_field_large)
+  exists_alpha_witness_of_field_size P h_bound (by exact_mod_cast h_field_large)
 
 /-! #### Sub-target 3.3: γ ↔ δ arithmetic for the Johnson regime
 
@@ -803,7 +803,7 @@ mixing ℕ and ℚ subtractions; we expose only the cleanest version. -/
 /-- Arithmetic helper (Sub-target 3.3): given the strict Johnson-style
 inequality `δ * (l + 2) < n - k + 1` (in ℕ), conclude the
 ℚ-form `γ * (l + 2) < (n - k + 1 : ℕ : ℚ) / n` with `γ = δ / n`. -/
-theorem gamma_johnson_implies_hi
+theorem gamma_hi_of_johnson
     {n k l δ : ℕ} (hn : 0 < n)
     (h_arith : δ * (l + 2) < n - k + 1) :
     ((δ : ℚ) / n) * ((l : ℚ) + 2) <
@@ -832,14 +832,14 @@ obtain the existence of a "good" seed `α` for which the bad event fails.
 
 For sharpness, we take `γ = δ/n` with `δ` adapted to `h_johnson_τ`. The
 exact inequality the user wants to feed into the bound is captured in
-`gamma_johnson_implies_hi`. -/
+`gamma_hi_of_johnson`. -/
 
 /-- Sub-target 3 (capstone): combining the list-decoding MCA bound
 (Sub-target 3.1) with the field-size implication (Sub-target 3.2),
 whenever the field is large enough relative to the bound, some seed
 makes the bad event fail. -/
 theorem rs_some_alpha_evades_bad_event
-    {F : Type} [Field F] [DecidableEq F] [Fintype F]
+    {F : Type*} [Field F] [DecidableEq F] [Fintype F]
     (cfg : ReedSolomonConfig F) (h_dom : cfg.domain.size = cfg.codeLength)
     (h_distinct : ∀ i j : Fin cfg.domain.size, i ≠ j →
         cfg.domain.getD i.val 0 ≠ cfg.domain.getD j.val 0)
@@ -873,7 +873,7 @@ theorem rs_some_alpha_evades_bad_event
     rs_MCA_list_decoding_bound cfg h_dom h_distinct hn hl h_field us
       h_johnson_τ hγ_pos hγ_hi h_radius
   -- Apply Sub-target 3.2.
-  exact field_size_implies_some_alpha_witness _ h_bound h_field_large
+  exact exists_alpha_witness_of_field_size _ h_bound h_field_large
 
 /-! ### Step 11: GS Phase 2 — submodule reformulation of `mcaGoodScalar`
 
@@ -1086,7 +1086,7 @@ non-list-decodability assumption on the input rows. We state the
 result with `fs : Fin (l + 1) → Array F` so that the `rsGenerator F l :
 Generator F F (l + 1)` view aligns with `linComb` via
 `combine_eq_linComb_funForm`. -/
-theorem caseA_implies_bad_event_universal
+theorem bad_event_universal_of_caseA
     [DecidableEq F]
     (cfg : ReedSolomonConfig F) (h_dom_size : cfg.domain.size = cfg.codeLength)
     {l : ℕ} (fs : Fin (l + 1) → Array F)
@@ -1132,7 +1132,7 @@ theorem caseA_implies_bad_event_universal
 terms of `arrayToFun (linComb cfg.codeLength fs α)`. The two forms are
 interchangeable via `combine_eq_linComb_funForm`. This form does not
 require `fs` to be a `Fin (l + 1)`-family. -/
-theorem caseA_implies_bad_event_universal_linComb
+theorem bad_event_universal_of_caseA_linComb
     [DecidableEq F]
     (cfg : ReedSolomonConfig F) (h_dom_size : cfg.domain.size = cfg.codeLength)
     {l : ℕ} (fs : Fin l → Array F)
@@ -1199,9 +1199,16 @@ The canonical case-(a) MCA theorem for RS, with the `O((l + 1) · n²)`
 Johnson field-size threshold matching BCGM25 Theorem 9.2 / BCIKS18
 Theorem 1.2. The hypothesis `h_field_size` matches the bound furnished by
 `rs_some_alpha_evades_bad_event`, which uses the squared-Johnson
-list-size `n²` rather than the `2^n` pigeonhole codomain count. -/
+list-size `n²` rather than the `2^n` pigeonhole codomain count.
+
+**Naming note.** "case (a)" here is BCGM25/BCIKS18 paper terminology
+(the *structural* MCA: "∀ α gives δ-close combination ⇒ MCA"), not to
+be confused with Lean's internal "Case 1 / Case 2" in
+`Case2Capstone.lean` which is the small-γ vs large-γ branch of the
+Theorem 6.1 proof. The two case-numberings are unrelated; see the
+naming-crosswalk header in `MCA/Case2Capstone.lean`. -/
 theorem rs_MCA_caseA
-    {F : Type} [Field F] [DecidableEq F] [Fintype F]
+    {F : Type*} [Field F] [DecidableEq F] [Fintype F]
     (cfg : ReedSolomonConfig F) (h_dom_size : cfg.domain.size = cfg.codeLength)
     (h_distinct : ∀ i j : Fin cfg.domain.size, i ≠ j →
         cfg.domain.getD i.val 0 ≠ cfg.domain.getD j.val 0)
@@ -1322,6 +1329,19 @@ theorem rs_MCA_caseA
     -- Combine: (fs i).getD j.val 0 = v_i j = (funMessagePoly m_fun).eval ... =
     --   (encode (funToArray m_fun)).getD j.val 0.
     rw [← h_v_i_at_j, h_v_i_eval, ← h_enc_eval]
+
+/-! ### Reader-friendly aliases
+
+The `rs_MCA_*` names follow BCGM25 / BCIKS18 paper conventions. We
+expose long-form aliases so callers can find the theorems via their
+full natural-language descriptions without having to know the paper. -/
+
+@[inherit_doc rs_MCA_caseA]
+alias reedSolomon_correlatedAgreement_johnson_regime := rs_MCA_caseA
+
+@[inherit_doc rs_MCA_list_decoding_bound]
+alias reedSolomon_correlatedAgreement_listDecoding_bound :=
+  rs_MCA_list_decoding_bound
 
 /-! ### Sanity checks: concrete instances of the new RS-MCA API -/
 

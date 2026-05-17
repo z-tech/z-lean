@@ -28,7 +28,7 @@ injectivity / dimension half of MDS together with the multiplicative
 distance bound.
 -/
 
-import LinearCodes.MCA.Examples
+import LinearCodes.MCA.Generators
 import LinearCodes.MCA.ConcreteMDS
 
 set_option linter.unusedSectionVars false

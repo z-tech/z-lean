@@ -270,7 +270,7 @@ theorem hammingDistance_le_of_agree_on [DecidableEq F]
 /-- **Key lemma for §6.1.** In an MDS code with dimension `k`, two codewords
 that agree on a set `T` of size at least `k` must be equal. This is the
 algebraic backbone of BCGM25 Theorem 6.1's polynomial argument. -/
-theorem agreement_implies_eq_of_MDS [DecidableEq F]
+theorem eq_of_agreement_of_MDS [DecidableEq F]
     {k : ℕ} {c : Submodule F (Fin n → F)}
     (h_MDS : IsMDS c k)
     {u v : Fin n → F} (hu : u ∈ c) (hv : v ∈ c)
@@ -301,7 +301,7 @@ theorem MDS_distinct_codewords_disagree [DecidableEq F]
   by_contra h_size_ge
   push_neg at h_size_ge
   apply h_ne
-  apply agreement_implies_eq_of_MDS h_MDS hu hv h_size_ge
+  apply eq_of_agreement_of_MDS h_MDS hu hv h_size_ge
   intros i hi
   exact mem_agreementSet.mp hi
 
@@ -353,7 +353,7 @@ theorem MDS_unique_decoding [DecidableEq F]
 
 /-- **MinDist version of MDS rigidity.** In a code with minimum distance
 at least `d`, two codewords agreeing on more than `n − d` positions are
-equal. This generalizes `agreement_implies_eq_of_MDS` to the
+equal. This generalizes `eq_of_agreement_of_MDS` to the
 `MinDistAtLeast` predicate (without requiring `IsMDS`). -/
 theorem MinDistAtLeast.codewords_eq_of_agree [DecidableEq F]
     {d : ℕ} {c : Submodule F (Fin n → F)} (h_minDist : MinDistAtLeast c d)

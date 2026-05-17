@@ -19,20 +19,20 @@ unity. An FFT-based encoder can be slotted in later as an optimisation.
 
 namespace LinearCodes
 
-variable {F : Type} [Field F]
+variable {F : Type*} [Field F]
 
 /-- Reed-Solomon configuration: message length `k`, code length `n` (with
 `n > k`), and the evaluation domain — an array of `n` distinct points in `F`.
 The constructor `mkConfig` performs no validation; if the domain is not the
 right length or contains duplicates, `encode` will still produce a (broken)
 codeword. -/
-structure ReedSolomonConfig (F : Type) [Field F] where
+structure ReedSolomonConfig (F : Type*) [Field F] where
   messageLength : Nat
   codeLength : Nat
   domain : Array F
 
 /-- The Reed-Solomon code over `F`, parameterised by a `ReedSolomonConfig`. -/
-structure ReedSolomonCode (F : Type) [Field F] where
+structure ReedSolomonCode (F : Type*) [Field F] where
   config : ReedSolomonConfig F
 
 /-- Evaluate a polynomial given by its coefficient array `coeffs`

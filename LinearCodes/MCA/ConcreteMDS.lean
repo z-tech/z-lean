@@ -2,12 +2,12 @@
 # Concrete generator IsMDS proofs
 
 Wires the `Generator.IsMDS` predicate (from `UniqueDecoding.lean`) to the
-concrete generators defined in `Examples.lean`. Kept in a separate file
-because `Generator.IsMDS` is downstream of `Examples`.
+concrete generators defined in `Generators.lean`. Kept in a separate file
+because `Generator.IsMDS` is downstream of `Generators`.
 -/
 
 import LinearCodes.MCA.UniqueDecoding
-import LinearCodes.MCA.Examples
+import LinearCodes.MCA.Generators
 import LinearCodes.MCA.InducedCode
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Algebra.Polynomial.Roots
