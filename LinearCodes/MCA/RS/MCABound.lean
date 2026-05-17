@@ -783,8 +783,16 @@ theorem rs_MCA_caseA
 /-! ### Reader-friendly aliases
 
 The `rs_MCA_*` names follow BCGM25 / BCIKS18 paper conventions. We
-expose long-form aliases so callers can find the theorems via their
-full natural-language descriptions without having to know the paper. -/
+expose two alternative naming surfaces so callers can find theorems
+via either (a) their natural-language descriptions or (b) Mathlib-style
+namespacing:
+
+* Flat long-form: `reedSolomon_correlatedAgreement_*`.
+* Namespaced (Mathlib-style): `ReedSolomon.MCA.*` (see below).
+
+All three surfaces (`rs_MCA_*`, `reedSolomon_correlatedAgreement_*`,
+`ReedSolomon.MCA.*`) refer to the *same* theorems via `alias`. Pick
+whichever style matches your code. -/
 
 @[inherit_doc rs_MCA_caseA]
 alias reedSolomon_correlatedAgreement_johnson_regime := rs_MCA_caseA
@@ -792,6 +800,26 @@ alias reedSolomon_correlatedAgreement_johnson_regime := rs_MCA_caseA
 @[inherit_doc rs_MCA_list_decoding_bound]
 alias reedSolomon_correlatedAgreement_listDecoding_bound :=
   rs_MCA_list_decoding_bound
+
+/-! #### Mathlib-style `ReedSolomon.MCA.*` namespace
+
+A discoverability layer for users who prefer namespaced access to the
+RS-MCA capstones. -/
+
+namespace ReedSolomon
+namespace MCA
+
+@[inherit_doc LinearCodes.rs_MCA_caseA]
+alias caseA := LinearCodes.rs_MCA_caseA
+
+@[inherit_doc LinearCodes.rs_MCA_list_decoding_bound]
+alias listDecodingBound := LinearCodes.rs_MCA_list_decoding_bound
+
+@[inherit_doc LinearCodes.rs_some_alpha_evades_bad_event]
+alias someAlphaEvadesBadEvent := LinearCodes.rs_some_alpha_evades_bad_event
+
+end MCA
+end ReedSolomon
 
 /-! ### Sanity checks: concrete instances of the new RS-MCA API -/
 
