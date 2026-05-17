@@ -1,8 +1,11 @@
 import Mathlib.Data.ZMod.Basic
+import Mathlib.Algebra.Field.ZMod
 
 import Sumcheck.Src.EvalForm
 import Sumcheck.Src.Verifier
 import Sumcheck.Src.Convention
+
+set_option maxHeartbeats 800000
 
 /-!
 # Eval-form sumcheck oracle: `#eval` test cases

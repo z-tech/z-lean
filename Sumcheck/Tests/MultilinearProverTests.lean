@@ -1,7 +1,10 @@
 import Mathlib.Data.ZMod.Basic
+import Mathlib.Algebra.Field.ZMod
 
 import Sumcheck.Src.EvalForm
 import Sumcheck.Src.MultilinearProver
+
+set_option maxHeartbeats 800000
 
 /-!
 # Multilinear evaluation-table prover oracle: `#eval` test cases
