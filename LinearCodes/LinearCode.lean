@@ -72,9 +72,28 @@ class LinearCode (Code : Type*) (F : Type*) [Field F] where
   to all `l` words simultaneously. Returned as a rational for exact
   chaining in security profilers. The `regime` selects between
   Johnson-bound (`proven`) and capacity-bound (`conjectured`) formulas;
-  see `ProximityRegime`. -/
+  see `ProximityRegime`.
+
+  Instance authors are responsible for ensuring the returned value is
+  a valid upper bound on the actual MCA seed-probability bad event.
+  The typeclass enforces the **range axiom**
+  `mcaProximityGapError_in_unit_interval` below, which alone rules out
+  pathological instances; the full soundness link to a proved theorem
+  (e.g. `rs_MCA_list_decoding_bound` for the Reed-Solomon instance) is
+  documented but not yet a typeclass field — see
+  `LinearCodes/ReedSolomon.lean` for the standing soundness pointer. -/
   mcaProximityGapError : Code → ProximityRegime → (l : Nat) → (δ : Nat)
     → (q : Nat) → ℚ
+  /-- **Range axiom.** Every value of `mcaProximityGapError` is a
+  probability — lives in `[0, 1]`. This is the lightest typeclass-level
+  soundness obligation that rules out instances returning garbage
+  numbers (e.g. an instance that returns `2`, or returns negative). It
+  does *not* witness the bound matches a proved theorem; that link is
+  intentionally deferred (see the field docstring). -/
+  mcaProximityGapError_in_unit_interval :
+    ∀ (c : Code) (regime : ProximityRegime) (l δ q : Nat),
+      0 ≤ mcaProximityGapError c regime l δ q ∧
+      mcaProximityGapError c regime l δ q ≤ 1
 
 /-! ### Derived quantities
 

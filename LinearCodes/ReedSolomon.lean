@@ -1,4 +1,6 @@
 import LinearCodes.LinearCode
+import Mathlib.Algebra.Order.Field.Rat
+import Mathlib.Tactic.Linarith
 
 /-!
 # Reed-Solomon code
@@ -58,6 +60,71 @@ private def isqrtAux : Nat → Nat → Nat
 /-- Largest `m : Nat` with `m² ≤ n`. -/
 private def isqrt (n : Nat) : Nat := isqrtAux n n
 
+/-- The MCA proximity-gap error formula for Reed-Solomon, factored out
+of the typeclass instance so its `[0, 1]` range can be proved cleanly.
+
+* `.proven` returns the integer-tight bound from
+  `rs_MCA_list_decoding_bound`,
+  `n² · (max(δ, 1) + 1) · (l - 1) / q`, clipped to `[0, 1]` via
+  `min · 1`.
+* `.conjectured` returns the capacity-regime placeholder
+  `n · (l - 1) / q`, also clipped. Not yet machine-checked. -/
+def rsMCAProximityGapError (rs : ReedSolomonCode F) (regime : ProximityRegime)
+    (l δ q : Nat) : ℚ :=
+  let lq : ℚ := if l = 0 then 0 else ((l - 1 : ℕ) : ℚ)
+  let n_q : ℚ := (rs.config.codeLength : ℚ)
+  let proven_raw : ℚ := n_q ^ 2 * (max (δ : ℚ) 1 + 1) * lq / (q : ℚ)
+  let conjectured_raw : ℚ := n_q * lq / (q : ℚ)
+  if q = 0 then (1 : ℚ)
+  else
+    match regime with
+    | .proven => min proven_raw 1
+    | .conjectured => min conjectured_raw 1
+
+/-- Common non-negativity helper for the RS proximity-gap formula:
+`lq := if l = 0 then 0 else (l - 1)` is always nonneg in `ℚ`. -/
+private lemma rs_lq_nonneg (l : Nat) :
+    0 ≤ (if l = 0 then (0 : ℚ) else ((l - 1 : ℕ) : ℚ)) := by
+  split_ifs
+  · exact le_refl (0 : ℚ)
+  · exact_mod_cast Nat.zero_le _
+
+/-- The `rsMCAProximityGapError` value is always in `[0, 1]`. -/
+theorem rsMCAProximityGapError_in_unit_interval
+    (rs : ReedSolomonCode F) (regime : ProximityRegime) (l δ q : Nat) :
+    0 ≤ rsMCAProximityGapError rs regime l δ q ∧
+    rsMCAProximityGapError rs regime l δ q ≤ 1 := by
+  unfold rsMCAProximityGapError
+  by_cases hq : q = 0
+  · -- q = 0 branch: returns 1.
+    simp only [hq, if_true]
+    exact ⟨zero_le_one, le_refl 1⟩
+  · -- q > 0 branch: each regime returns `min raw 1`, raw ≥ 0.
+    simp only [if_neg hq]
+    have hlq_nn := rs_lq_nonneg l
+    have hq_pos : (0 : ℚ) < (q : ℚ) := by exact_mod_cast Nat.pos_of_ne_zero hq
+    have h_n_q_nn : (0 : ℚ) ≤ (rs.config.codeLength : ℚ) := Nat.cast_nonneg _
+    cases regime with
+    | proven =>
+      simp only
+      have h_n_sq : (0 : ℚ) ≤ (rs.config.codeLength : ℚ) ^ 2 :=
+        pow_nonneg h_n_q_nn 2
+      have h_max : (0 : ℚ) ≤ max (δ : ℚ) 1 + 1 := by
+        have : (1 : ℚ) ≤ max (δ : ℚ) 1 := le_max_right _ _
+        linarith
+      have h_raw : (0 : ℚ) ≤
+          (rs.config.codeLength : ℚ) ^ 2 * (max (δ : ℚ) 1 + 1) *
+            (if l = 0 then (0 : ℚ) else ((l - 1 : ℕ) : ℚ)) / (q : ℚ) :=
+        div_nonneg (mul_nonneg (mul_nonneg h_n_sq h_max) hlq_nn) hq_pos.le
+      exact ⟨le_min h_raw zero_le_one, min_le_right _ _⟩
+    | conjectured =>
+      simp only
+      have h_raw : (0 : ℚ) ≤
+          (rs.config.codeLength : ℚ) *
+            (if l = 0 then (0 : ℚ) else ((l - 1 : ℕ) : ℚ)) / (q : ℚ) :=
+        div_nonneg (mul_nonneg h_n_q_nn hlq_nn) hq_pos.le
+      exact ⟨le_min h_raw zero_le_one, min_le_right _ _⟩
+
 /-- Linear-code instance for `ReedSolomonCode`.
 
 Security bounds:
@@ -89,22 +156,7 @@ instance : LinearCode (ReedSolomonCode F) F where
     rs.config.codeLength
       - isqrt (rs.config.codeLength * rs.config.messageLength)
       - 1
-  mcaProximityGapError rs regime l δ q :=
-    if q = 0 then (1 : ℚ)
-    else
-      let lq : ℚ := if l = 0 then 0 else ((l - 1 : ℕ) : ℚ)
-      let raw : ℚ := match regime with
-        | .proven =>
-          -- Matches `rs_MCA_list_decoding_bound` /
-          -- `LinearCodes/MCA/RSListDecoding.lean#L651`:
-          --   n² · (max(n·γ, 1) + 1) · (ℓ − 1) / |F|
-          -- with γ := δ/n so that n·γ = δ.
-          let n_q : ℚ := (rs.config.codeLength : ℚ)
-          let δ_q : ℚ := (δ : ℚ)
-          n_q ^ 2 * (max δ_q 1 + 1) * lq / (q : ℚ)
-        | .conjectured =>
-          -- Capacity-regime placeholder; not yet machine-checked.
-          (rs.config.codeLength : ℚ) * lq / (q : ℚ)
-      min raw 1
+  mcaProximityGapError := rsMCAProximityGapError
+  mcaProximityGapError_in_unit_interval := rsMCAProximityGapError_in_unit_interval
 
 end LinearCodes
