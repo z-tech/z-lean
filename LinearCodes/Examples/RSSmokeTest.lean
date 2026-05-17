@@ -10,11 +10,15 @@ Concrete encoding examples over `ZMod 17` validated by `decide`. Force the
 linear-code interface and the polynomial-evaluation kernel to elaborate on
 real inputs.
 
+This file is excluded from the public `import LinearCodes` umbrella so
+downstream users don't pull in test scaffolding by accident. It is built
+in CI as a separate lake target (`LinearCodes.Examples.RSSmokeTest`).
+
 See also `LinearCodes/ReedSolomonProperties.lean` for proven properties
 (minimum distance, etc.) of the Reed-Solomon code.
 -/
 
-namespace __ReedSolomonTests__
+namespace LinearCodes.Examples.RSSmokeTest
 
 open LinearCodes
 
@@ -107,4 +111,4 @@ example :
 /-- Rate of the (8, 2) code is 2/8 = 1/4. -/
 example : LinearCodes.rate (F := 𝔽) rs82 = 1 / 4 := by native_decide
 
-end __ReedSolomonTests__
+end LinearCodes.Examples.RSSmokeTest

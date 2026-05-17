@@ -30,4 +30,3 @@ import LinearCodes.ReedSolomonProperties
 import LinearCodes.MCA.RS.Submodule
 import LinearCodes.MCA.RS.ArrayBridge
 import LinearCodes.MCA.RS.MCABound
-import LinearCodes.Tests
