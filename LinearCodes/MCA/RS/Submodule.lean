@@ -16,7 +16,7 @@ abstract-MCA framework with the right shape:
 This is the "pure submodule" layer; the array-bridge to the `Array F`
 encoder lives in `MCA/RS/ArrayBridge.lean`, and the MCA bound itself in
 `MCA/RS/MCABound.lean`. (Formerly the head of
-`LinearCodes/MCA/RSListDecoding.lean`, extracted as part of the P2
+`LinearCodes/MCA/RS/`, extracted as part of the P2
 file-split refactor.)
 -/
 

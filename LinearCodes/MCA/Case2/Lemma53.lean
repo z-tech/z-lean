@@ -12,7 +12,7 @@ the MDS-bridge sub-targets from `Case2/MDSBridge.lean` (specifically the
   `Case2/MDSBridge.lean` for the bound discussion).
 * Companion: `Ttilde_card_gt_of_MDS_aggregate_via_A` (agreement-set form).
 
-(Formerly the tail of `LinearCodes/MCA/Case2Subtargets.lean`, extracted
+(Formerly the tail of `LinearCodes/MCA/Case2/`, extracted
 as part of the P2 file-split refactor.)
 -/
 

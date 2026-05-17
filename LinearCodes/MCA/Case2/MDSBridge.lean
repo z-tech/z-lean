@@ -19,7 +19,7 @@ problem on the bad-seed set:
 * Sub-target E8 — degree bound for `strict_superset_count_bound`
   (`degree_bound_at_non_Ttilde`).
 
-(Formerly the middle of `LinearCodes/MCA/Case2Subtargets.lean`,
+(Formerly the middle of `LinearCodes/MCA/Case2/`,
 extracted as part of the P2 file-split refactor.)
 -/
 

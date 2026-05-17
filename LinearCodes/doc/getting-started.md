@@ -95,7 +95,7 @@ The MCA proximity-gap error needs a regime (`.proven` or
 ```
 
 The `.proven` branch matches the integer-tight bound from
-`rs_MCA_list_decoding_bound` (`MCA/RSListDecoding.lean`) — clipped to
+`rs_MCA_list_decoding_bound` (`MCA/RS/`) — clipped to
 `1` when the field is too small for the bound to be useful. See the
 "Bounds delivered" section of the PR description for the bound shape.
 
@@ -120,7 +120,7 @@ land on a final bit-security number.
 
 - **Reed-Solomon properties** (`ReedSolomonProperties.lean`): the seven
   formal properties proved about the encoder.
-- **MCA / RS bridge** (`MCA/RSListDecoding.lean`): the proven RS-MCA
+- **MCA / RS bridge** (`MCA/RS/`): the proven RS-MCA
   bounds backing the `.proven` typeclass branch.
 - **Tests** (`Tests.lean`): hand-computed encoding examples and
   security-bound smoke tests; good as reading material.

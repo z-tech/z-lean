@@ -95,7 +95,7 @@ downstream consumers:
   `rs_MCA_list_decoding_bound`).
 - **Recently landed (may evolve)**: theorem aliases
   (`correlatedAgreement_*`, `reedSolomon_correlatedAgreement_*`); the
-  GS-sharpened RS-MCA bridge (`MCA/RSListDecoding.lean`); the
+  GS-sharpened RS-MCA bridge (`MCA/RS/`); the
   `JohnsonListSize` vs `JohnsonListSizeWithSlack` split. Public names
   are unlikely to change but exact theorem locations may move as the
   tree gets reorganised (P2 work).
@@ -127,7 +127,7 @@ parameter `γ` and the minimum distance `δ_C` of the underlying linear code.
   Phase B (Theorem 6.2) capstones are proved end-to-end, and the
   GS-sharpened Reed-Solomon bridge has landed.
 - **GS-sharpened Reed-Solomon bridge** (landed):
-  [`LinearCodes/MCA/RSListDecoding.lean`](LinearCodes/MCA/RSListDecoding.lean)
+  [`LinearCodes/MCA/RS/`](LinearCodes/MCA/RS/)
   threads the Johnson list-size `n²` through the abstract list-decoding
   capstone, yielding a sharper concrete bound for Reed-Solomon (see below).
 - **Theorem map:** see
@@ -162,7 +162,7 @@ parameter `γ` and the minimum distance `δ_C` of the underlying linear code.
 
 ### GS-sharpened Reed-Solomon bridge
 
-[`LinearCodes/MCA/RSListDecoding.lean`](LinearCodes/MCA/RSListDecoding.lean)
+[`LinearCodes/MCA/RS/`](LinearCodes/MCA/RS/)
 is the new bridge from the `Array F`-shaped Reed-Solomon implementation to
 the abstract `Submodule F (Fin n → F)` view used throughout the MCA
 capstones. It packages:
@@ -190,7 +190,7 @@ requirement sharpens from the loose `(ℓ + 1) · 2^n` (used when bounding
 `L` by the trivial `2^n`) to `(ℓ + 1) · n²`, which is the right order for
 realistic STIR/WHIR/WARP parameter regimes. The case-(a) RS-MCA theorem
 under this sharper hypothesis is `rs_MCA_caseA` in
-[`LinearCodes/MCA/RSListDecoding.lean`](LinearCodes/MCA/RSListDecoding.lean).
+[`LinearCodes/MCA/RS/`](LinearCodes/MCA/RS/).
 
 For the full theorem-by-theorem map (including which sub-targets are
 landed and which are still in progress for the bridge), see
@@ -211,7 +211,7 @@ landed and which are still in progress for the bridge), see
   [`ConcreteMDS.lean`](LinearCodes/MCA/ConcreteMDS.lean) (concrete MDS
   certificates).
 - *Lemma 5.3 sub-targets*:
-  [`Case2Subtargets.lean`](LinearCodes/MCA/Case2Subtargets.lean) — the
+  [`Case2/`](LinearCodes/MCA/Case2/) — the
   ℚ-double-counting argument bounding the size of the maximal agreement
   domain `T̃`.
 - *Capstones*:
@@ -223,7 +223,7 @@ landed and which are still in progress for the bridge), see
   [`ListDecoding/Counting.lean`](LinearCodes/MCA/ListDecoding/Counting.lean),
   and [`JohnsonBound.lean`](LinearCodes/MCA/JohnsonBound.lean).
 - *Reed-Solomon bridge*:
-  [`RSListDecoding.lean`](LinearCodes/MCA/RSListDecoding.lean) — bridge
+  [`RS/`](LinearCodes/MCA/RS/) — bridge
   from `Array F`-form RS codewords to `Submodule F (Fin n → F)`,
   squared-Johnson list-decodability, and the `rs_MCA_list_decoding_bound`
   specialization of Theorem 6.2.

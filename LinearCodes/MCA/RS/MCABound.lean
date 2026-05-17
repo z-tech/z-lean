@@ -11,7 +11,7 @@ The capstone half of the GS-sharpened RS-MCA development:
 * Reader-friendly aliases (`reedSolomon_correlatedAgreement_*`).
 * Sanity checks: `ZMod 7` / `ZMod 11` smoke tests.
 
-(Formerly the tail of `LinearCodes/MCA/RSListDecoding.lean`, extracted
+(Formerly the tail of `LinearCodes/MCA/RS/`, extracted
 as part of the P2 file-split refactor.)
 -/
 

@@ -4,7 +4,7 @@
 This file contains **BCGM25 Theorem 6.1 (unique-decoding regime)**, namely
 `MCA_unique_decoding_bound`, together with its large-γ ingredient
 `MCA_unique_decoding_large_gamma_bound` (the §6.1 Case 2 capstone). It wires
-together the sub-targets from `Case2Subtargets.lean` with the
+together the sub-targets from `Case2/` with the
 maximal-agreement infrastructure from `MaximalDomain.lean` to prove the
 weakened §6.1 Case 2 capstone:
 
@@ -13,12 +13,12 @@ weakened §6.1 Case 2 capstone:
 Two unrelated case-numberings appear in this codebase. They look similar
 but mean different things — don't confuse them.
 
-* **Lean's "Case 1 / Case 2"** (this file, `Case2Subtargets.lean`,
+* **Lean's "Case 1 / Case 2"** (this file, `Case2/`,
   `MCA_unique_decoding_small_gamma_bound` vs `_large_gamma_bound`):
   internal branching by `γ < 1/n` vs `γ ≥ 1/n` in the proof of
   Theorem 6.1. Both cases prove the *same* statement; the split is
   purely about which counting argument applies.
-* **BCGM25 / BCIKS18 "case (a) / case (b)"** (in `RSListDecoding.lean`
+* **BCGM25 / BCIKS18 "case (a) / case (b)"** (in `RS/`
   as `rs_MCA_caseA`): the paper-level distinction between the
   *structural* form of MCA (case (a): "∀ α gives δ-close combination ⇒
   MCA") and the *quantitative* form (case (b): the seed-probability
@@ -51,14 +51,14 @@ identically into both the small-γ and large-γ branches via
 ## Why this file exists separately from `MaximalDomain.lean`
 
 The two theorems live here, not in `MaximalDomain.lean`, to avoid a circular
-import. `Case2Subtargets.lean` imports `MaximalDomain.lean` for the
+import. `Case2/` imports `MaximalDomain.lean` for the
 `IsCADomain`/`IsMaxAgreementDomain` predicates used by sub-target F (etc.),
-so the capstone — which uses both `Case2Subtargets` and `MaximalDomain` —
+so the capstone — which uses both `Case2.*` and `MaximalDomain` —
 has to live strictly above both of them.
 -/
 
 import LinearCodes.MCA.MaximalDomain
-import LinearCodes.MCA.Case2Subtargets
+import LinearCodes.MCA.Case2.Lemma53
 
 
 -- File-level `variable` block is used by most theorems but legitimately

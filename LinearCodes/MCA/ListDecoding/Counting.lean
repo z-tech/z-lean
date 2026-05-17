@@ -18,7 +18,7 @@ Key contents:
 * `degree_bound_at_non_Ttilde_list` — degree bound at coordinates
   outside `T̃`.
 
-Depends on `LinearCodes.MCA.Case2Subtargets`,
+Depends on `LinearCodes.MCA.Case2.*`,
 `LinearCodes.MCA.ListDecoding.Domains`, and
 `Mathlib.Combinatorics.Pigeonhole`.
 
@@ -26,7 +26,7 @@ Depends on `LinearCodes.MCA.Case2Subtargets`,
 it lives here now since this file is its only consumer.
 -/
 
-import LinearCodes.MCA.Case2Subtargets
+import LinearCodes.MCA.Case2.Lemma53
 import LinearCodes.MCA.ListDecoding.Domains
 import Mathlib.Combinatorics.Pigeonhole
 

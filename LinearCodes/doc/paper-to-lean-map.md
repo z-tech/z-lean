@@ -111,15 +111,15 @@ per-seed integer rounding (`Nat.ceil`).
 
 | Paper | Lean | Notes |
 |---|---|---|
-| Lemma 5.3 (specialized to MDS) | `Ttilde_card_gt_of_MDS_aggregate` | [MCA/Case2Subtargets.lean][case2sub] — paper-tight at the integer-honest BCH+25 bound |
-| Companion (agreement-set form) | `Ttilde_card_gt_of_MDS_aggregate_via_A` | [MCA/Case2Subtargets.lean][case2sub] |
+| Lemma 5.3 (specialized to MDS) | `Ttilde_card_gt_of_MDS_aggregate` | [MCA/Case2/][case2sub] — paper-tight at the integer-honest BCH+25 bound |
+| Companion (agreement-set form) | `Ttilde_card_gt_of_MDS_aggregate_via_A` | [MCA/Case2/][case2sub] |
 | Counterexample for the real-number form | (`#eval`) | [MCA/Lemma53Examples.lean](../MCA/Lemma53Examples.lean) |
 | Literature survey | — | [doc/literature-survey-lemma-5-3.md](literature-survey-lemma-5-3.md) |
 | Numerical analysis | — | [doc/lemma-5-3-numerical-analysis.md](lemma-5-3-numerical-analysis.md) |
-| Helper: column-difference vec | `colDiff us cstars i` | [MCA/Case2Subtargets.lean][case2sub] |
-| Per-coord count bound | `bad_pair_count_per_coord_le` | [MCA/Case2Subtargets.lean][case2sub] |
+| Helper: column-difference vec | `colDiff us cstars i` | [MCA/Case2/][case2sub] |
+| Per-coord count bound | `bad_pair_count_per_coord_le` | [MCA/Case2/][case2sub] |
 
-[case2sub]: ../MCA/Case2Subtargets.lean
+[case2sub]: ../MCA/Case2/
 
 ---
 
@@ -156,12 +156,12 @@ machinery.
 | Maximal agreement domain (def) | `IsMaxAgreementDomain` | [MCA/MaximalDomain.lean][maxdom] |
 | Maximal CA domain (def) | `IsMaxCADomain` | [MCA/MaximalDomain.lean][maxdom] |
 | Bad-witness bundle | `MCABadWitness` | [MCA/UniqueDecoding.lean][uniq] |
-| Cstars construction (MDS-inversion) | `exists_cstars_of_MDS` | [MCA/Case2Subtargets.lean][case2sub] |
-| Witness codeword equality | `bad_witness_cw_eq_combine_cstars` | [MCA/Case2Subtargets.lean][case2sub] |
-| Coordinate-wise CA from MDS-equality | `isCADomain_of_combines_agree` | [MCA/Case2Subtargets.lean][case2sub] |
-| Strictness `T̃ ⊊ Bₓ` | `CAdomain_strictly_subset_maxAgreementDomain` | [MCA/Case2Subtargets.lean][case2sub] |
-| Degree bound (Corrádi-style) | `degree_bound_at_non_Ttilde` | [MCA/Case2Subtargets.lean][case2sub] |
-| `T̃ ⊆ Bₓ` for max agreement | `Ttilde_subset_maxAgreementDomain` | [MCA/Case2Subtargets.lean][case2sub] |
+| Cstars construction (MDS-inversion) | `exists_cstars_of_MDS` | [MCA/Case2/][case2sub] |
+| Witness codeword equality | `bad_witness_cw_eq_combine_cstars` | [MCA/Case2/][case2sub] |
+| Coordinate-wise CA from MDS-equality | `isCADomain_of_combines_agree` | [MCA/Case2/][case2sub] |
+| Strictness `T̃ ⊊ Bₓ` | `CAdomain_strictly_subset_maxAgreementDomain` | [MCA/Case2/][case2sub] |
+| Degree bound (Corrádi-style) | `degree_bound_at_non_Ttilde` | [MCA/Case2/][case2sub] |
+| `T̃ ⊆ Bₓ` for max agreement | `Ttilde_subset_maxAgreementDomain` | [MCA/Case2/][case2sub] |
 
 [cap]: ../MCA/Case2Capstone.lean
 [maxdom]: ../MCA/MaximalDomain.lean
@@ -176,7 +176,7 @@ per-seed `Nat.ceil` integer rounding. See
 [`literature-survey-lemma-5-3.md`](literature-survey-lemma-5-3.md) and
 [`lemma-5-3-numerical-analysis.md`](lemma-5-3-numerical-analysis.md) for
 the full audit, and the docstring of `Ttilde_card_gt_of_MDS_aggregate`
-in [Case2Subtargets.lean][case2sub] for the in-file analysis.
+in [MCA/Case2/][case2sub] for the in-file analysis.
 
 ---
 
@@ -318,52 +318,52 @@ back into RS-specific case-(a) MCA results.
 
 | Paper concept | Lean | File |
 |---|---|---|
-| Encoder as `LinearMap` | `reedSolomonLinearMap` | [MCA/RSListDecoding.lean][rsld] |
-| RS code as submodule | `reedSolomonSubmodule` | [MCA/RSListDecoding.lean][rsld] |
-| RS submodule is MDS | `reedSolomonSubmodule_isMDS` | [MCA/RSListDecoding.lean][rsld] |
-| RS submodule Johnson list-decoding | `reedSolomonSubmodule_isListDecodable_johnson` | [MCA/RSListDecoding.lean][rsld] |
-| Array → Fin function lift | `arrayToFun` | [MCA/RSListDecoding.lean][rsld] |
-| Array RS encoder ≡ submodule encoder | `reedSolomonEncode_eq_linearMap` | [MCA/RSListDecoding.lean][rsld] |
-| Array codeword in submodule | `arrayEncoded_mem_reedSolomonSubmodule` | [MCA/RSListDecoding.lean][rsld] |
+| Encoder as `LinearMap` | `reedSolomonLinearMap` | [MCA/RS/][rsld] |
+| RS code as submodule | `reedSolomonSubmodule` | [MCA/RS/][rsld] |
+| RS submodule is MDS | `reedSolomonSubmodule_isMDS` | [MCA/RS/][rsld] |
+| RS submodule Johnson list-decoding | `reedSolomonSubmodule_isListDecodable_johnson` | [MCA/RS/][rsld] |
+| Array → Fin function lift | `arrayToFun` | [MCA/RS/][rsld] |
+| Array RS encoder ≡ submodule encoder | `reedSolomonEncode_eq_linearMap` | [MCA/RS/][rsld] |
+| Array codeword in submodule | `arrayEncoded_mem_reedSolomonSubmodule` | [MCA/RS/][rsld] |
 
 ### RS combination generator (Phase 1)
 
 | Paper concept | Lean | File |
 |---|---|---|
-| RS combination generator `(1, α, …, αˡ)` | `rsGenerator F l` (alias of `Generator.univariatePowers`) | [MCA/RSListDecoding.lean][rsld] |
-| Coordinate evaluation | `rsGenerator_apply` | [MCA/RSListDecoding.lean][rsld] |
-| RS generator is MDS | `rsGenerator_IsMDS` | [MCA/RSListDecoding.lean][rsld] |
-| `combine` ↔ `linComb` (function form) | `combine_eq_linComb_funForm` | [MCA/RSListDecoding.lean][rsld] |
-| `linComb arrayToFun` ↔ `combine` | `linComb_arrayToFun_eq_combine` | [MCA/RSListDecoding.lean][rsld] |
+| RS combination generator `(1, α, …, αˡ)` | `rsGenerator F l` (alias of `Generator.univariatePowers`) | [MCA/RS/][rsld] |
+| Coordinate evaluation | `rsGenerator_apply` | [MCA/RS/][rsld] |
+| RS generator is MDS | `rsGenerator_IsMDS` | [MCA/RS/][rsld] |
+| `combine` ↔ `linComb` (function form) | `combine_eq_linComb_funForm` | [MCA/RS/][rsld] |
+| `linComb arrayToFun` ↔ `combine` | `linComb_arrayToFun_eq_combine` | [MCA/RS/][rsld] |
 
 ### Submodule reformulation of `mcaGoodScalar` (Phase 2)
 
 | Paper concept | Lean | File |
 |---|---|---|
-| Array-form ↔ submodule-form `mcaGoodScalar` | `mcaGoodScalar_iff_submodule_close` | [MCA/RSListDecoding.lean][rsld] |
-| Universal case-A ⇒ MCA bad event (combine form) | `caseA_implies_bad_event_universal` | [MCA/RSListDecoding.lean][rsld] |
-| Universal case-A ⇒ MCA bad event (linComb form) | `caseA_implies_bad_event_universal_linComb` | [MCA/RSListDecoding.lean][rsld] |
-| Hamming-distance reflection through `arrayToFun` | `hammingDist_eq_hammingDistance_arrayToFun` | [MCA/RSListDecoding.lean][rsld] |
+| Array-form ↔ submodule-form `mcaGoodScalar` | `mcaGoodScalar_iff_submodule_close` | [MCA/RS/][rsld] |
+| Universal case-A ⇒ MCA bad event (combine form) | `caseA_implies_bad_event_universal` | [MCA/RS/][rsld] |
+| Universal case-A ⇒ MCA bad event (linComb form) | `caseA_implies_bad_event_universal_linComb` | [MCA/RS/][rsld] |
+| Hamming-distance reflection through `arrayToFun` | `hammingDist_eq_hammingDistance_arrayToFun` | [MCA/RS/][rsld] |
 
 ### RS-specialized list-decoding MCA bound (Phase 3)
 
 | Paper concept | Lean | File |
 |---|---|---|
-| RS list-decoding MCA bound | `rs_MCA_list_decoding_bound` | [MCA/RSListDecoding.lean][rsld] |
-| Existence of a good seed | `rs_some_alpha_evades_bad_event` | [MCA/RSListDecoding.lean][rsld] |
-| Field-size ⇒ ∃ α witness (ℚ form) | `field_size_implies_some_alpha_witness` | [MCA/RSListDecoding.lean][rsld] |
-| Field-size ⇒ ∃ α witness (ℕ form) | `field_size_implies_some_alpha_witness_nat` | [MCA/RSListDecoding.lean][rsld] |
-| `seedProb < 1` ↔ ∃ α evading | `seedProb_lt_one_iff_exists_not` | [MCA/RSListDecoding.lean][rsld] |
-| `n*(1−γ) = n−δ` arithmetic | `n_one_minus_gamma_eq_n_sub_delta` | [MCA/RSListDecoding.lean][rsld] |
-| Johnson `τ` ⇒ `k ≤ n` | `rs_messageLength_le_codeLength_of_johnson` | [MCA/RSListDecoding.lean][rsld] |
-| Johnson `δ ≤ n` arithmetic | `rs_delta_le_codeLength` | [MCA/RSListDecoding.lean][rsld] |
-| Johnson γ-threshold derivation | `gamma_johnson_implies_hi`, `rs_gamma_to_agreement_size` | [MCA/RSListDecoding.lean][rsld] |
+| RS list-decoding MCA bound | `rs_MCA_list_decoding_bound` | [MCA/RS/][rsld] |
+| Existence of a good seed | `rs_some_alpha_evades_bad_event` | [MCA/RS/][rsld] |
+| Field-size ⇒ ∃ α witness (ℚ form) | `field_size_implies_some_alpha_witness` | [MCA/RS/][rsld] |
+| Field-size ⇒ ∃ α witness (ℕ form) | `field_size_implies_some_alpha_witness_nat` | [MCA/RS/][rsld] |
+| `seedProb < 1` ↔ ∃ α evading | `seedProb_lt_one_iff_exists_not` | [MCA/RS/][rsld] |
+| `n*(1−γ) = n−δ` arithmetic | `n_one_minus_gamma_eq_n_sub_delta` | [MCA/RS/][rsld] |
+| Johnson `τ` ⇒ `k ≤ n` | `rs_messageLength_le_codeLength_of_johnson` | [MCA/RS/][rsld] |
+| Johnson `δ ≤ n` arithmetic | `rs_delta_le_codeLength` | [MCA/RS/][rsld] |
+| Johnson γ-threshold derivation | `gamma_johnson_implies_hi`, `rs_gamma_to_agreement_size` | [MCA/RS/][rsld] |
 
 ### Case-(a) RS-MCA (Phase 4 — landed)
 
 | Paper concept | Lean | Status |
 |---|---|---|
-| Case-(a) RS-MCA at the `(ℓ+1)·n²` Johnson field-size threshold | `rs_MCA_caseA` | **Landed** — proved end-to-end in [`MCA/RSListDecoding.lean`][rsld] via the abstract Cauchy-Schwarz Johnson bound |
+| Case-(a) RS-MCA at the `(ℓ+1)·n²` Johnson field-size threshold | `rs_MCA_caseA` | **Landed** — proved end-to-end in [`MCA/RS/`][rsld] via the abstract Cauchy-Schwarz Johnson bound |
 
 `rs_MCA_caseA` matches the field-size threshold of BCGM25 Theorem 9.2 /
 BCIKS18 Theorem 1.2. New callers should use `rs_MCA_caseA` directly.
@@ -397,10 +397,10 @@ BCIKS18 Theorem 1.2. New callers should use `rs_MCA_caseA` directly.
 
 The Reed-Solomon → `IsListDecodable` bridge (formerly parked here) has
 fully landed across Phases 1–4 in
-[`MCA/RSListDecoding.lean`][rsld]; the complete API is documented in the
+[`MCA/RS/`][rsld]; the complete API is documented in the
 "§9.x — GS-sharpened RS bridge (Guruswami-Sudan track)" section above.
 
-[rsld]: ../MCA/RSListDecoding.lean
+[rsld]: ../MCA/RS/
 
 ---
 

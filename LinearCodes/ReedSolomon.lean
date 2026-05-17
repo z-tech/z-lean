@@ -138,7 +138,7 @@ Security bounds:
     `n² · (max(δ, 1) + 1) · (l − 1) / q`. Here `δ` is the agreement-slack
     distance from the BCGM25 §6.2 setup (so `n·γ = δ` with `γ = δ/n` the
     real-valued slack). Holds *unconditionally* in Lean — see the proof
-    in `LinearCodes/MCA/RSListDecoding.lean`.
+    in `LinearCodes/MCA/RS/`.
   * `conjectured` (capacity regime): a tighter placeholder shape
     `(l − 1) · n / q`, valid up to `δ → 1 − ρ`. Relies on the
     capacity-achieving proximity-gap conjecture. Yields higher

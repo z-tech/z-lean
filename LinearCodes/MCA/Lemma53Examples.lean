@@ -2,7 +2,7 @@
 # Lemma 5.3 boundary-case numerical analysis
 
 Concrete `#eval` examples that probe the boundary of the BCGM25 Lemma 5.3
-formalization in `LinearCodes/MCA/Case2Subtargets.lean`
+formalization in `LinearCodes/MCA/Case2/`
 (`Ttilde_card_gt_of_MDS_aggregate`).
 
 Parameters: `n = 5`, `ℓ = 2`, `γ = 0.4`, `F = ZMod 5`, `S = F`,

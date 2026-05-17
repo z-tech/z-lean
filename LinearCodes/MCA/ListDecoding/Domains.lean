@@ -16,12 +16,12 @@ Key contents:
   from a per-row family of `L` candidates.
 
 Depends on `LinearCodes.MCA.UniqueDecoding`, `LinearCodes.MCA.ListDecoding.Core`,
-and `LinearCodes.MCA.Case2Subtargets`.
+and `LinearCodes.MCA.Case2.*`.
 -/
 
 import LinearCodes.MCA.UniqueDecoding
 import LinearCodes.MCA.ListDecoding.Core
-import LinearCodes.MCA.Case2Subtargets
+import LinearCodes.MCA.Case2.MDSBridge
 
 
 -- File-level `variable` block is used by most theorems but legitimately

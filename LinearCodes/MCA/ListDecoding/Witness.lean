@@ -16,12 +16,12 @@ Key contents:
   bad seeds, produces a uniform list of `MCAListBadWitness` data,
   ready to feed into the counting bounds in `ListDecoding/Counting.lean`.
 
-Depends on `UniqueDecoding`, `ListDecoding`, `Case2Subtargets`.
+Depends on `UniqueDecoding`, `ListDecoding`, `Case2.*`.
 -/
 
 import LinearCodes.MCA.UniqueDecoding
 import LinearCodes.MCA.ListDecoding.Core
-import LinearCodes.MCA.Case2Subtargets
+import LinearCodes.MCA.Case2.Counting
 
 
 -- File-level `variable` block is used by most theorems but legitimately

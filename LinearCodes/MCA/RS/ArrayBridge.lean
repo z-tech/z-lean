@@ -14,7 +14,7 @@ the function/submodule view used by the BCGM25 MCA framework:
   alias of `Generator.univariatePowers`, the `combine ↔ linComb`
   identity, and the MDS structural alias.
 
-(Formerly the middle section of `LinearCodes/MCA/RSListDecoding.lean`,
+(Formerly the middle section of `LinearCodes/MCA/RS/`,
 extracted as part of the P2 file-split refactor.)
 -/
 

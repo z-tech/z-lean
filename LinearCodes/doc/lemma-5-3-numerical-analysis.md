@@ -12,7 +12,7 @@ is *not* merely an artifact of the Lean proof.
 The Lemma file: `LinearCodes/MCA/Lemma53Examples.lean` (with `#eval`
 sanity checks). The Lean theorem under analysis:
 `Ttilde_card_gt_of_MDS_aggregate` in
-`LinearCodes/MCA/Case2Subtargets.lean` (line 917).
+`LinearCodes/MCA/Case2/` (line 917).
 
 ## 1. Parameters and threshold values
 
@@ -143,7 +143,7 @@ In our example `|B_set| = 3 > 2` and `|T̃| = 2 < 3`. Hypothesis
 satisfied, conclusion fails. **CONTRADICTION!** This shape of the
 lemma is **simply false** as stated.
 
-The codebase comment in `Case2Subtargets.lean` line 723 — "BCGM25's
+The codebase comment in `Case2/` line 723 — "BCGM25's
 Lemma 5.3 states `|T̃| > n(1-γ)` (strict) under the hypothesis
 `|B_set| > n·γ·(ℓ-1)`" — is **wrong** when `B_set` is taken with the
 Lean-shape definition `{x : Δ_x ≤ nγ}`. It would only be correct under
@@ -186,7 +186,7 @@ must:
    altogether (the "bad" seeds in the IOP literature are inherently the
    `Δ ≤ nγ` ones), OR
 2. Accept the `+1` factor as fundamental to the chosen definition of
-   `B_set`, and update the doc comments in `Case2Subtargets.lean` to
+   `B_set`, and update the doc comments in `Case2/` to
    reflect that the paper's `nγ(ℓ-1)` claim is for a *different,
    strictly stronger* `B_set` shape.
 
@@ -197,7 +197,7 @@ research-level restructuring of the Case 2 reduction.
 
 * `/Users/zitek/Documents/LeanStuff/LinearCodes/MCA/Lemma53Examples.lean`
   — concrete `#eval` sanity checks of `|T̃|, |B_set|`, etc.
-* `/Users/zitek/Documents/LeanStuff/LinearCodes/MCA/Case2Subtargets.lean`
+* `/Users/zitek/Documents/LeanStuff/LinearCodes/MCA/Case2/`
   line 917 — the Lean theorem `Ttilde_card_gt_of_MDS_aggregate`.
 * `/Users/zitek/Documents/LeanStuff/LinearCodes/doc/lemma-5-3-paper-technique.md`
   — the planning note (this analysis revises its conclusions).

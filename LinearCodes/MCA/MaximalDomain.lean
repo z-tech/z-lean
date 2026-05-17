@@ -325,6 +325,6 @@ theorem MCABadWitness.exists_maxAgreement_extending
 /-! The §6.1 Case 2 capstone `MCA_unique_decoding_large_gamma_bound` and the
 unified BCGM25 Theorem 6.1 statement `MCA_unique_decoding_bound` live in
 `LinearCodes.MCA.Case2Capstone`, which imports both this file and
-`LinearCodes.MCA.Case2Subtargets`. -/
+`LinearCodes.MCA.Case2.*`. -/
 
 end LinearCodes

@@ -22,14 +22,14 @@ Key contents:
   unique-decoding statement for STIR.
 
 Depends on `MaximalDomain`, `Case2Capstone`, `ConcreteMDS`, `ListDecoding`,
-`RSListDecoding`.
+`RS.*`.
 -/
 
 import LinearCodes.MCA.MaximalDomain
 import LinearCodes.MCA.Case2Capstone
 import LinearCodes.MCA.ConcreteMDS
 import LinearCodes.MCA.ListDecoding.Core
-import LinearCodes.MCA.RSListDecoding
+import LinearCodes.MCA.RS.MCABound
 
 
 namespace LinearCodes

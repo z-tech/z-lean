@@ -10,7 +10,7 @@ Case 2 proof of `MCA_unique_decoding_large_gamma_bound`:
 These do not depend on MDS structure or column-difference machinery and
 are also reused by the list-decoding Phase B proofs.
 
-(Formerly the opening sections of `LinearCodes/MCA/Case2Subtargets.lean`,
+(Formerly the opening sections of `LinearCodes/MCA/Case2/`,
 extracted as part of the P2 file-split refactor.)
 -/
 

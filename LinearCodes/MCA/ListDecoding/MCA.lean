@@ -14,7 +14,7 @@ Key contents:
   for the list multiplicity factor `L`.
 * `MCA_list_decoding_small_gamma_bound` — small-`γ` regime bound.
 * `MCA_list_decoding_large_gamma_bound` — large-`γ` regime bound,
-  combining `Case2Subtargets` with the list-aware counting from
+  combining `Case2.*` with the list-aware counting from
   `ListDecoding/Counting.lean`.
 * `MCA_list_decoding_bound` — the capstone (BCGM25 Theorem 6.2,
   list-decoding regime), unifying the two regimes.

@@ -52,7 +52,7 @@ Downstream proximity-test protocols (FRI / STIR / WHIR / WARP)
 discharge the pointwise hypothesis from their own soundness analysis,
 so the case-(a) form is what they directly consume.
 
-Both forms are formalized in `LinearCodes/MCA/RSListDecoding.lean`:
+Both forms are formalized in `LinearCodes/MCA/RS/`:
 
 * `rs_MCA_list_decoding_bound` — the **quantitative** RS-MCA bound, with
   the `(l + 1) · n²` Johnson list-size baked in (concrete
@@ -65,7 +65,7 @@ Both forms are formalized in `LinearCodes/MCA/RSListDecoding.lean`:
 The underlying Johnson list-size bound
 (`IsListDecodable_squared_johnson_MDS` in `MCA/JohnsonBound.lean`) is
 proved via Cauchy-Schwarz double-counting — no Guruswami-Sudan
-infrastructure is required. `MCA/RSListDecoding.lean` plumbs that
+infrastructure is required. `MCA/RS/` plumbs that
 abstract bound down to the `Array F` RS layer and seals case-(a)
 end-to-end. Highlights:
 
@@ -784,16 +784,16 @@ theorem mcaGoodScalar_choice [DecidableEq F]
     Classical.choose_spec (And.right (Classical.choose_spec hAG))
   exact ⟨hmsg, hsupp.1, hsupp.2.1, hsupp.2.2⟩
 
-/-! ### Case-(a) form of MCA — see `MCA/RSListDecoding.lean`
+/-! ### Case-(a) form of MCA — see `MCA/RS/`
 
 The case-(a) MCA theorem for Reed-Solomon now lives downstream as
-`rs_MCA_caseA` in `LinearCodes/MCA/RSListDecoding.lean`.
+`rs_MCA_caseA` in `LinearCodes/MCA/RS/`.
 It uses the asymptotically optimal `O((l + 1) · n²)` Johnson threshold
 matching BCGM25 Theorem 9.2 / BCIKS18 Theorem 1.2 — bridged via the
 abstract Cauchy-Schwarz Johnson bound (no Guruswami-Sudan infrastructure).
 
 The intermediate helpers `mcaGoodScalar`, `mcaGoodScalar_largeAgreement`,
 `mcaGoodScalar_choice` defined here are used by the tight variant via
-`mcaGoodScalar_iff_submodule_close` in `MCA/RSListDecoding.lean`. -/
+`mcaGoodScalar_iff_submodule_close` in `MCA/RS/`. -/
 
 end LinearCodes

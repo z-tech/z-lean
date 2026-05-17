@@ -10,7 +10,9 @@ import LinearCodes.MCA.InducedCode
 import LinearCodes.MCA.CAImplications
 import LinearCodes.MCA.UniqueDecoding
 import LinearCodes.MCA.MaximalDomain
-import LinearCodes.MCA.Case2Subtargets
+import LinearCodes.MCA.Case2.Counting
+import LinearCodes.MCA.Case2.MDSBridge
+import LinearCodes.MCA.Case2.Lemma53
 import LinearCodes.MCA.Case2Capstone
 import LinearCodes.MCA.ConcreteMDS
 import LinearCodes.MCA.Tensor
@@ -25,5 +27,7 @@ import LinearCodes.MCA.Applications.Profile
 import LinearCodes.LinearCode
 import LinearCodes.ReedSolomon
 import LinearCodes.ReedSolomonProperties
-import LinearCodes.MCA.RSListDecoding
+import LinearCodes.MCA.RS.Submodule
+import LinearCodes.MCA.RS.ArrayBridge
+import LinearCodes.MCA.RS.MCABound
 import LinearCodes.Tests

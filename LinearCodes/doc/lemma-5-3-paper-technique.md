@@ -2,7 +2,7 @@
 
 **Goal of this note.** The Lean formalization of BCGM25's Lemma 5.3
 (`Ttilde_card_gt_of_MDS_aggregate` in
-`LinearCodes/MCA/Case2Subtargets.lean`) carries an intrinsic `+1` slack
+`LinearCodes/MCA/Case2/`) carries an intrinsic `+1` slack
 relative to the paper's tight bound. Multiple ℚ-double-counting attempts
 have confirmed the slack is unavoidable in the *current Lean shape* of
 the lemma. This note records what the paper *actually* does, identifies
