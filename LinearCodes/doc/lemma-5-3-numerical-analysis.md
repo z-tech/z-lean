@@ -195,9 +195,9 @@ research-level restructuring of the Case 2 reduction.
 
 ## 7. Files
 
-* `/Users/zitek/Documents/LeanStuff/LinearCodes/MCA/Lemma53Examples.lean`
+* `/Users/zitek/Documents/z-lean/LinearCodes/MCA/Lemma53Examples.lean`
   — concrete `#eval` sanity checks of `|T̃|, |B_set|`, etc.
-* `/Users/zitek/Documents/LeanStuff/LinearCodes/MCA/Case2/`
+* `/Users/zitek/Documents/z-lean/LinearCodes/MCA/Case2/`
   line 917 — the Lean theorem `Ttilde_card_gt_of_MDS_aggregate`.
-* `/Users/zitek/Documents/LeanStuff/LinearCodes/doc/lemma-5-3-paper-technique.md`
+* `/Users/zitek/Documents/z-lean/LinearCodes/doc/lemma-5-3-paper-technique.md`
   — the planning note (this analysis revises its conclusions).

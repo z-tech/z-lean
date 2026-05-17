@@ -19,7 +19,7 @@ shape. Full details: [`literature-survey-lemma-5-3.md`](literature-survey-lemma-
 and [`lemma-5-3-numerical-analysis.md`](lemma-5-3-numerical-analysis.md).
 
 Files referenced are relative to the repo root
-`/Users/zitek/Documents/LeanStuff/`.
+`/Users/zitek/Documents/z-lean/`.
 
 ---
 
