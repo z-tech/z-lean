@@ -9,9 +9,18 @@ lean_lib «Sumcheck» where
 
 lean_lib «InteractiveProtocol» where
 
+@[default_target]
 lean_lib «LinearCodes» where
 
+@[default_target]
 lean_lib «Upstream» where
+
+-- Research-facing scratch (`LinearCodes/Research/`). Built in CI so it
+-- catches API regressions, but excluded from the public umbrella
+-- `LinearCodes.lean` so downstream users don't transitively import it.
+@[default_target]
+lean_lib «LinearCodes.Research» where
+  roots := #[`LinearCodes.Research.Capstones]
 
 require "leanprover-community" / mathlib @ git "v4.28.0"
 require CompPoly from git "https://github.com/z-tech/CompPoly" @ "z-tech/keep_add_rm_instHAddMaxNat"
