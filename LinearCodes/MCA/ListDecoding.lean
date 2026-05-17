@@ -16,8 +16,10 @@ Guruswami–Sudan infrastructure is required.
 
 * `IsListDecodable c τ L` — bound on the number of codewords within
   Hamming distance `τ` of any vector.
-* `JohnsonListSize` — the BCGM25 list-size bound `O((ℓ+1)·n²)` for the
-  Johnson-radius regime.
+* `JohnsonListSize n = n²` — the tight Johnson list-size proved by
+  `IsListDecodable_squared_johnson_MDS`.
+* `JohnsonListSizeWithSlack ℓ n = (ℓ + 1)·n²` — the relaxed form for
+  callers pre-multiplying by an ℓ-slack factor.
 * Structural properties of `IsListDecodable` (monotonicity in `L`,
   zero-radius case, etc.).
 -/
@@ -40,13 +42,22 @@ def IsListDecodable [Fintype F]
   ∀ u : Fin n → F,
     {v : Fin n → F | v ∈ c ∧ hammingDistance u v ≤ τ}.ncard ≤ L
 
-/-- The list-decoding size from BCGM25's Lemma 6.2 (RS-specialized form):
-for an RS code (or general MDS code) with min distance `d` and dimension
-`k = n - d + 1`, the Johnson bound says any vector has at most
-`O(n / (n - d) · ℓ²)` codewords within `τ < n - √(n·(n-d))` distance.
+/-- The **tight** Johnson list-size that the Cauchy–Schwarz proof in
+`MCA/JohnsonBound.lean` actually delivers: any vector has at most `n²`
+codewords within the squared-Johnson radius for an MDS code.
 
-We use the BCGM25 quantitative form: `O((ℓ+1) · n²)`. -/
-def JohnsonListSize (ℓ n : ℕ) : ℕ := (ℓ + 1) * n ^ 2
+This is what `IsListDecodable_squared_johnson_MDS` proves directly. The
+relaxed `(ℓ + 1)·n²` form used in callers that pre-multiply by an
+ℓ-slack factor is `JohnsonListSizeWithSlack` below. -/
+def JohnsonListSize (n : ℕ) : ℕ := n ^ 2
+
+/-- The **slack** Johnson list-size `(ℓ + 1)·n²` used by callers that
+want to pre-multiply by an ℓ-factor (BCGM25 §6.2 quantitative form
+when combined with a generator-multiplicity bound). The `(ℓ + 1)`
+factor is **not** derived from the Johnson argument itself — it is a
+caller-supplied relaxation. The Johnson bound proper delivers
+`JohnsonListSize n = n²` (no ℓ-dependence). -/
+def JohnsonListSizeWithSlack (ℓ n : ℕ) : ℕ := (ℓ + 1) * n ^ 2
 
 /-! ### Trivial properties -/
 

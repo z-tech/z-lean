@@ -3,14 +3,17 @@
 
 This file packages the squared-form Johnson bound used by the BCGM25 §6.2
 list-decoding capstone (`ListDecodingMCA.lean`). The "squared" form means
-we avoid `Real.sqrt` on the load-bearing path: list sizes are stated in
-terms of `JohnsonListSize ℓ n = (ℓ + 1) * n^2`, an integer expression that
-plugs cleanly into the ℚ-arithmetic of the seed-probability bounds.
+we avoid `Real.sqrt` on the load-bearing path: list sizes are stated as
+the integer `JohnsonListSize n = n^2`, which plugs cleanly into the
+ℚ-arithmetic of the seed-probability bounds. Callers that pre-multiply
+by a generator-multiplicity slack `(ℓ + 1)` use `JohnsonListSizeWithSlack`
+instead.
 
 Key contents:
-* `JohnsonListSize_pos`, `JohnsonListSize_mono_ell`, `JohnsonListSize_mono_n`,
-  `JohnsonListSize_at_zero`, `JohnsonListSize_zero_ell`, `JohnsonListSize_eq` —
-  basic monotonicity / boundary properties.
+* `JohnsonListSizeWithSlack_pos`, `_mono_ell`, `_mono_n`, `_at_zero`,
+  `_eq` — basic monotonicity / boundary properties of the slack form.
+* `JohnsonListSize_eq_slack_zero` — bridge between the tight and slack
+  forms at `ℓ = 0`.
 * `IsListDecodable_squared_johnson_MDS` and friends — list-decodability
   certificates for MDS / Reed–Solomon codes at the squared-Johnson radius.
 * `johnson_squared_iff_real_sqrt` — bridge to the standard `Real.sqrt` form
@@ -30,52 +33,63 @@ set_option linter.unusedSectionVars false
 
 namespace LinearCodes
 
-/-! ### J1-J3: JohnsonListSize basic properties (split from L14) -/
+/-! ### J1-J3: Johnson list-size basic properties (split from L14) -/
 
-/-- J1: `JohnsonListSize` is positive when `n > 0`. -/
-theorem JohnsonListSize_pos {ℓ n : ℕ} (hn : 0 < n) : 0 < JohnsonListSize ℓ n := by
-  unfold JohnsonListSize
+/-- J1: `JohnsonListSizeWithSlack` is positive when `n > 0`. -/
+theorem JohnsonListSizeWithSlack_pos {ℓ n : ℕ} (hn : 0 < n) :
+    0 < JohnsonListSizeWithSlack ℓ n := by
+  unfold JohnsonListSizeWithSlack
   exact Nat.mul_pos (Nat.succ_pos ℓ) (pow_pos hn 2)
 
 /-- J2a: Monotone in ℓ. -/
-theorem JohnsonListSize_mono_ell {ℓ ℓ' n : ℕ} (h : ℓ ≤ ℓ') :
-    JohnsonListSize ℓ n ≤ JohnsonListSize ℓ' n := by
-  unfold JohnsonListSize
+theorem JohnsonListSizeWithSlack_mono_ell {ℓ ℓ' n : ℕ} (h : ℓ ≤ ℓ') :
+    JohnsonListSizeWithSlack ℓ n ≤ JohnsonListSizeWithSlack ℓ' n := by
+  unfold JohnsonListSizeWithSlack
   exact Nat.mul_le_mul_right (n ^ 2) (Nat.add_le_add_right h 1)
 
 /-- J2b: Monotone in n. -/
-theorem JohnsonListSize_mono_n {ℓ n n' : ℕ} (h : n ≤ n') :
-    JohnsonListSize ℓ n ≤ JohnsonListSize ℓ n' := by
-  unfold JohnsonListSize
+theorem JohnsonListSizeWithSlack_mono_n {ℓ n n' : ℕ} (h : n ≤ n') :
+    JohnsonListSizeWithSlack ℓ n ≤ JohnsonListSizeWithSlack ℓ n' := by
+  unfold JohnsonListSizeWithSlack
   exact Nat.mul_le_mul_left (ℓ + 1) (Nat.pow_le_pow_left h 2)
 
-/-- J3: At `n = 0`, list size is 0. -/
-theorem JohnsonListSize_at_zero (ℓ : ℕ) : JohnsonListSize ℓ 0 = 0 := by
-  simp [JohnsonListSize]
+/-- J3: At `n = 0`, slack list size is 0. -/
+theorem JohnsonListSizeWithSlack_at_zero (ℓ : ℕ) : JohnsonListSizeWithSlack ℓ 0 = 0 := by
+  simp [JohnsonListSizeWithSlack]
 
-/-- J3b: At `ℓ = 0`, `JohnsonListSize 0 n = n^2`. -/
-theorem JohnsonListSize_zero_ell (n : ℕ) : JohnsonListSize 0 n = n^2 := by
-  simp [JohnsonListSize]
+/-- J3b: At `ℓ = 0`, the slack form collapses to the tight `JohnsonListSize n = n²`.
+This is the bridge between the slack and tight forms. -/
+theorem JohnsonListSize_eq_slack_zero (n : ℕ) :
+    JohnsonListSize n = JohnsonListSizeWithSlack 0 n := by
+  simp [JohnsonListSize, JohnsonListSizeWithSlack]
 
 /-- J3c: Definitional unfolding `(ℓ+1)·n²`. -/
-theorem JohnsonListSize_eq (ℓ n : ℕ) : JohnsonListSize ℓ n = (ℓ + 1) * n ^ 2 := rfl
+theorem JohnsonListSizeWithSlack_eq (ℓ n : ℕ) :
+    JohnsonListSizeWithSlack ℓ n = (ℓ + 1) * n ^ 2 := rfl
+
+/-- J3d: Definitional unfolding `n²`. -/
+theorem JohnsonListSize_eq (n : ℕ) : JohnsonListSize n = n ^ 2 := rfl
+
+/-- J3e: The tight Johnson list-size is positive when `n > 0`. -/
+theorem JohnsonListSize_pos {n : ℕ} (hn : 0 < n) : 0 < JohnsonListSize n :=
+  pow_pos hn 2
 
 /-! ### J4-J5: Boundary case-consistency lemmas -/
 
-/-- J4: At radius 0, any code is `(0, JohnsonListSize ℓ n)`-list-decodable for n > 0. -/
+/-- J4: At radius 0, any code is `(0, JohnsonListSizeWithSlack ℓ n)`-list-decodable for n > 0. -/
 theorem IsListDecodable_zero_radius_via_Johnson
     {F : Type*} [Field F] [DecidableEq F] [Fintype F] {n : ℕ}
     (c : Submodule F (Fin n → F)) (ℓ : ℕ) (hn : 0 < n) :
-    IsListDecodable c 0 (JohnsonListSize ℓ n) :=
-  (IsListDecodable_zero c).mono_L (JohnsonListSize_pos hn)
+    IsListDecodable c 0 (JohnsonListSizeWithSlack ℓ n) :=
+  (IsListDecodable_zero c).mono_L (JohnsonListSizeWithSlack_pos hn)
 
-/-- J5: At unique-decoding radius `2τ < d`, list size fits inside `JohnsonListSize`. -/
+/-- J5: At unique-decoding radius `2τ < d`, list size fits inside `JohnsonListSizeWithSlack`. -/
 theorem IsListDecodable_at_unique_decoding_threshold
     {F : Type*} [Field F] [DecidableEq F] [Fintype F] {n : ℕ}
     {c : Submodule F (Fin n → F)} {d : ℕ} (h_minDist : MinDistAtLeast c d)
     {τ : ℕ} (hτ : 2 * τ < d) (ℓ : ℕ) (hn : 0 < n) :
-    IsListDecodable c τ (JohnsonListSize ℓ n) :=
-  (IsListDecodable_of_minDist_unique h_minDist hτ).mono_L (JohnsonListSize_pos hn)
+    IsListDecodable c τ (JohnsonListSizeWithSlack ℓ n) :=
+  (IsListDecodable_of_minDist_unique h_minDist hτ).mono_L (JohnsonListSizeWithSlack_pos hn)
 
 /-! ### J6-J7: MDS Johnson bound (squared form)
 
@@ -359,8 +373,8 @@ theorem IsListDecodable_squared_johnson_MDS
     {F : Type*} [Field F] [DecidableEq F] [Fintype F] {n k : ℕ}
     {c : Submodule F (Fin n → F)} (h_MDS : IsMDS c k)
     {τ : ℕ} (h_johnson : (n - τ) * (n - τ) > n * k) :
-    IsListDecodable c τ (JohnsonListSize 0 n) := by
-  rw [JohnsonListSize_zero_ell]
+    IsListDecodable c τ (JohnsonListSize n) := by
+  rw [JohnsonListSize_eq]
   -- n ≥ 1 (since (n - τ)² > 0 from h_johnson).
   have hn_pos : 0 < n := by
     by_contra h_n
@@ -424,15 +438,21 @@ theorem IsListDecodable_squared_johnson_MDS
   rw [hL_card_eq]
   exact h_delta
 
-/-- J7: J6 with an explicit `ℓ` parameter; conclusion uses `JohnsonListSize ℓ n`. -/
+/-- J7: J6 with an explicit `ℓ` parameter; conclusion uses
+`JohnsonListSizeWithSlack ℓ n`. The `(ℓ + 1)` slack is **not** part of
+the Johnson bound itself — it is a caller-supplied relaxation introduced
+here via `IsListDecodable.mono_L`. -/
 theorem IsListDecodable_squared_johnson_MDS_explicit
     {F : Type*} [Field F] [DecidableEq F] [Fintype F] {n k : ℕ}
     {c : Submodule F (Fin n → F)} (h_MDS : IsMDS c k)
     {τ : ℕ} (h_johnson : (n - τ) * (n - τ) > n * k)
     (ℓ : ℕ) :
-    IsListDecodable c τ (JohnsonListSize ℓ n) :=
-  (IsListDecodable_squared_johnson_MDS h_MDS h_johnson).mono_L
-    (JohnsonListSize_mono_ell (Nat.zero_le ℓ))
+    IsListDecodable c τ (JohnsonListSizeWithSlack ℓ n) := by
+  have h_tight := IsListDecodable_squared_johnson_MDS h_MDS h_johnson
+  refine h_tight.mono_L ?_
+  -- JohnsonListSize n = n² ≤ (ℓ + 1) · n² = JohnsonListSizeWithSlack ℓ n
+  rw [JohnsonListSize_eq, JohnsonListSizeWithSlack_eq]
+  exact Nat.le_mul_of_pos_left _ (Nat.succ_pos ℓ)
 
 /-! ### J8: domain-of-validity helper -/
 
@@ -446,17 +466,6 @@ theorem johnson_squared_implies_above_unique
   have h_zero : n - τ = 0 := Nat.le_zero.mp h
   rw [h_zero] at h_johnson
   simp at h_johnson
-
-/-! ### J9: zero-evading connection (induced code) -/
-
-/-- J9: Zero-evading-style derivation of list-decodability for MDS-induced codes. -/
-theorem zeroEvading_implies_list_decodable_johnson
-    {F : Type*} [Field F] [DecidableEq F] [Fintype F]
-    {S : Type*} [Fintype S] [Nonempty S] {ℓ : ℕ}
-    (_G : Generator F S ℓ) {τ : ℕ}
-    (_h_johnson : (Fintype.card S - τ) * (Fintype.card S - τ) > Fintype.card S * ℓ) :
-    True := by  -- placeholder to avoid Submodule coercion complications
-  trivial
 
 /-! ### J10: Real-form bridge (paper fidelity) -/
 

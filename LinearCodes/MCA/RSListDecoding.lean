@@ -391,7 +391,7 @@ theorem reedSolomonSubmodule_isListDecodable_johnson
     (h_johnson : (cfg.codeLength - τ) * (cfg.codeLength - τ) >
                  cfg.codeLength * cfg.messageLength) :
     IsListDecodable (reedSolomonSubmodule cfg) τ
-      (JohnsonListSize 0 cfg.codeLength) :=
+      (JohnsonListSize cfg.codeLength) :=
   IsListDecodable_squared_johnson_MDS
     (reedSolomonSubmodule_isMDS cfg h_dom_size h_distinct h_le)
     h_johnson
@@ -490,7 +490,7 @@ theorem reedSolomonSubmodule_johnson_ncard
       cfg.codeLength ^ 2 := by
   have h := reedSolomonSubmodule_isListDecodable_johnson
     cfg h_dom_size h_distinct h_le h_johnson u
-  rwa [JohnsonListSize_zero_ell] at h
+  rwa [JohnsonListSize_eq] at h
 
 /-! ### Step 9: Bridge to the abstract `Generator` framework
 
@@ -662,7 +662,8 @@ theorem rs_MCA_list_decoding_bound
     {γ : ℚ} (hγ_pos : 0 ≤ γ)
     (hγ_hi : γ * (l + 2) <
              ((cfg.codeLength - cfg.messageLength + 1 : ℕ) : ℚ) /
-               cfg.codeLength) :
+               cfg.codeLength)
+    (h_radius : (cfg.codeLength : ℚ) * γ ≤ (τ : ℚ)) :
     seedProb (S := F) (fun α =>
       ∃ T : Finset (Fin cfg.codeLength), (T.card : ℚ) ≥ cfg.codeLength * (1 - γ) ∧
         InRestrictedCode (reedSolomonSubmodule cfg) T
@@ -683,17 +684,18 @@ theorem rs_MCA_list_decoding_bound
       MinDistAtLeast (reedSolomonSubmodule cfg)
         (cfg.codeLength - cfg.messageLength + 1) :=
     reedSolomonSubmodule_minDist cfg h_dom h_distinct
-  -- List-decoding witness for the RS submodule.
+  -- List-decoding witness for the RS submodule (tight `n²` form).
   have h_LD :
       IsListDecodable (reedSolomonSubmodule cfg) τ
-        (JohnsonListSize 0 cfg.codeLength) :=
+        (JohnsonListSize cfg.codeLength) :=
     reedSolomonSubmodule_isListDecodable_johnson cfg h_dom h_distinct h_le
       h_johnson_τ
-  -- Convert the Johnson-list-size to its concrete form `n²`.
+  -- Unfold `JohnsonListSize cfg.codeLength = cfg.codeLength^2` for the
+  -- bound's display form.
   have h_LD' :
       IsListDecodable (reedSolomonSubmodule cfg) τ
         (cfg.codeLength ^ 2) := by
-    rw [← JohnsonListSize_zero_ell]; exact h_LD
+    rw [← JohnsonListSize_eq]; exact h_LD
   -- The hypothesis hγ_hi already matches the ℕ-form δ_C / n once we
   -- recast `(l + 2)` as `((l+1) + 1)`.
   have hγ_hi' :
@@ -707,7 +709,7 @@ theorem rs_MCA_list_decoding_bound
   -- Apply MCA_list_decoding_bound.
   have h_main :=
     MCA_list_decoding_bound (Generator.univariatePowers F l) hG_MDS hl
-      (reedSolomonSubmodule cfg) hn h_minDist h_LD' us hγ_pos hγ_hi'
+      (reedSolomonSubmodule cfg) hn h_minDist h_LD' us hγ_pos hγ_hi' h_radius
   -- Massage the conclusion: shape `(L * (max ((n:ℚ)*γ) 1 + 1) * (ℓ - 1)) / |F|`.
   -- `L = n^2`, `ℓ = l + 1`, so `ℓ - 1 = l`. Need to align the
   -- multiplication order: theorem gives L * factor * (ℓ-1), we want
@@ -851,6 +853,7 @@ theorem rs_some_alpha_evades_bad_event
     (hγ_hi : γ * (l + 2) <
              ((cfg.codeLength - cfg.messageLength + 1 : ℕ) : ℚ) /
                cfg.codeLength)
+    (h_radius : (cfg.codeLength : ℚ) * γ ≤ (τ : ℚ))
     (h_field_large :
       (cfg.codeLength : ℚ) ^ 2 *
         (max ((cfg.codeLength : ℚ) * γ) 1 + 1) * ((l + 1 : ℕ) - 1 : ℚ) <
@@ -868,7 +871,7 @@ theorem rs_some_alpha_evades_bad_event
   -- Apply the Sub-target 3.1 bound.
   have h_bound :=
     rs_MCA_list_decoding_bound cfg h_dom h_distinct hn hl h_field us
-      h_johnson_τ hγ_pos hγ_hi
+      h_johnson_τ hγ_pos hγ_hi h_radius
   -- Apply Sub-target 3.2.
   exact field_size_implies_some_alpha_witness _ h_bound h_field_large
 
@@ -1228,10 +1231,18 @@ theorem rs_MCA_caseA
     apply div_nonneg
     · exact_mod_cast Nat.zero_le _
     · exact_mod_cast Nat.zero_le _
+  -- BCGM25 §6.2 semantic pin `n·γ ≤ τ`: with τ := δ and γ := δ/n,
+  -- n·γ = n·(δ/n) = δ ≤ δ, discharged by `div_mul_cancel`.
+  have h_radius_caseA :
+      (cfg.codeLength : ℚ) * ((δ : ℚ) / cfg.codeLength) ≤ (δ : ℚ) := by
+    have hn_q : (cfg.codeLength : ℚ) ≠ 0 := by
+      exact_mod_cast Nat.pos_iff_ne_zero.mp hn
+    rw [mul_comm, div_mul_cancel₀ _ hn_q]
   -- Step 1: apply `rs_some_alpha_evades_bad_event` with γ = δ/n.
   obtain ⟨α_star, h_no_bad⟩ :=
     rs_some_alpha_evades_bad_event cfg h_dom_size h_distinct hn
-      (Nat.succ_pos l) h_field_lower us h_johnson hγ_pos h_gamma_hi h_field_size
+      (Nat.succ_pos l) h_field_lower us h_johnson hγ_pos h_gamma_hi
+      h_radius_caseA h_field_size
   -- Step 2: case-A says α_star is good — extract the T witness.
   have h_α_good := h_caseA α_star
   -- Lift mcaGoodScalar to submodule form.
@@ -1349,7 +1360,10 @@ tight case-(a) RS-MCA theorem. These are pure API regression tests:
 they catch signature drift rather than testing numerical content. -/
 
 -- `ZMod 7` and `ZMod 11` need `Fact (Nat.Prime _)` to be a `Field`.
-private instance : Fact (Nat.Prime 7) := ⟨by decide⟩
+-- `local` keeps the instance scoped to this section; `private` does NOT
+-- hide instances from typeclass unification, so the `local` form is what
+-- actually limits the smoke-test fact to this file.
+local instance : Fact (Nat.Prime 7) := ⟨by decide⟩
 
 /-- Sanity 5: the tight case-(a) RS-MCA theorem applies over `ZMod 7`.
 We feed in a `ReedSolomonConfig (ZMod 7)` and the matching Johnson +

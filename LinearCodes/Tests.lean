@@ -67,7 +67,8 @@ A `(n=8, k=2)` Reed-Solomon code over an arbitrary field. Bounds:
 * `minimumDistance = n − k + 1 = 7` (Singleton).
 * `uniqueDecodingRadius = ⌊(d − 1) / 2⌋ = 3`.
 * `johnsonRadius = n − ⌈√(n·k)⌉ − 1 = 8 − 4 − 1 = 3`. (`√16 = 4` exactly.)
-* `mcaProximityGapError` at `l = 3, q = 17`: `(l − 1)·d/q = 2·7/17 = 14/17`. -/
+* `mcaProximityGapError` (proven): the integer-tight bound from
+  `rs_MCA_list_decoding_bound` is `n² · (max(δ,1) + 1) · (l-1) / q`. -/
 
 def cfg82 : ReedSolomonConfig 𝔽 :=
   { messageLength := 2
@@ -79,17 +80,28 @@ def rs82 : ReedSolomonCode 𝔽 := ⟨cfg82⟩
 example : LinearCode.minimumDistance (F := 𝔽) rs82 = 7 := by native_decide
 example : LinearCodes.uniqueDecodingRadius (F := 𝔽) rs82 = 3 := by native_decide
 example : LinearCode.johnsonRadius (F := 𝔽) rs82 = 3 := by native_decide
-/-- Proven (Johnson-regime) bound: `(l − 1) · d / q = 2 · 7 / 17 = 14/17`. -/
+
+/-- Proven (Johnson-regime) bound: matches the bound proved by
+`rs_MCA_list_decoding_bound`. At `l = 3, δ = 0, q = 17`:
+`n² · (max(0,1) + 1) · (l-1) / q = 64 · 2 · 2 / 17 = 256/17 > 1`, clipped
+to `1` (vacuous bound for these toy parameters — the proven Johnson
+regime needs `q ≫ n²·l` to give a useful number). -/
 example :
-    LinearCode.mcaProximityGapError (F := 𝔽) rs82 .proven 3 0 17 = 14 / 17 := by
+    LinearCode.mcaProximityGapError (F := 𝔽) rs82 .proven 3 0 17 = 1 := by
   native_decide
 
-/-- Conjectured (capacity-regime) bound: `(l − 1) · n / q = 2 · 8 / 17 = 16/17`.
-Tighter would be smaller; here `16/17 > 14/17` because the placeholder
-formula is loose — refine when pinning to a specific paper. -/
+/-- Conjectured (capacity-regime) placeholder bound:
+`(l − 1) · n / q = 2 · 8 / 17 = 16/17`. Not yet machine-checked. -/
 example :
     LinearCode.mcaProximityGapError (F := 𝔽) rs82 .conjectured 3 0 17
       = 16 / 17 := by
+  native_decide
+
+/-- A larger field makes the proven Johnson bound non-vacuous. With
+`q = 1009`, `l = 3`, `δ = 0`: `n² · 2 · (l-1) / q = 256/1009`. -/
+example :
+    LinearCode.mcaProximityGapError (F := 𝔽) rs82 .proven 3 0 1009
+      = 256 / 1009 := by
   native_decide
 
 /-- Rate of the (8, 2) code is 2/8 = 1/4. -/

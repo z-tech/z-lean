@@ -66,16 +66,17 @@ Security bounds:
   `⌊√x⌋`; we adjust to `⌈·⌉` by the standard `n − Nat.sqrt(n*k) − 1` form
   (sound but slightly conservative when `n·k` is a perfect square).
 * **MCA proximity-gap error**: two modes —
-  * `proven` (Johnson regime, BCIKS18-style): roughly `(l − 1) · d / q`,
-    where `d = n − k + 1` is the minimum distance. Holds unconditionally
-    modulo paper-level proofs.
-  * `conjectured` (capacity regime): a tighter `(l − 1) · n / q`, valid up
-    to `δ → 1 − ρ`. Relies on the capacity-achieving proximity-gap
-    conjecture. Yields higher bit-security but inherits the conjecture's
-    risk.
-
-  The `δ` parameter is unused at this level of abstraction; it's part of
-  the API for richer per-protocol bounds that *do* depend on `δ`. -/
+  * `proven` (Johnson regime): the integer-tight bound machine-checked
+    by `rs_MCA_list_decoding_bound`,
+    `n² · (max(δ, 1) + 1) · (l − 1) / q`. Here `δ` is the agreement-slack
+    distance from the BCGM25 §6.2 setup (so `n·γ = δ` with `γ = δ/n` the
+    real-valued slack). Holds *unconditionally* in Lean — see the proof
+    in `LinearCodes/MCA/RSListDecoding.lean`.
+  * `conjectured` (capacity regime): a tighter placeholder shape
+    `(l − 1) · n / q`, valid up to `δ → 1 − ρ`. Relies on the
+    capacity-achieving proximity-gap conjecture. Yields higher
+    bit-security but inherits the conjecture's risk; not currently
+    backed by a Lean theorem. -/
 instance : LinearCode (ReedSolomonCode F) F where
   Config := ReedSolomonConfig F
   new cfg := { config := cfg }
@@ -88,14 +89,22 @@ instance : LinearCode (ReedSolomonCode F) F where
     rs.config.codeLength
       - isqrt (rs.config.codeLength * rs.config.messageLength)
       - 1
-  mcaProximityGapError rs regime l _δ q :=
+  mcaProximityGapError rs regime l δ q :=
     if q = 0 then (1 : ℚ)
     else
       let lq : ℚ := if l = 0 then 0 else ((l - 1 : ℕ) : ℚ)
-      let bound : ℚ := match regime with
+      let raw : ℚ := match regime with
         | .proven =>
-          ((rs.config.codeLength - rs.config.messageLength + 1 : ℕ) : ℚ)
-        | .conjectured => (rs.config.codeLength : ℚ)
-      lq * bound / (q : ℚ)
+          -- Matches `rs_MCA_list_decoding_bound` /
+          -- `LinearCodes/MCA/RSListDecoding.lean#L651`:
+          --   n² · (max(n·γ, 1) + 1) · (ℓ − 1) / |F|
+          -- with γ := δ/n so that n·γ = δ.
+          let n_q : ℚ := (rs.config.codeLength : ℚ)
+          let δ_q : ℚ := (δ : ℚ)
+          n_q ^ 2 * (max δ_q 1 + 1) * lq / (q : ℚ)
+        | .conjectured =>
+          -- Capacity-regime placeholder; not yet machine-checked.
+          (rs.config.codeLength : ℚ) * lq / (q : ℚ)
+      min raw 1
 
 end LinearCodes

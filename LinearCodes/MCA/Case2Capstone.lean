@@ -424,10 +424,17 @@ theorem max_one_nGamma_relax_v2
     exact mul_le_mul_of_nonneg_right h_le hℓm1_nn
 
 /-- **BCGM25 Theorem 6.1 (unique-decoding regime).** For an MDS
-generator and `γ < δ_C/(n·(ℓ+1))`, the MCA bad-event probability is bounded
-by `(max{n·γ, 1} + 1)·(ℓ-1) / |S|`. The proof case-splits on `γ < 1/n`
-(Case 1, `MCA_unique_decoding_small_gamma_bound`) vs `γ ≥ 1/n` (Case 2,
-`MCA_unique_decoding_large_gamma_bound`).
+generator and `γ · (ℓ + 1) < δ_C / n`, the MCA bad-event probability is
+bounded by `(max{n·γ, 1} + 1)·(ℓ-1) / |S|`. The proof case-splits on
+`γ < 1/n` (Case 1, `MCA_unique_decoding_small_gamma_bound`) vs `γ ≥ 1/n`
+(Case 2, `MCA_unique_decoding_large_gamma_bound`).
+
+**Hypothesis use.** `h_minDist` is consumed *only* on the large-γ
+(γ ≥ 1/n) branch — Case 1 reduces to the strict bad-seed shape
+`Δ_x = 0`, which does not need the min-distance witness. Callers
+known to be in the small-γ regime should prefer
+`MCA_unique_decoding_small_gamma_bound` directly, which drops the
+`h_minDist` and `δ_C` hypotheses entirely.
 
 This bound is the integer-honest form of BCGM25's `max{n·γ,1}·(ℓ-1)/|S|`,
 matching BCH+25 (eprint 2025/2055) Theorem 4.1 (tight per Remark 2.5).

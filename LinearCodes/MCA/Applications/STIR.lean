@@ -80,7 +80,8 @@ theorem STIR_MCA_list_decoding_bound
     {γ : ℚ} (hγ_pos : 0 ≤ γ)
     (hγ_hi : γ * (l + 2) <
              ((cfg.codeLength - cfg.messageLength + 1 : ℕ) : ℚ) /
-               cfg.codeLength) :
+               cfg.codeLength)
+    (h_radius : (cfg.codeLength : ℚ) * γ ≤ (τ : ℚ)) :
     seedProb (S := F) (fun α =>
       ∃ T : Finset (Fin cfg.codeLength), (T.card : ℚ) ≥ cfg.codeLength * (1 - γ) ∧
         InRestrictedCode (reedSolomonSubmodule cfg) T
@@ -91,7 +92,7 @@ theorem STIR_MCA_list_decoding_bound
         (max ((cfg.codeLength : ℚ) * γ) 1 + 1) * ((l + 1 : ℕ) - 1 : ℚ)) /
           Fintype.card F) :=
   rs_MCA_list_decoding_bound cfg h_dom h_distinct hn hl h_field us
-    h_johnson_τ hγ_pos hγ_hi
+    h_johnson_τ hγ_pos hγ_hi h_radius
 
 /-- Sanity (A1b): instantiate `STIR_MCA_list_decoding_bound` over `ZMod 7`
 with degree `l = 3`. All the runtime data (a concrete `cfg`, distinctness
@@ -108,7 +109,8 @@ example (cfg : ReedSolomonConfig (ZMod 7))
     {γ : ℚ} (hγ_pos : 0 ≤ γ)
     (hγ_hi : γ * (3 + 2) <
              ((cfg.codeLength - cfg.messageLength + 1 : ℕ) : ℚ) /
-               cfg.codeLength) :
+               cfg.codeLength)
+    (h_radius : (cfg.codeLength : ℚ) * γ ≤ (τ : ℚ)) :
     seedProb (S := ZMod 7) (fun α =>
       ∃ T : Finset (Fin cfg.codeLength), (T.card : ℚ) ≥ cfg.codeLength * (1 - γ) ∧
         InRestrictedCode (reedSolomonSubmodule cfg) T
@@ -121,7 +123,7 @@ example (cfg : ReedSolomonConfig (ZMod 7))
   haveI : Fact (Nat.Prime 7) := ⟨by decide⟩
   exact STIR_MCA_list_decoding_bound cfg h_dom h_distinct hn
     (by decide : 0 < 3 + 1) (by decide : 3 + 1 ≤ Fintype.card (ZMod 7))
-    us h_johnson_τ hγ_pos hγ_hi
+    us h_johnson_τ hγ_pos hγ_hi h_radius
 
 /-! ### A2: STIR MCA predicate -/
 

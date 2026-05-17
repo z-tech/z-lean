@@ -53,6 +53,7 @@ theorem seedProb_le_JohnsonListSize_ncard_div
 
 /-! ### E2: Small-γ list-decoding case -/
 
+set_option linter.unusedVariables false in
 /-- E2: Small-γ case for list-decoding regime.
 
 Strategy: relax the unique-decoding bound `(ℓ-1)/|S|` from
@@ -60,13 +61,21 @@ Strategy: relax the unique-decoding bound `(ℓ-1)/|S|` from
 
 The case `L = 0` is vacuous: `IsListDecodable c τ 0` would require the set
 `{v ∈ c | hammingDistance 0 v ≤ τ}` to have cardinality ≤ 0, but `0 ∈ c`
-(submodule) and `hammingDistance 0 0 = 0 ≤ τ`, so the set contains `0`. -/
+(submodule) and `hammingDistance 0 0 = 0 ≤ τ`, so the set contains `0`.
+
+The hypothesis `h_radius : n·γ ≤ τ` is the BCGM25 §6.2 semantic pin: the
+list-decoding radius must cover the agreement-slack `n·γ`, so that any
+witness codeword of the bad event lives inside the τ-ball that the
+list-decodability hypothesis controls. Without it the theorem is true
+but vacuous in the limit `τ = 0` (where it collapses to the
+unique-decoding bound dressed up as list-decoding). -/
 theorem MCA_list_decoding_small_gamma_bound
     (G : Generator F S ℓ) (hG_MDS : G.IsMDS) (hℓ : 0 < ℓ)
     (c : Submodule F (Fin n → F)) (hn : 0 < n)
     {τ : ℕ} (h_LD : IsListDecodable c τ L)
     (us : Fin ℓ → (Fin n → F))
-    {γ : ℚ} (hγ_pos : 0 ≤ γ) (hγ_lt : (n : ℚ) * γ < 1) :
+    {γ : ℚ} (hγ_pos : 0 ≤ γ) (hγ_lt : (n : ℚ) * γ < 1)
+    (h_radius : (n : ℚ) * γ ≤ (τ : ℚ)) :
     seedProb (S := S) (fun x =>
       ∃ T : Finset (Fin n), (T.card : ℚ) ≥ n * (1 - γ) ∧
         InRestrictedCode c T (G.combine x us) ∧
@@ -112,18 +121,23 @@ theorem MCA_list_decoding_small_gamma_bound
 
 /-! ### E1: Large-γ list-decoding case -/
 
+set_option linter.unusedVariables false in
 /-- E1: Large-γ case for list-decoding regime.
 
 Strategy: relax the unique-decoding bound `(nγ·(ℓ-1))/|S|` from
 `MCA_unique_decoding_large_gamma_bound` by the multiplier `L ≥ 1`. The
 case `L = 0` is vacuous (same argument as E2: the zero vector is in `c`
-and at Hamming distance 0 from itself, so the τ-ball list is non-empty). -/
+and at Hamming distance 0 from itself, so the τ-ball list is non-empty).
+
+The hypothesis `h_radius : n·γ ≤ τ` pins the BCGM25 §6.2 semantic
+contract — see `MCA_list_decoding_small_gamma_bound` for discussion. -/
 theorem MCA_list_decoding_large_gamma_bound
     (G : Generator F S ℓ) (hG_MDS : G.IsMDS) (hℓ : 0 < ℓ)
     (c : Submodule F (Fin n → F)) {δ_C : ℕ} (h_minDist : MinDistAtLeast c δ_C)
     {τ : ℕ} (h_LD : IsListDecodable c τ L)
     (us : Fin ℓ → (Fin n → F))
-    {γ : ℚ} (hγ_lo : 1 / n ≤ γ) (hγ_hi : γ * (ℓ + 1) < δ_C / n) :
+    {γ : ℚ} (hγ_lo : 1 / n ≤ γ) (hγ_hi : γ * (ℓ + 1) < δ_C / n)
+    (h_radius : (n : ℚ) * γ ≤ (τ : ℚ)) :
     seedProb (S := S) (fun x =>
       ∃ T : Finset (Fin n), (T.card : ℚ) ≥ n * (1 - γ) ∧
         InRestrictedCode c T (G.combine x us) ∧
@@ -176,14 +190,19 @@ theorem MCA_list_decoding_large_gamma_bound
 
 /-! ### E3: Unified list-decoding bound -/
 
-/-- E3: Unified bound for the list-decoding regime. -/
+set_option linter.unusedVariables false in
+/-- E3: Unified bound for the list-decoding regime. The hypothesis
+`h_radius : n·γ ≤ τ` is the BCGM25 §6.2 semantic pin (list-decoding
+radius covers the agreement-slack — see
+`MCA_list_decoding_small_gamma_bound` for discussion). -/
 theorem MCA_list_decoding_bound
     (G : Generator F S ℓ) (hG_MDS : G.IsMDS) (hℓ : 0 < ℓ)
     (c : Submodule F (Fin n → F)) (hn : 0 < n)
     {δ_C : ℕ} (h_minDist : MinDistAtLeast c δ_C)
     {τ : ℕ} (h_LD : IsListDecodable c τ L)
     (us : Fin ℓ → (Fin n → F))
-    {γ : ℚ} (hγ_pos : 0 ≤ γ) (hγ_hi : γ * (ℓ + 1) < δ_C / n) :
+    {γ : ℚ} (hγ_pos : 0 ≤ γ) (hγ_hi : γ * (ℓ + 1) < δ_C / n)
+    (h_radius : (n : ℚ) * γ ≤ (τ : ℚ)) :
     seedProb (S := S) (fun x =>
       ∃ T : Finset (Fin n), (T.card : ℚ) ≥ n * (1 - γ) ∧
         InRestrictedCode c T (G.combine x us) ∧
@@ -191,7 +210,7 @@ theorem MCA_list_decoding_bound
     ≤ (L * (max ((n : ℚ) * γ) 1 + 1) * (ℓ - 1)) / Fintype.card S := by
   classical
   by_cases h_case : (n : ℚ) * γ < 1
-  · have h_small := MCA_list_decoding_small_gamma_bound G hG_MDS hℓ c hn h_LD us hγ_pos h_case
+  · have h_small := MCA_list_decoding_small_gamma_bound G hG_MDS hℓ c hn h_LD us hγ_pos h_case h_radius
     have hS_pos : (0 : ℚ) < Fintype.card S := by exact_mod_cast Fintype.card_pos
     have hℓm : (0 : ℚ) ≤ ℓ - 1 := by
       have h1 : (1 : ℚ) ≤ ℓ := by exact_mod_cast hℓ
@@ -209,7 +228,8 @@ theorem MCA_list_decoding_bound
     have hγ_lo : (1 : ℚ) / n ≤ γ := by
       rw [div_le_iff₀ hn_q]
       linarith
-    have h_large := MCA_list_decoding_large_gamma_bound G hG_MDS hℓ c h_minDist h_LD us hγ_lo hγ_hi
+    have h_large :=
+      MCA_list_decoding_large_gamma_bound G hG_MDS hℓ c h_minDist h_LD us hγ_lo hγ_hi h_radius
     have h_max : max ((n : ℚ) * γ) 1 = (n : ℚ) * γ := max_eq_left h_case
     rw [h_max]
     exact h_large
@@ -228,13 +248,15 @@ theorem MCA_list_decoding_bound_L_one
     {δ_C : ℕ} (h_minDist : MinDistAtLeast c δ_C)
     {τ : ℕ} (h_LD_one : IsListDecodable c τ 1)
     (us : Fin ℓ → (Fin n → F))
-    {γ : ℚ} (hγ_pos : 0 ≤ γ) (hγ_hi : γ * (ℓ + 1) < δ_C / n) :
+    {γ : ℚ} (hγ_pos : 0 ≤ γ) (hγ_hi : γ * (ℓ + 1) < δ_C / n)
+    (h_radius : (n : ℚ) * γ ≤ (τ : ℚ)) :
     seedProb (S := S) (fun x =>
       ∃ T : Finset (Fin n), (T.card : ℚ) ≥ n * (1 - γ) ∧
         InRestrictedCode c T (G.combine x us) ∧
         ∃ j : Fin ℓ, ¬ InRestrictedCode c T (us j))
     ≤ (max ((n : ℚ) * γ) 1 + 1) * (ℓ - 1) / Fintype.card S := by
-  have h := MCA_list_decoding_bound (L := 1) G hG_MDS hℓ c hn h_minDist h_LD_one us hγ_pos hγ_hi
+  have h := MCA_list_decoding_bound (L := 1) G hG_MDS hℓ c hn h_minDist h_LD_one us
+    hγ_pos hγ_hi h_radius
   -- The bound `(1 * (max(nγ,1) + 1) * (ℓ-1)) / |S|` reduces to
   -- `(max(nγ,1) + 1) * (ℓ-1) / |S|`.
   simpa [one_mul] using h
@@ -251,13 +273,14 @@ theorem MCA_list_decoding_bound_L_one_eq_unique
     {δ_C : ℕ} (h_minDist : MinDistAtLeast c δ_C)
     {τ : ℕ} (h_LD_one : IsListDecodable c τ 1)
     (us : Fin ℓ → (Fin n → F))
-    {γ : ℚ} (hγ_pos : 0 ≤ γ) (hγ_hi : γ * (ℓ + 1) < δ_C / n) :
+    {γ : ℚ} (hγ_pos : 0 ≤ γ) (hγ_hi : γ * (ℓ + 1) < δ_C / n)
+    (h_radius : (n : ℚ) * γ ≤ (τ : ℚ)) :
     seedProb (S := S) (fun x =>
       ∃ T : Finset (Fin n), (T.card : ℚ) ≥ n * (1 - γ) ∧
         InRestrictedCode c T (G.combine x us) ∧
         ∃ j : Fin ℓ, ¬ InRestrictedCode c T (us j))
     ≤ (max ((n : ℚ) * γ) 1 + 1) * (ℓ - 1) / Fintype.card S :=
-  MCA_list_decoding_bound_L_one G hG_MDS hℓ c hn h_minDist h_LD_one us hγ_pos hγ_hi
+  MCA_list_decoding_bound_L_one G hG_MDS hℓ c hn h_minDist h_LD_one us hγ_pos hγ_hi h_radius
 
 /-- The unique-decoding capstone implies the same bound that the
 specialized list-decoding capstone at `L = 1` gives. (The `IsListDecodable`
@@ -288,7 +311,8 @@ theorem MCA_list_decoding_bound_div
     {δ_C : ℕ} (h_minDist : MinDistAtLeast c δ_C)
     {τ : ℕ} (h_LD : IsListDecodable c τ L)
     (us : Fin ℓ → (Fin n → F))
-    {γ : ℚ} (hγ_pos : 0 ≤ γ) (hγ_hi : γ * (ℓ + 1) < δ_C / n) :
+    {γ : ℚ} (hγ_pos : 0 ≤ γ) (hγ_hi : γ * (ℓ + 1) < δ_C / n)
+    (h_radius : (n : ℚ) * γ ≤ (τ : ℚ)) :
     ∃ B : ℚ, 0 ≤ B ∧
       B = L * (max ((n : ℚ) * γ) 1 + 1) * (ℓ - 1) ∧
       seedProb (S := S) (fun x =>
@@ -306,7 +330,7 @@ theorem MCA_list_decoding_bound_div
       linarith
     have h1 : (0 : ℚ) ≤ (L : ℚ) * (max ((n : ℚ) * γ) 1 + 1) := mul_nonneg hL_nn h_max1_nn
     exact mul_nonneg h1 hℓm
-  · exact MCA_list_decoding_bound G hG_MDS hℓ c hn h_minDist h_LD us hγ_pos hγ_hi
+  · exact MCA_list_decoding_bound G hG_MDS hℓ c hn h_minDist h_LD us hγ_pos hγ_hi h_radius
 
 /-- Sanity: the list-decoding capstone elaborates against a concrete instance. -/
 example {F : Type*} [Field F] [DecidableEq F] [Fintype F]
@@ -315,12 +339,13 @@ example {F : Type*} [Field F] [DecidableEq F] [Fintype F]
     {δ_C : ℕ} (h_minDist : MinDistAtLeast c δ_C)
     {τ : ℕ} {L : ℕ} (h_LD : IsListDecodable c τ L)
     (us : Fin 2 → (Fin n → F))
-    {γ : ℚ} (hγ_pos : 0 ≤ γ) (hγ_hi : γ * (2 + 1) < δ_C / n) :
+    {γ : ℚ} (hγ_pos : 0 ≤ γ) (hγ_hi : γ * (2 + 1) < δ_C / n)
+    (h_radius : (n : ℚ) * γ ≤ (τ : ℚ)) :
     seedProb (S := F) (fun x =>
       ∃ T : Finset (Fin n), (T.card : ℚ) ≥ n * (1 - γ) ∧
         InRestrictedCode c T (G.combine x us) ∧
         ∃ j : Fin 2, ¬ InRestrictedCode c T (us j))
     ≤ (L * (max ((n : ℚ) * γ) 1 + 1) * (2 - 1)) / Fintype.card F :=
-  MCA_list_decoding_bound G hG_MDS (by omega) c hn h_minDist h_LD us hγ_pos hγ_hi
+  MCA_list_decoding_bound G hG_MDS (by omega) c hn h_minDist h_LD us hγ_pos hγ_hi h_radius
 
 end LinearCodes
