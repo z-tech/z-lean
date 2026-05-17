@@ -27,6 +27,7 @@ import LinearCodes.MCA.Applications.Profile
 import LinearCodes.LinearCode
 import LinearCodes.ReedSolomon
 import LinearCodes.ReedSolomonProperties
+import LinearCodes.ReedSolomonSoundness
 import LinearCodes.MCA.RS.Submodule
 import LinearCodes.MCA.RS.ArrayBridge
 import LinearCodes.MCA.RS.MCABound
