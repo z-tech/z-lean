@@ -5,7 +5,7 @@ package "sumcheck" where
   version := v!"0.1.0"
 
 @[default_target]
-lean_lib «Sumcheck» where
+lean_lib «SumcheckProtocol» where
 
 lean_lib «InteractiveProtocol» where
 
