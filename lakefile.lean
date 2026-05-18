@@ -30,4 +30,6 @@ lean_lib «LinearCodes.Examples» where
   roots := #[`LinearCodes.Examples.RSSmokeTest]
 
 require "leanprover-community" / mathlib @ git "v4.29.1"
-require CompPoly from git "https://github.com/Verified-zkEVM/CompPoly" @ "master"
+-- Pinned to a specific rev (not `master`) so upstream churn doesn't break CI.
+-- Bump deliberately when picking up new CompPoly features.
+require CompPoly from git "https://github.com/Verified-zkEVM/CompPoly" @ "01609714fa06e8f83485fe663f953d59c229477f"

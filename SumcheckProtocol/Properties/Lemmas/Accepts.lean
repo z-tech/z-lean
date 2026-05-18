@@ -22,11 +22,6 @@ lemma acceptsEvent_rounds_ok
   intro hAcc
   dsimp [AcceptsEvent] at hAcc
   simp [isVerifierAccepts] at hAcc
-  have h : (by
-      -- name these lets the same way `simp` expanded them
-      -- but we don't actually need to name them; `simp` already reduced to (roundsOk && finalOk) = true
-      exact True) := by
-    trivial
   -- turn (roundsOk && finalOk) = true into roundsOk = true ∧ finalOk = true
   have h' : ( (List.finRange n).all (fun i : Fin n =>
       verifierCheck domain (indDegreeK p i) (t.claims claim (Fin.castSucc i)) (t.roundPolys i)
