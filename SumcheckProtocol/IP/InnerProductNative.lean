@@ -112,6 +112,7 @@ structure NativeStatement
   evalPoints      : Fin 3 → 𝔽
   evalPoints_inj  : Function.Injective evalPoints
   domain_sub      : ∀ x ∈ domain, ∃ k, evalPoints k = x
+  domain_nodup    : domain.Nodup
   f_multilinear   : ∀ i : Fin n, f.degreeOf i ≤ 1
   g_multilinear   : ∀ i : Fin n, g.degreeOf i ≤ 1
 
@@ -124,7 +125,8 @@ def NativeStatement.toInnerProduct {n : ℕ}
   { domain := S.domain
     claim := S.claim
     f := S.f
-    g := S.g }
+    g := S.g
+    domain_nodup := S.domain_nodup }
 
 /-- A native statement is *valid* exactly when its thin-wrapper image
 is — i.e. the claim equals the honest inner-product sum. -/
@@ -250,6 +252,7 @@ def NativeStatement.toEvalFormStatement {n : ℕ}
     evalPoints := S.evalPoints
     evalPoints_inj := S.evalPoints_inj
     domain_sub := S.domain_sub
+    domain_nodup := S.domain_nodup
     degree_le :=
       indDegreeK_mul_multilinear_le
         (𝔽 := 𝔽) (n := n) S.f S.g S.f_multilinear S.g_multilinear }

@@ -65,6 +65,7 @@ structure SumcheckProtocolStatementEvalForm
   evalPoints     : Fin (d + 1) → 𝔽
   evalPoints_inj : Function.Injective evalPoints
   domain_sub     : ∀ x ∈ domain, ∃ k, evalPoints k = x
+  domain_nodup   : domain.Nodup
   degree_le      : ∀ i : Fin n, indDegreeK polynomial i ≤ d
 
 /-- SumcheckProtocol claim correctness in the eval-form bundle. -/
@@ -197,7 +198,8 @@ def evalFormToStatement {𝔽 : Type} {n d : ℕ}
     (st : SumcheckProtocolStatementEvalForm 𝔽 n d) : SumcheckProtocolStatement 𝔽 n :=
   { domain := st.domain
     claim := st.claim
-    polynomial := st.polynomial }
+    polynomial := st.polynomial
+    domain_nodup := st.domain_nodup }
 
 @[simp] lemma evalFormToStatement_domain {𝔽 : Type} {n d : ℕ}
     [Field 𝔽] [DecidableEq 𝔽] (st : SumcheckProtocolStatementEvalForm 𝔽 n d) :

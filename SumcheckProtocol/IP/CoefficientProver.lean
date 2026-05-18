@@ -37,7 +37,8 @@ def toEvalFormStatement {n d : ℕ}
     (domain : List 𝔽) (claim : 𝔽)
     (evalPoints : Fin (d + 1) → 𝔽)
     (evalPoints_inj : Function.Injective evalPoints)
-    (domain_sub : ∀ x ∈ domain, ∃ k, evalPoints k = x) :
+    (domain_sub : ∀ x ∈ domain, ∃ k, evalPoints k = x)
+    (domain_nodup : domain.Nodup) :
     SumcheckProtocolStatementEvalForm 𝔽 n d where
   domain := domain
   claim := claim
@@ -45,6 +46,7 @@ def toEvalFormStatement {n d : ℕ}
   evalPoints := evalPoints
   evalPoints_inj := evalPoints_inj
   domain_sub := domain_sub
+  domain_nodup := domain_nodup
   degree_le := E.virtualPolynomial_degree_le
 
 @[simp] lemma toEvalFormStatement_polynomial {n d : ℕ}
@@ -52,9 +54,10 @@ def toEvalFormStatement {n d : ℕ}
     (domain : List 𝔽) (claim : 𝔽)
     (evalPoints : Fin (d + 1) → 𝔽)
     (evalPoints_inj : Function.Injective evalPoints)
-    (domain_sub : ∀ x ∈ domain, ∃ k, evalPoints k = x) :
+    (domain_sub : ∀ x ∈ domain, ∃ k, evalPoints k = x)
+    (domain_nodup : domain.Nodup) :
     (toEvalFormStatement E domain claim evalPoints
-        evalPoints_inj domain_sub).polynomial
+        evalPoints_inj domain_sub domain_nodup).polynomial
       = E.virtualPolynomial := rfl
 
 @[simp] lemma toEvalFormStatement_domain {n d : ℕ}
@@ -62,9 +65,10 @@ def toEvalFormStatement {n d : ℕ}
     (domain : List 𝔽) (claim : 𝔽)
     (evalPoints : Fin (d + 1) → 𝔽)
     (evalPoints_inj : Function.Injective evalPoints)
-    (domain_sub : ∀ x ∈ domain, ∃ k, evalPoints k = x) :
+    (domain_sub : ∀ x ∈ domain, ∃ k, evalPoints k = x)
+    (domain_nodup : domain.Nodup) :
     (toEvalFormStatement E domain claim evalPoints
-        evalPoints_inj domain_sub).domain
+        evalPoints_inj domain_sub domain_nodup).domain
       = domain := rfl
 
 @[simp] lemma toEvalFormStatement_claim {n d : ℕ}
@@ -72,9 +76,10 @@ def toEvalFormStatement {n d : ℕ}
     (domain : List 𝔽) (claim : 𝔽)
     (evalPoints : Fin (d + 1) → 𝔽)
     (evalPoints_inj : Function.Injective evalPoints)
-    (domain_sub : ∀ x ∈ domain, ∃ k, evalPoints k = x) :
+    (domain_sub : ∀ x ∈ domain, ∃ k, evalPoints k = x)
+    (domain_nodup : domain.Nodup) :
     (toEvalFormStatement E domain claim evalPoints
-        evalPoints_inj domain_sub).claim
+        evalPoints_inj domain_sub domain_nodup).claim
       = claim := rfl
 
 @[simp] lemma toEvalFormStatement_evalPoints {n d : ℕ}
@@ -82,9 +87,10 @@ def toEvalFormStatement {n d : ℕ}
     (domain : List 𝔽) (claim : 𝔽)
     (evalPoints : Fin (d + 1) → 𝔽)
     (evalPoints_inj : Function.Injective evalPoints)
-    (domain_sub : ∀ x ∈ domain, ∃ k, evalPoints k = x) :
+    (domain_sub : ∀ x ∈ domain, ∃ k, evalPoints k = x)
+    (domain_nodup : domain.Nodup) :
     (toEvalFormStatement E domain claim evalPoints
-        evalPoints_inj domain_sub).evalPoints
+        evalPoints_inj domain_sub domain_nodup).evalPoints
       = evalPoints := rfl
 
 end RoundPolyEvaluator

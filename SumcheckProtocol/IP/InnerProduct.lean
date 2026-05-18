@@ -42,13 +42,17 @@ namespace InnerProduct
 open CPoly
 
 /-- An inner-product sumcheck statement: two polynomials, a summation
-domain, and the claimed value of the inner-product sum. -/
+domain, and the claimed value of the inner-product sum.
+
+`domain_nodup` mirrors the underlying `SumcheckProtocolStatement` invariant —
+required so the claim counts each assignment exactly once. -/
 structure InnerProductStatement (𝔽 : Type*) [Field 𝔽] [DecidableEq 𝔽]
     (n : ℕ) where
   domain : List 𝔽
   claim : 𝔽
   f : CMvPolynomial n 𝔽
   g : CMvPolynomial n 𝔽
+  domain_nodup : domain.Nodup
 
 variable {𝔽 : Type*} [Field 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] [DecidableEq 𝔽]
 
@@ -58,7 +62,8 @@ def InnerProductStatement.toSumcheckProtocol {n : ℕ} (I : InnerProductStatemen
     SumcheckProtocolStatement 𝔽 n :=
   { domain := I.domain
     claim := I.claim
-    polynomial := I.f * I.g }
+    polynomial := I.f * I.g
+    domain_nodup := I.domain_nodup }
 
 /-- The statement is *valid* when the claim equals the honest inner-product
 sum — equivalently, when the reduced sumcheck claim is correct. -/

@@ -9,17 +9,24 @@ import SumcheckProtocol
 
 ## Key features
 
-- **Fully computable**: transcript generation is provided given a
+- **Symbolic-form prover & verifier are fully computable**: transcript
+  generation `#eval`s end-to-end given a
   [`CMvPolynomial`](https://github.com/Verified-zkEVM/CompPoly), a
   claim, and a challenge set.
-- **Formalized theorems**: `completeness` and `soundness` are
-  machine-checked.
+- **Eval-form layer is partially shipped**: the eval-form prover/verifier
+  in [`IP/EvalForm.lean`](IP/EvalForm.lean) is currently `noncomputable`
+  because it routes through `Lagrange.interpolate`. Replacing this with
+  an explicit barycentric evaluator is on the P0 roadmap. See
+  [`doc/stability.md`](doc/stability.md) for what's stable vs. partial.
+- **Formalized theorems**: `completeness` and `soundness` for the
+  symbolic protocol are machine-checked.
 - **Inner-product sumcheck**
   ([`SumcheckProtocol/IP/InnerProduct.lean`](IP/InnerProduct.lean)):
   `InnerProductStatement` claiming `c = Σ f(x)·g(x)` over a boolean
   hypercube (or other domain), reduced to sumcheck on `f * g`.
   Completeness, soundness, and a multilinear soundness-error bound of
   `n · 2 / |𝔽|`.
+- **0 `sorry`, 0 axioms**, enforced by CI.
 
 ## Theorems
 

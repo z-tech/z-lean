@@ -55,6 +55,7 @@ def honestStatement : SumcheckProtocolStatement (ZMod 19) 2 where
   domain := domain
   claim := (17 : ZMod 19)  -- correct: 1 + 6 + 1 + 9 = 17
   polynomial := poly
+  domain_nodup := by decide
 
 -- The generic verifier accepts the honest transcript.
 lemma honest_claim_accepted :
@@ -80,6 +81,7 @@ def dishonestStatement : SumcheckProtocolStatement (ZMod 19) 2 where
   domain := domain
   claim := (18 : ZMod 19)  -- wrong claim
   polynomial := poly
+  domain_nodup := by decide
 
 -- The generic verifier rejects the dishonest claim.
 lemma wrong_claim_rejected :

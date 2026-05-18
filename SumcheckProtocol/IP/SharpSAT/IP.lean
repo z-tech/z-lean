@@ -101,7 +101,10 @@ def SharpSATInstance.toSumcheckProtocol {n : ℕ} (I : SharpSATInstance n) :
     SumcheckProtocolStatement 𝔽 n :=
   { domain := [0, 1]
     claim := (I.count : 𝔽)
-    polynomial := arithmetize (𝔽 := 𝔽) I.formula }
+    polynomial := arithmetize (𝔽 := 𝔽) I.formula
+    domain_nodup := by
+      -- `[0, 1]` is `Nodup` provided `(0 : 𝔽) ≠ 1`, which holds in any field.
+      simp [List.Nodup, zero_ne_one] }
 
 /-- **#SAT arithmetization bridge.** Summing the arithmetized polynomial over
 the boolean hypercube `{0,1}^n` yields the number of satisfying assignments

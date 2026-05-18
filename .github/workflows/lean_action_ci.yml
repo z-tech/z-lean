@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - name: Reject proof-term `sorry` and user-declared `axiom` in LinearCodes/ and Upstream/
+      - name: Reject proof-term `sorry` and user-declared `axiom` in the umbrella
         run: |
           python3 - <<'PY'
           import pathlib, re, sys
@@ -27,7 +27,10 @@ jobs:
           # declaration but a query).
           AXIOM = re.compile(r"^\s*axiom\s+[A-Za-z_]", re.MULTILINE)
 
-          roots = [pathlib.Path("LinearCodes"), pathlib.Path("Upstream")]
+          roots = [pathlib.Path("LinearCodes"),
+                   pathlib.Path("Upstream"),
+                   pathlib.Path("SumcheckProtocol"),
+                   pathlib.Path("InteractiveProtocol")]
           sorry_offenders, axiom_offenders = [], []
           for root in roots:
               if not root.exists():
@@ -53,7 +56,8 @@ jobs:
               failed = True
           if failed:
               sys.exit(1)
-          print("Clean: no proof-term `sorry`, no user-declared `axiom` in LinearCodes/ or Upstream/.")
+          print("Clean: no proof-term `sorry`, no user-declared `axiom` in LinearCodes/, "
+                "Upstream/, SumcheckProtocol/, or InteractiveProtocol/.")
           PY
       - uses: leanprover/lean-action@v1
       - name: Encoder smoke check (native_decide on a fixed vector)

@@ -1,11 +1,18 @@
 import InteractiveProtocol.Src.Protocol
 import SumcheckProtocol.Src
 
--- this bundles domain, claim and claim_polynomial
+/-- A sumcheck statement bundles the evaluation domain, the claimed sum, and
+the polynomial whose hypercube-sum is being asserted.
+
+`domain_nodup` ensures the claim counts each assignment exactly once; without
+it `honestClaim` would inflate the true sum on repeated domain values, and the
+soundness theorem's Schwartz–Zippel argument silently assumes uniform
+sampling from `𝔽` not `𝔽 \ domain`. -/
 structure SumcheckProtocolStatement (𝔽 : Type*) [Field 𝔽] [DecidableEq 𝔽] (n : ℕ) where
   domain : List 𝔽
   claim : 𝔽
   polynomial : CPoly.CMvPolynomial n 𝔽
+  domain_nodup : domain.Nodup
 
 -- need predicate so we can quantify over false/ true statements
 def sumcheckClaimIsCorrect {𝔽 : Type*} {n : ℕ} [Field 𝔽] [DecidableEq 𝔽]
