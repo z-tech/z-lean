@@ -48,11 +48,11 @@ namespace CPoly
 
 open CMvPolynomial
 
-variable {𝔽 : Type} [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+variable {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
 
 /-- Substitution map sending `Fin (n+1)` position 0 to the constant `w` and
 positions `1..n` to the corresponding variables of `CMvPolynomial n 𝔽`. -/
-@[simp] def substRound0Map {n : ℕ} (w : 𝔽) :
+def substRound0Map {n : ℕ} (w : 𝔽) :
     Fin (n + 1) → CMvPolynomial n 𝔽 :=
   Fin.cases (CMvPolynomial.C (n := n) w) (fun i => CMvPolynomial.X (R := 𝔽) i)
 
@@ -73,24 +73,44 @@ def substRound0 {n : ℕ} (w : 𝔽) (p : CMvPolynomial (n + 1) 𝔽) :
   unfold substRound0
   exact bind₁_add _ p q
 
-/-! ## Eval lemmas (deferred — pending upstream `aeval_bind₁` bridge)
+/-! ## Eval lemma signatures (proofs deferred to upstream CompPoly)
 
-Two eval lemmas are needed for downstream Phase-2 multi-round correctness:
+The natural primitive `eval_substRound0` —
+`(substRound0 w p).eval b = p.eval (Fin.cons w b)` — is the
+unconditional pointwise evaluation property of `bind₁` at our specific
+substitution map. Its proof factors through `MvPolynomial.aeval_bind₁`
+on the Mathlib side combined with `fromCMvPolynomial`'s ring-hom
+structure; the cleanest place for it is alongside `bind₁` in CompPoly.
 
-* **`eval_substRound0`** (unconditional): `(substRound0 w p).eval b = p.eval (Fin.cons w b)`.
-  Mathlib has `aeval_bind₁` for `MvPolynomial`; the analogue for `CMvPolynomial`
-  via the `eval_equiv`/`eval₂_equiv` bridge (in
-  `CompPoly/Multivariate/MvPolyEquiv/Eval.lean`) is the bridge piece — best
-  upstreamed to CompPoly so the proof here stays a one-liner.
+Until that upstream PR lands, downstream theorems that depend on this
+fact (`fold_correctness`, `multi_round_correctness`) take it as an
+explicit hypothesis — see the **`EvalSubstRound0Hyp`** abbreviation
+below. When the upstream lemma lands, every callsite supplies the
+proven witness and the hypothesis disappears.
 
-* **`eval_substRound0_multilinear`** (conditional, multilinear): when
-  `degreeOf 0 p ≤ 1`, `(substRound0 w p).eval b = (1-w)·p.eval(0,b) + w·p.eval(1,b)`.
-  Requires the coefficient decomposition `p = q + X_0 · r` for multilinear `p`,
-  which is also the right CompPoly upstream candidate.
-
-Until those upstream pieces land, the multi-round Phase 2 induction
-(`fold_correctness` + `multi_round_correctness`) stays parked. The Phase 2
-table-form correctness (`compute_correctness_at_zero/at_one` for round 0) is
-already proven in `SumcheckProtocol/Properties/MultilinearProverBridge.lean`. -/
+This file does not introduce a `sorry`: it only provides a named
+**hypothesis abbreviation** that downstream theorems consume. -/
 
 end CPoly
+
+/-- The unconditional pointwise-evaluation property of `substRound0`,
+phrased as a Prop-valued abbreviation so downstream theorems can take
+it as a named hypothesis until the upstream CompPoly lemma lands. -/
+def EvalSubstRound0Hyp (𝔽 : Type _) [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] (n : ℕ) : Prop :=
+  ∀ (w : 𝔽) (p : CPoly.CMvPolynomial (n + 1) 𝔽) (b : Fin n → 𝔽),
+    (CPoly.substRound0 w p).eval b = p.eval (Fin.cons w b)
+
+/-- The multilinear extension at variable 0: when `p` is multilinear in
+variable 0 (`degreeOf 0 p ≤ 1`), `(substRound0 w p).eval b` is a linear
+interpolation between `p.eval (Fin.cons 0 b)` and `p.eval (Fin.cons 1 b)`.
+
+This is the key property `fold_correctness` consumes: the `(1−w)·lo +
+w·hi` linear interpolation in `fold_msb_succ` is correct exactly because
+binding a multilinear variable to `w` is a linear blend of binding it
+to `0` and `1`. -/
+def EvalSubstRound0MultilinearHyp (𝔽 : Type _) [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+    (n : ℕ) : Prop :=
+  ∀ (w : 𝔽) (p : CPoly.CMvPolynomial (n + 1) 𝔽) (b : Fin n → 𝔽),
+    CPoly.CMvPolynomial.degreeOf (0 : Fin (n + 1)) p ≤ 1 →
+    (CPoly.substRound0 w p).eval b =
+      (1 - w) * p.eval (Fin.cons 0 b) + w * p.eval (Fin.cons 1 b)

@@ -1,5 +1,27 @@
 import SumcheckProtocol.Properties.Lemmas.SoundnessLemmas
 
+/-- **Round-by-round soundness.** For any prover and any single round `i`,
+the probability — over the verifier's random challenges — that the
+transcript accepts AND the prover's round-`i` polynomial disagrees with
+the honest one (but they happen to agree at the challenge point) is at
+most `maxIndDegree(p) / |𝔽|`.
+
+This is the per-round Schwartz–Zippel bound, exported here as a public
+theorem (the union-bounded `soundness` below composes it across rounds).
+Useful for downstream IOP composition — GKR, batched sumcheck — where
+the layer-level / batch-level soundness analysis needs to compose
+per-round bounds. -/
+theorem soundness_per_round {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+  (st : SumcheckProtocolStatement 𝔽 n)
+  (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n)))
+  (i : Fin n) :
+    probOverChallenges (𝔽 := 𝔽) (n := n)
+      (fun r =>
+        AcceptsAndBadTranscriptOnChallenges st P r ∧
+        RoundDisagreeButAgreeAtChallenge st P r i)
+      ≤ (maxIndDegree st.polynomial) / fieldSize (𝔽 := 𝔽) :=
+  prob_single_round_accepts_and_disagree_le (𝔽 := 𝔽) (n := n) st P i
+
 -- Prob verifier accepts transcript when at least one round poly differs from honest one
 theorem soundness {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (st : SumcheckProtocolStatement 𝔽 n)
