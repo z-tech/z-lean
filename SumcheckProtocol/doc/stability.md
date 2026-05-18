@@ -76,23 +76,29 @@ docstring carefully.
   ([`IP/InnerProductNative.lean`](../IP/InnerProductNative.lean#L288)) —
   native-side deferred.
 
-## Noncomputable (efficiency-oriented but `#eval`-broken)
+## Removed: noncomputable eval-form IP wrapper
 
-The eval-form protocol layer is **currently `noncomputable`** because
-its round-polynomial check routes through `Lagrange.interpolate` from
-Mathlib. The symbolic-form protocol provides the correctness oracle;
-the eval-form layer existed for efficiency, but a noncomputable
-"efficient" path is self-defeating. Either of the two outcomes below
-will land as P0:
+The previously-shipped eval-form IP wrapper (`Src/EvalFormVerifier.lean`,
+`IP/EvalForm.lean`, `IP/CoefficientProver.lean`, `IP/InnerProductNative.lean`,
+`Properties/EvalForm.lean`) routed its round-polynomial check through
+`Lagrange.interpolate` from Mathlib, which is `noncomputable`. The whole
+point of the eval-form was *efficiency relative to the symbolic protocol*,
+and a noncomputable "efficient" path is self-defeating — correctness is
+already established by the symbolic protocol. These files were **deleted**
+in the P0 council fallout commit.
 
-- **Replace** `Lagrange.interpolate` with a barycentric evaluator over
-  fixed nodes `0..d`, restoring `#eval`-ability; or
-- **Delete** the eval-form layer entirely and document that the
-  symbolic spec is the public surface.
+The eval-form *prover* (`Src/EvalForm.lean::honestProverMessageEvalsAt`)
+remains and is computable; it's the prover-side evaluation tuple used by
+the VSBW multilinear prover. To resurrect a verifier that consumes this
+output, the next implementer should:
 
-Affected files: [`Src/EvalFormVerifier.lean`](../Src/EvalFormVerifier.lean),
-[`IP/EvalForm.lean`](../IP/EvalForm.lean) (16 `noncomputable`
-annotations across the two).
+1. Define a computable `evalAt evalPoints qEvals challenge` using an
+   explicit barycentric formula on scalars (no `Polynomial 𝔽` infra).
+2. Restate the verifier acceptance predicate in terms of `evalAt`.
+3. (Optional) Prove `evalAt = (Lagrange.interpolate ...).eval challenge`
+   if existing proofs are to be ported.
+
+The old code is recoverable from git history if anyone takes this on.
 
 ## Out of scope (for now)
 

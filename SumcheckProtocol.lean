@@ -1,11 +1,7 @@
 import SumcheckProtocol.Src
 import SumcheckProtocol.Properties
-import SumcheckProtocol.Properties.EvalForm
 import SumcheckProtocol.Properties.MultilinearProver
 import SumcheckProtocol.Tests
 import SumcheckProtocol.IP.InteractiveProtocol
-import SumcheckProtocol.IP.EvalForm
 import SumcheckProtocol.IP.InnerProduct
-import SumcheckProtocol.IP.InnerProductNative
 import SumcheckProtocol.IP.SharpSAT
-import SumcheckProtocol.IP.CoefficientProver

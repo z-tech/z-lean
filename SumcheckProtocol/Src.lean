@@ -5,7 +5,6 @@ import SumcheckProtocol.Src.Prover
 import SumcheckProtocol.Src.Verifier
 import SumcheckProtocol.Src.Convention
 import SumcheckProtocol.Src.EvalForm
-import SumcheckProtocol.Src.EvalFormVerifier
 import SumcheckProtocol.Src.MultilinearProver
 import SumcheckProtocol.Src.RoundEvaluator
 import SumcheckProtocol.Src.SubstRound0
