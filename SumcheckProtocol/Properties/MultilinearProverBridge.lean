@@ -852,25 +852,167 @@ def SubstRound0PreservesMultilinear (𝔽 : Type _) [Field 𝔽] [DecidableEq �
     (∀ j : Fin (m + 1), CPoly.CMvPolynomial.degreeOf j q ≤ 1) →
     (∀ j : Fin m, CPoly.CMvPolynomial.degreeOf j (CPoly.substRound0 w q) ≤ 1)
 
-/-- **`multi_round_correctness`** (modulo two named bridge hypotheses).
+/-- Concrete proof of the symbolic-side recursion under `substRound0`. -/
+theorem honestProver_substRound0_bridge :
+    HonestProverSubstRound0Bridge 𝔽 := by
+  intro m r₀ q i ch c
+  unfold honestProverMessageEvalsAt residualSumWithOpenVars
+  simp [numOpenVars]
+  let a : ℕ := m - (i.val + 1)
+  let b : ℕ := m + 1 - (i.val + 1 + 1)
+  have hab : a = b := by omega
+  have hleft : m = i.val + 1 + a := by omega
+  have hright : m + 1 = i.val + 1 + 1 + b := by omega
+  trans sumOverDomainRecursive (𝔽 := 𝔽) (β := 𝔽) [(0 : 𝔽), 1] (· + ·) 0 (m := b)
+      (fun x => CPoly.CMvPolynomial.eval
+        (fun i_1 => Fin.addCases (Fin.snoc ch c) (x ∘ Fin.cast hab) (Fin.cast hleft i_1))
+        (CPoly.substRound0 r₀ q))
+  · exact sum_over_domain_recursive_cast (𝔽 := 𝔽) (β := 𝔽) [(0 : 𝔽), 1] (· + ·) 0 hab _
+  · refine sum_over_domain_recursive_congr (𝔽 := 𝔽) (β := 𝔽) [(0 : 𝔽), 1] (· + ·) 0 ?_
+    intro x
+    rw [CPoly.eval_substRound0]
+    congr 1
+    change Fin.cons r₀ (Fin.append (Fin.snoc ch c) (x ∘ Fin.cast hab) ∘ Fin.cast hleft) =
+      Fin.append (Fin.snoc (Fin.cons r₀ ch) c) x ∘ Fin.cast hright
+    rw [← Fin.cons_snoc_eq_snoc_cons]
+    rw [Fin.append_cons]
+    funext t
+    refine Fin.cases ?_ (fun t' => ?_) t
+    · simp [Function.comp_def]
+    · rw [Fin.append_cast_right (xs := Fin.snoc ch c) (ys := x) (m' := a) hab]
+      simp [Function.comp_def]
+
+private theorem fromCMvPolynomial_substRound0_symm {m : ℕ}
+    (w : 𝔽) (p : MvPolynomial (Fin (m + 1)) 𝔽) :
+    CPoly.fromCMvPolynomial
+        (CPoly.substRound0 w ((CPoly.polyRingEquiv (n := m + 1) (R := 𝔽)).symm p))
+      =
+    Polynomial.eval (MvPolynomial.C w) (MvPolynomial.finSuccEquiv 𝔽 m p) := by
+  induction p using MvPolynomial.induction_on with
+  | C a =>
+      have hsymm : (CPoly.polyRingEquiv (n := m + 1) (R := 𝔽)).symm (MvPolynomial.C a)
+          = CPoly.CMvPolynomial.C (n := m + 1) a := by
+        apply (CPoly.polyRingEquiv (n := m + 1) (R := 𝔽)).injective
+        rw [RingEquiv.apply_symm_apply]
+        exact (CPoly.CMvPolynomial.fromCMvPolynomial_C (n := m + 1) (R := 𝔽) a).symm
+      rw [hsymm, CPoly.substRound0_C]
+      simpa [MvPolynomial.finSuccEquiv_apply] using
+        CPoly.CMvPolynomial.fromCMvPolynomial_C (n := m) (R := 𝔽) a
+  | add p q hp hq =>
+      simp [map_add, hp, hq, CPoly.substRound0_add]
+  | mul_X p j hp =>
+      rw [map_mul]
+      unfold CPoly.substRound0
+      rw [CPoly.CMvPolynomial.bind₁_mul]
+      rw [CPoly.map_mul]
+      change CPoly.fromCMvPolynomial (CPoly.substRound0 w (CPoly.polyRingEquiv.symm p)) *
+          CPoly.fromCMvPolynomial (CPoly.substRound0 w (CPoly.polyRingEquiv.symm (MvPolynomial.X j))) =
+        Polynomial.eval (MvPolynomial.C w) ((MvPolynomial.finSuccEquiv 𝔽 m) (p * MvPolynomial.X j))
+      rw [hp]
+      rw [map_mul, Polynomial.eval_mul]
+      congr 1
+      refine Fin.cases ?_ (fun k => ?_) j
+      · have hsymm : (CPoly.polyRingEquiv (n := m + 1) (R := 𝔽)).symm
+            (MvPolynomial.X (0 : Fin (m + 1)))
+            = CPoly.CMvPolynomial.X (R := 𝔽) (0 : Fin (m + 1)) := by
+          apply (CPoly.polyRingEquiv (n := m + 1) (R := 𝔽)).injective
+          rw [RingEquiv.apply_symm_apply]
+          exact (CPoly.CMvPolynomial.fromCMvPolynomial_X (R := 𝔽) (0 : Fin (m + 1))).symm
+        rw [hsymm]
+        unfold CPoly.substRound0
+        rw [CPoly.CMvPolynomial.bind₁_X]
+        rw [MvPolynomial.finSuccEquiv_X_zero]
+        unfold CPoly.substRound0Map
+        simp only [Polynomial.eval_X]
+        change CPoly.fromCMvPolynomial (CPoly.CMvPolynomial.C (n := m) w) = MvPolynomial.C w
+        exact CPoly.CMvPolynomial.fromCMvPolynomial_C (n := m) (R := 𝔽) w
+      · have hsymm : (CPoly.polyRingEquiv (n := m + 1) (R := 𝔽)).symm (MvPolynomial.X k.succ)
+            = CPoly.CMvPolynomial.X (R := 𝔽) k.succ := by
+          apply (CPoly.polyRingEquiv (n := m + 1) (R := 𝔽)).injective
+          rw [RingEquiv.apply_symm_apply]
+          exact (CPoly.CMvPolynomial.fromCMvPolynomial_X (R := 𝔽) k.succ).symm
+        rw [hsymm]
+        unfold CPoly.substRound0
+        rw [CPoly.CMvPolynomial.bind₁_X]
+        rw [MvPolynomial.finSuccEquiv_X_succ]
+        unfold CPoly.substRound0Map
+        simp only [Fin.cases_succ, Polynomial.eval_C]
+        change CPoly.fromCMvPolynomial (CPoly.CMvPolynomial.X (R := 𝔽) k) = MvPolynomial.X k
+        exact CPoly.CMvPolynomial.fromCMvPolynomial_X (R := 𝔽) k
+
+private theorem fromCMvPolynomial_substRound0 {m : ℕ}
+    (w : 𝔽) (q : CPoly.CMvPolynomial (m + 1) 𝔽) :
+    CPoly.fromCMvPolynomial (CPoly.substRound0 w q)
+      =
+    Polynomial.eval (MvPolynomial.C w) (MvPolynomial.finSuccEquiv 𝔽 m (CPoly.fromCMvPolynomial q)) := by
+  have h := fromCMvPolynomial_substRound0_symm (𝔽 := 𝔽) (m := m) w
+    (CPoly.fromCMvPolynomial q)
+  have hround :
+      (CPoly.polyRingEquiv (n := m + 1) (R := 𝔽)).symm (CPoly.fromCMvPolynomial q) = q := by
+    exact (CPoly.polyRingEquiv (n := m + 1) (R := 𝔽)).left_inv q
+  simpa [hround] using h
+
+omit [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] in
+private theorem degreeOf_polynomial_eval_C_le_sup {m : ℕ}
+    (j : Fin m) (w : 𝔽) (P : Polynomial (MvPolynomial (Fin m) 𝔽)) :
+    MvPolynomial.degreeOf j (Polynomial.eval (MvPolynomial.C w) P) ≤
+      P.support.sup (fun i => MvPolynomial.degreeOf j (P.coeff i)) := by
+  rw [Polynomial.eval_eq_sum]
+  unfold Polynomial.sum
+  calc
+    MvPolynomial.degreeOf j (P.toFinsupp.sum fun e a => a * MvPolynomial.C w ^ e) ≤
+        P.support.sup (fun i => MvPolynomial.degreeOf j ((fun e => P.coeff e * MvPolynomial.C w ^ e) i)) := by
+      simpa [Polynomial.support] using
+        MvPolynomial.degreeOf_sum_le (R := 𝔽) j P.support
+          (fun i => P.coeff i * MvPolynomial.C w ^ i)
+    _ ≤ P.support.sup (fun i => MvPolynomial.degreeOf j (P.coeff i)) := by
+      apply Finset.sup_mono_fun
+      intro i hi
+      have hmul := MvPolynomial.degreeOf_mul_le j (P.coeff i) (MvPolynomial.C w ^ i)
+      have hc : MvPolynomial.degreeOf j (MvPolynomial.C w ^ i : MvPolynomial (Fin m) 𝔽) = 0 := by
+        rw [← map_pow (MvPolynomial.C : 𝔽 →+* MvPolynomial (Fin m) 𝔽) w i]
+        exact MvPolynomial.degreeOf_C (w ^ i) j
+      exact hmul.trans_eq (by rw [hc, Nat.add_zero])
+
+/-- Concrete proof that `substRound0` preserves multilinearity of the remaining variables. -/
+theorem substRound0_preserves_multilinear :
+    SubstRound0PreservesMultilinear 𝔽 := by
+  intro m w q hq j
+  have hdegSub :
+      CPoly.CMvPolynomial.degreeOf j (CPoly.substRound0 w q)
+        =
+      MvPolynomial.degreeOf j (CPoly.fromCMvPolynomial (CPoly.substRound0 w q)) := by
+    simpa using congrFun
+      (CPoly.degreeOf_equiv (p := CPoly.substRound0 w q) (S := 𝔽)) j
+  rw [hdegSub, fromCMvPolynomial_substRound0 (𝔽 := 𝔽) w q]
+  refine le_trans (degreeOf_polynomial_eval_C_le_sup (𝔽 := 𝔽) j w _) ?_
+  apply Finset.sup_le
+  intro k hk
+  have hcoeff :
+      MvPolynomial.degreeOf j
+          (Polynomial.coeff (MvPolynomial.finSuccEquiv 𝔽 m (CPoly.fromCMvPolynomial q)) k)
+        ≤ MvPolynomial.degreeOf j.succ (CPoly.fromCMvPolynomial q) :=
+    MvPolynomial.degreeOf_coeff_finSuccEquiv (CPoly.fromCMvPolynomial q) j k
+  have hqSucc :
+      MvPolynomial.degreeOf j.succ (CPoly.fromCMvPolynomial q) ≤ 1 := by
+    have hdeg :
+        CPoly.CMvPolynomial.degreeOf j.succ q =
+          MvPolynomial.degreeOf j.succ (CPoly.fromCMvPolynomial q) := by
+      simpa using congrFun (CPoly.degreeOf_equiv (p := q) (S := 𝔽)) j.succ
+    simpa [hdeg] using hq j.succ
+  exact le_trans hcoeff hqSucc
+
+/-- **`multi_round_correctness`** (unconditional).
 
 For multilinear `p : CMvPolynomial n 𝔽`, the i-th entry of the eval-table
 prover's output list matches the eval-tuple of the symbolic round-i
 message. Combined with `multilinearProverEvalForm_length`, this fully
 characterises the VSBW multilinear prover.
-
-Two hypotheses consumed:
-* `hSubstHonest : HonestProverSubstRound0Bridge` — symbolic-side recursion.
-* `hPreserve : SubstRound0PreservesMultilinear` — preservation under subst.
-
-Each is dispatchable independently; when both land, this becomes
-unconditional. -/
+ -/
 theorem multi_round_correctness {n : ℕ}
     (challenges : Fin n → 𝔽)
     (p : CPoly.CMvPolynomial n 𝔽)
-    (hp_ml : ∀ i : Fin n, CPoly.CMvPolynomial.degreeOf i p ≤ 1)
-    (hSubstHonest : HonestProverSubstRound0Bridge 𝔽)
-    (hPreserve : SubstRound0PreservesMultilinear 𝔽) :
+    (hp_ml : ∀ i : Fin n, CPoly.CMvPolynomial.degreeOf i p ≤ 1) :
     ∀ (i : Fin n) (hi : i.val < (multilinearProverEvalForm challenges
         (toEvalTable (𝔽 := 𝔽) p)).length),
       (multilinearProverEvalForm challenges (toEvalTable (𝔽 := 𝔽) p))[i.val]'hi
@@ -892,14 +1034,14 @@ theorem multi_round_correctness {n : ℕ}
           = ( honestProverMessageEvalsAt [(0 : 𝔽), 1] p ⟨0, Nat.succ_pos m⟩ _ 0,
               honestProverMessageEvalsAt [(0 : 𝔽), 1] p ⟨0, Nat.succ_pos m⟩ _ 1 )
         simp only [List.getElem_cons_zero]
-        convert compute_correctness (𝔽 := 𝔽) p using 2 <;>
-          funext j <;> exact Fin.elim0 j
+        convert compute_correctness (𝔽 := 𝔽) p using 2
       · -- Round j.succ: apply IH on (substRound0 r₀ p), bridge with hSubstHonest.
         intro hi
         simp only [multilinearProverEvalForm_recurse challenges p (hp_ml ⟨0, Nat.succ_pos m⟩)]
         let r₀ : 𝔽 := challenges ⟨0, Nat.succ_pos m⟩
         let q : CPoly.CMvPolynomial m 𝔽 := CPoly.substRound0 r₀ p
-        have hq_ml : ∀ k : Fin m, q.degreeOf k ≤ 1 := hPreserve r₀ p hp_ml
+        have hq_ml : ∀ k : Fin m, q.degreeOf k ≤ 1 :=
+          substRound0_preserves_multilinear (𝔽 := 𝔽) r₀ p hp_ml
         let chTail : Fin m → 𝔽 :=
           fun k => challenges ⟨k.val + 1, Nat.succ_lt_succ k.isLt⟩
         have htail : j.val < (multilinearProverEvalForm chTail
@@ -917,10 +1059,10 @@ theorem multi_round_correctness {n : ℕ}
                     lt_of_lt_of_le j_1.isLt (Nat.le_of_lt j.succ.isLt)⟩) 1 )
         have hIH := ih chTail q hq_ml j
         rw [hIH htail]
-        · have hB0 := hSubstHonest (m := m) r₀ p j
+        · have hB0 := honestProver_substRound0_bridge (𝔽 := 𝔽) (m := m) r₀ p j
             (fun k : Fin j.val => chTail ⟨k.val,
               lt_of_lt_of_le k.isLt (Nat.le_of_lt j.isLt)⟩) (0 : 𝔽)
-          have hB1 := hSubstHonest (m := m) r₀ p j
+          have hB1 := honestProver_substRound0_bridge (𝔽 := 𝔽) (m := m) r₀ p j
             (fun k : Fin j.val => chTail ⟨k.val,
               lt_of_lt_of_le k.isLt (Nat.le_of_lt j.isLt)⟩) (1 : 𝔽)
           refine Prod.ext ?_ ?_
