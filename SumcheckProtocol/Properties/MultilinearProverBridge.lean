@@ -759,23 +759,16 @@ For `p` multilinear in its high-order variable, the table representation
 commutes with the substitution: building the eval-table of
 `substRound0 w p` is the same as folding the eval-table of `p` by `w`.
 
-Conditional on `EvalSubstRound0MultilinearHyp` — the upstream CompPoly
-piece. -/
+Now unconditional: uses `CPoly.eval_substRound0_multilinear` proven in
+`SumcheckProtocol/Src/SubstRound0.lean`. -/
 theorem fold_correctness {n : ℕ}
     (w : 𝔽) (p : CPoly.CMvPolynomial (n + 1) 𝔽)
-    (hp_ml : CPoly.CMvPolynomial.degreeOf (0 : Fin (n + 1)) p ≤ 1)
-    (hEval : EvalSubstRound0MultilinearHyp 𝔽 n) :
+    (hp_ml : CPoly.CMvPolynomial.degreeOf (0 : Fin (n + 1)) p ≤ 1) :
     toEvalTable (𝔽 := 𝔽) (CPoly.substRound0 w p)
       = fold_msb_succ w (toEvalTable (𝔽 := 𝔽) p) := by
   -- Both sides are `Vector 𝔽 (2^n)`. Compare pointwise.
   apply Vector.ext
   intro k hk
-  -- LHS[k] = eval (boolPoint_msb k) (substRound0 w p) = (substRound0 w p).eval (boolPoint_msb k)
-  -- = (1 - w) * eval (cons 0 (boolPoint_msb k)) p + w * eval (cons 1 (boolPoint_msb k)) p  -- hEval
-  -- The cons-helpers (Fin_cons_{zero,one}_boolFromFin_msb_eq) rewrite the cons points
-  -- to boolPoint_msb of the corresponding low/high indices.
-  -- RHS[k] = lo + (hi - lo) * w via fold_msb_succ_lerp_form.
-  -- Both forms equal (1 - w) * lo + w * hi by ring.
   set kFin : Fin (2^n) := ⟨k, hk⟩
   rw [show (toEvalTable (𝔽 := 𝔽) (CPoly.substRound0 w p))[k]
         = (toEvalTable (𝔽 := 𝔽) (CPoly.substRound0 w p))[kFin] from rfl]
@@ -783,16 +776,11 @@ theorem fold_correctness {n : ℕ}
         = (fold_msb_succ w (toEvalTable (𝔽 := 𝔽) p))[kFin] from rfl]
   rw [getElem_toEvalTable]
   rw [fold_msb_succ_lerp_form w p kFin]
-  -- The boolPoint_msb of kFin equals boolFromFin_msb of kFin by the bridge lemma.
   rw [← boolFromFin_msb_eq_boolPoint_msb]
-  -- Apply the multilinear hypothesis at b = boolFromFin_msb kFin.
-  rw [hEval w p (boolFromFin_msb (𝔽 := 𝔽) kFin) hp_ml]
-  -- Now LHS = (1 - w) * eval (cons 0 (boolFromFin_msb kFin)) p
-  --        + w * eval (cons 1 (boolFromFin_msb kFin)) p
-  -- Rewrite the cons-points to boolPoint_msb at the corresponding indices.
+  -- Apply the now-proven multilinear extension at b = boolFromFin_msb kFin.
+  rw [CPoly.eval_substRound0_multilinear w p (boolFromFin_msb (𝔽 := 𝔽) kFin) hp_ml]
   rw [Fin_cons_zero_boolFromFin_msb_eq (𝔽 := 𝔽) kFin]
   rw [Fin_cons_one_boolFromFin_msb_eq (𝔽 := 𝔽) kFin]
-  -- LHS = (1 - w) * lo + w * hi; RHS = lo + (hi - lo) * w. Both equal by ring.
   ring
 
 /-- **Multi-round recurrence (operational).**
@@ -809,26 +797,22 @@ multi-round correctness statement. The latter is the natural next step
 after CompPoly upstreams `eval_substRound0` and the symbolic-recursion
 lemma is added.
 
-Conditional on `EvalSubstRound0MultilinearHyp` and `degreeOf 0 p ≤ 1`. -/
+Conditional only on `degreeOf 0 p ≤ 1`. -/
 theorem multilinearProverEvalForm_recurse {n : ℕ}
     (challenges : Fin (n + 1) → 𝔽)
     (p : CPoly.CMvPolynomial (n + 1) 𝔽)
-    (hp_ml : CPoly.CMvPolynomial.degreeOf (0 : Fin (n + 1)) p ≤ 1)
-    (hEval : EvalSubstRound0MultilinearHyp 𝔽 n) :
+    (hp_ml : CPoly.CMvPolynomial.degreeOf (0 : Fin (n + 1)) p ≤ 1) :
     multilinearProverEvalForm challenges (toEvalTable (𝔽 := 𝔽) p)
       = computeS0S1_msb (toEvalTable (𝔽 := 𝔽) p)
         :: multilinearProverEvalForm
               (fun j : Fin n => challenges ⟨j.val + 1, Nat.succ_lt_succ j.isLt⟩)
               (toEvalTable (𝔽 := 𝔽)
                 (CPoly.substRound0 (challenges ⟨0, Nat.succ_pos n⟩) p)) := by
-  -- Operationally, the LHS unfolds to `(computeS0S1_msb t :: rest)` where rest
-  -- recurses on `fold_msb_succ r₀ t` — and by `fold_correctness` that table
-  -- equals `toEvalTable (substRound0 r₀ p)`.
   show (computeS0S1_msb (toEvalTable (𝔽 := 𝔽) p) ::
           multilinearProverEvalForm
             (fun j : Fin n => challenges ⟨j.val + 1, Nat.succ_lt_succ j.isLt⟩)
             (fold_msb_succ (challenges ⟨0, Nat.succ_pos n⟩)
               (toEvalTable (𝔽 := 𝔽) p))) = _
-  rw [fold_correctness (challenges ⟨0, Nat.succ_pos n⟩) p hp_ml hEval]
+  rw [fold_correctness (challenges ⟨0, Nat.succ_pos n⟩) p hp_ml]
 
 end SumcheckProtocol.MultilinearProver

@@ -1,5 +1,8 @@
 import CompPoly.Multivariate.Operations
 import CompPoly.Multivariate.MvPolyEquiv
+import Mathlib.Algebra.MvPolynomial.Polynomial
+import Mathlib.Algebra.MvPolynomial.Equiv
+import Mathlib.Algebra.Polynomial.Degree.SmallDegree
 
 import SumcheckProtocol.Src.CMvPolynomial
 
@@ -182,6 +185,85 @@ theorem eval_substRound0 {n : ℕ} (w : 𝔽) (p : CMvPolynomial (n + 1) 𝔽) (
     rw [hmap]
     have := aeval_X (n := n) (R := 𝔽) (σ := 𝔽) b j
     simpa [aeval] using this
+
+/-- **Polynomial degree-≤1 linearity.** A univariate polynomial of natDegree
+≤ 1 evaluates to an affine combination of its values at 0 and 1. -/
+lemma Polynomial.eval_affine_of_natDegree_le_one
+    {R : Type _} [CommRing R] (P : Polynomial R) (h : P.natDegree ≤ 1) (w : R) :
+    P.eval w = (1 - w) * P.eval 0 + w * P.eval 1 := by
+  obtain ⟨a, b₀, rfl⟩ := Polynomial.exists_eq_X_add_C_of_natDegree_le_one h
+  -- P = C a * X + C b₀
+  simp only [Polynomial.eval_add, Polynomial.eval_mul, Polynomial.eval_C, Polynomial.eval_X]
+  ring
+
+/-- **`eval_substRound0_multilinear`** (conditional on multilinearity at var 0).
+
+When `p` is multilinear in variable 0 (`degreeOf 0 p ≤ 1`), evaluating
+`substRound0 w p` at `b` is the linear blend of evaluating `p` at the
+0-prepended and 1-prepended assignments. -/
+theorem CPoly.eval_substRound0_multilinear {n : ℕ} {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽]
+    [BEq 𝔽] [LawfulBEq 𝔽]
+    (w : 𝔽) (p : CPoly.CMvPolynomial (n + 1) 𝔽) (b : Fin n → 𝔽)
+    (hp : CPoly.CMvPolynomial.degreeOf (0 : Fin (n + 1)) p ≤ 1) :
+    (CPoly.substRound0 w p).eval b
+      = (1 - w) * p.eval (Fin.cons 0 b) + w * p.eval (Fin.cons 1 b) := by
+  -- Step 1: use eval_substRound0 to convert LHS to p.eval (Fin.cons w b).
+  rw [CPoly.eval_substRound0 w p b]
+  -- Step 2: bridge to MvPolynomial via eval_equiv.
+  rw [CPoly.eval_equiv (p := p) (vals := Fin.cons w b)]
+  rw [CPoly.eval_equiv (p := p) (vals := Fin.cons 0 b)]
+  rw [CPoly.eval_equiv (p := p) (vals := Fin.cons 1 b)]
+  -- Now everything is on the MvPolynomial side.
+  set f : MvPolynomial (Fin (n + 1)) 𝔽 := CPoly.fromCMvPolynomial p with hf_def
+  have hf_deg : f.degreeOf 0 ≤ 1 := by
+    have hbridge : p.degreeOf = f.degreeOf := by
+      show p.degreeOf = (CPoly.fromCMvPolynomial p).degreeOf
+      exact CPoly.degreeOf_equiv (S := 𝔽)
+    have h0 : p.degreeOf 0 = f.degreeOf 0 := congrFun hbridge 0
+    rw [← h0]; exact hp
+  -- Step 3: use eval_polynomial_eval_finSuccEquiv to express each evaluation
+  -- as Polynomial.eval (C v) (finSuccEquiv f) lifted through (eval b).
+  have hCons : ∀ v : 𝔽,
+      f.eval (Fin.cons v b)
+        = (MvPolynomial.eval b)
+            (Polynomial.eval (MvPolynomial.C v) (MvPolynomial.finSuccEquiv 𝔽 n f)) := by
+    intro v
+    -- eval_polynomial_eval_finSuccEquiv with q = C v gives:
+    -- eval x (Polynomial.eval q (finSuccEquiv ...)) = eval (Fin.cases (eval x q) x) f
+    -- and eval x (C v) = v, so Fin.cases v x = Fin.cons v x.
+    have := MvPolynomial.eval_polynomial_eval_finSuccEquiv (R := 𝔽) (n := n)
+      (x := b) f (MvPolynomial.C v)
+    -- this : eval b (Polynomial.eval (C v) (finSuccEquiv R n f))
+    --        = eval (Fin.cases (eval b (C v)) b) f
+    rw [show MvPolynomial.eval b (MvPolynomial.C v) = v from MvPolynomial.eval_C _] at this
+    -- Fin.cases v b = Fin.cons v b (definitional? we need this)
+    rw [show (Fin.cases (motive := fun _ => 𝔽) v b) = Fin.cons v b from rfl] at this
+    exact this.symm
+  rw [hCons w, hCons 0, hCons 1]
+  -- Step 4: pull (MvPolynomial.eval b) outside via linearity.
+  set P : Polynomial (MvPolynomial (Fin n) 𝔽) := MvPolynomial.finSuccEquiv 𝔽 n f
+  have hP_natDeg : P.natDegree ≤ 1 := by
+    show (MvPolynomial.finSuccEquiv 𝔽 n f).natDegree ≤ 1
+    rw [MvPolynomial.natDegree_finSuccEquiv]
+    exact hf_deg
+  -- Apply Polynomial degree-≤1 linearity at w (in MvPolynomial (Fin n) 𝔽).
+  have hLin : P.eval (MvPolynomial.C w)
+      = (1 - MvPolynomial.C w) * P.eval (MvPolynomial.C 0)
+        + MvPolynomial.C w * P.eval (MvPolynomial.C 1) := by
+    have hC0 : (MvPolynomial.C 0 : MvPolynomial (Fin n) 𝔽) = 0 := MvPolynomial.C_0
+    have hC1 : (MvPolynomial.C 1 : MvPolynomial (Fin n) 𝔽) = 1 := MvPolynomial.C_1
+    rw [hC0, hC1]
+    exact Polynomial.eval_affine_of_natDegree_le_one (R := MvPolynomial (Fin n) 𝔽) P hP_natDeg
+      (MvPolynomial.C w)
+  rw [hLin]
+  -- Step 5: distribute (MvPolynomial.eval b) over the ring operations.
+  have hCw : (MvPolynomial.eval b) (MvPolynomial.C w) = w := MvPolynomial.eval_C _
+  show (MvPolynomial.eval b)
+        ((1 - MvPolynomial.C w) * P.eval (MvPolynomial.C 0)
+         + MvPolynomial.C w * P.eval (MvPolynomial.C 1))
+      = (1 - w) * (MvPolynomial.eval b) (Polynomial.eval (MvPolynomial.C 0) P)
+        + w * (MvPolynomial.eval b) (Polynomial.eval (MvPolynomial.C 1) P)
+  simp [map_add, map_mul, map_sub, map_one, hCw, P]
 
 end CPoly
 
