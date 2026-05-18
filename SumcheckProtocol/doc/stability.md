@@ -100,6 +100,24 @@ output, the next implementer should:
 
 The old code is recoverable from git history if anyone takes this on.
 
+## Future direction — degree d > 1
+
+The VSBW eval-table prover is multilinear-only by design. Extending to
+general individual degree `d > 1` requires a redesign (the
+`Vector 𝔽 (2^n)` eval-table representation fundamentally only carries
+Boolean-hypercube information). Two viable tracks documented in
+[`doc/vsbw-degree-d.md`](vsbw-degree-d.md):
+
+- **Track 1 (CoefficientProver)**: general-purpose symbolic walk;
+  resurrects the deleted `IP/CoefficientProver.lean` scaffold with a
+  *computable* verifier. ~2-3 weeks.
+- **Track 2 (ProductEvalTable)**: optimized for product polynomials
+  `p = ∏ fⱼ` (inner-product, GKR-style). Keeps VSBW's O(2^n)
+  advantage. ~1-2 months.
+
+The existing multilinear prover would be the `(k=1, d=1)` instance of
+Track 2.
+
 ## Out of scope (for now)
 
 - **Fiat–Shamir / NIZK soundness.** The placeholder
