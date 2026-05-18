@@ -815,4 +815,94 @@ theorem multilinearProverEvalForm_recurse {n : ℕ}
               (toEvalTable (𝔽 := 𝔽) p))) = _
   rw [fold_correctness (challenges ⟨0, Nat.succ_pos n⟩) p hp_ml]
 
+/-! ### Multi-round correctness -/
+
+/-- Symbolic-side recursion under `substRound0`, as a Prop-valued
+hypothesis. Provable from `CPoly.eval_substRound0` + careful Fin index
+manipulation through `residualSumWithOpenVars`. -/
+def HonestProverSubstRound0Bridge (𝔽 : Type _) [Field 𝔽] [DecidableEq 𝔽]
+    [BEq 𝔽] [LawfulBEq 𝔽] : Prop :=
+  ∀ {m : ℕ} (r₀ : 𝔽) (q : CPoly.CMvPolynomial (m + 1) 𝔽)
+    (i : Fin m) (ch : Fin i.val → 𝔽) (c : 𝔽),
+    honestProverMessageEvalsAt [(0 : 𝔽), 1] (CPoly.substRound0 r₀ q) i ch c
+      = honestProverMessageEvalsAt [(0 : 𝔽), 1] q
+          ⟨i.val + 1, Nat.succ_lt_succ i.isLt⟩ (Fin.cons r₀ ch) c
+
+/-- Multilinearity preservation under `substRound0`, as a Prop-valued
+hypothesis. Provable via Mathlib's `degreeOf_coeff_finSuccEquiv` bridge. -/
+def SubstRound0PreservesMultilinear (𝔽 : Type _) [Field 𝔽] [DecidableEq 𝔽]
+    [BEq 𝔽] [LawfulBEq 𝔽] : Prop :=
+  ∀ {m : ℕ} (w : 𝔽) (q : CPoly.CMvPolynomial (m + 1) 𝔽),
+    (∀ j : Fin (m + 1), CPoly.CMvPolynomial.degreeOf j q ≤ 1) →
+    (∀ j : Fin m, CPoly.CMvPolynomial.degreeOf j (CPoly.substRound0 w q) ≤ 1)
+
+/-- **`multi_round_correctness`** (modulo two named bridge hypotheses).
+
+For multilinear `p : CMvPolynomial n 𝔽`, the i-th entry of the eval-table
+prover's output list matches the eval-tuple of the symbolic round-i
+message. Combined with `multilinearProverEvalForm_length`, this fully
+characterises the VSBW multilinear prover.
+
+Two hypotheses consumed:
+* `hSubstHonest : HonestProverSubstRound0Bridge` — symbolic-side recursion.
+* `hPreserve : SubstRound0PreservesMultilinear` — preservation under subst.
+
+Each is dispatchable independently; when both land, this becomes
+unconditional. -/
+theorem multi_round_correctness {n : ℕ}
+    (challenges : Fin n → 𝔽)
+    (p : CPoly.CMvPolynomial n 𝔽)
+    (hp_ml : ∀ i : Fin n, CPoly.CMvPolynomial.degreeOf i p ≤ 1)
+    (hSubstHonest : HonestProverSubstRound0Bridge 𝔽)
+    (hPreserve : SubstRound0PreservesMultilinear 𝔽) :
+    ∀ (i : Fin n) (hi : i.val < (multilinearProverEvalForm challenges
+        (toEvalTable (𝔽 := 𝔽) p)).length),
+      (multilinearProverEvalForm challenges (toEvalTable (𝔽 := 𝔽) p))[i.val]'hi
+        = ( honestProverMessageEvalsAt [(0 : 𝔽), 1] p i
+              (fun j : Fin i.val =>
+                challenges ⟨j.val, lt_of_lt_of_le j.isLt (Nat.le_of_lt i.isLt)⟩) 0,
+            honestProverMessageEvalsAt [(0 : 𝔽), 1] p i
+              (fun j : Fin i.val =>
+                challenges ⟨j.val, lt_of_lt_of_le j.isLt (Nat.le_of_lt i.isLt)⟩) 1 ) := by
+  induction n with
+  | zero => intro i _; exact Fin.elim0 i
+  | succ m ih =>
+      intro i _
+      rw [multilinearProverEvalForm_recurse challenges p (hp_ml ⟨0, Nat.succ_pos m⟩)]
+      refine Fin.cases ?_ (fun j => ?_) i
+      · -- Round 0: use compute_correctness; the challenges-prefix at i=0 is empty.
+        show (computeS0S1_msb (toEvalTable (𝔽 := 𝔽) p) :: _)[0]
+          = ( honestProverMessageEvalsAt [(0 : 𝔽), 1] p ⟨0, Nat.succ_pos m⟩ _ 0,
+              honestProverMessageEvalsAt [(0 : 𝔽), 1] p ⟨0, Nat.succ_pos m⟩ _ 1 )
+        simp only [List.getElem_cons_zero]
+        convert compute_correctness (𝔽 := 𝔽) p using 2 <;>
+          funext j <;> exact Fin.elim0 j
+      · -- Round j.succ: apply IH on (substRound0 r₀ p), bridge with hSubstHonest.
+        show (computeS0S1_msb (toEvalTable (𝔽 := 𝔽) p) :: _)[j.val + 1]
+          = ( honestProverMessageEvalsAt [(0 : 𝔽), 1] p ⟨j.val + 1, _⟩ _ 0,
+              honestProverMessageEvalsAt [(0 : 𝔽), 1] p ⟨j.val + 1, _⟩ _ 1 )
+        simp only [List.getElem_cons_succ]
+        set r₀ : 𝔽 := challenges ⟨0, Nat.succ_pos m⟩ with hr₀
+        set q : CPoly.CMvPolynomial m 𝔽 := CPoly.substRound0 r₀ p with hq
+        have hq_ml : ∀ k : Fin m, q.degreeOf k ≤ 1 := hPreserve r₀ p hp_ml
+        set chTail : Fin m → 𝔽 :=
+          fun k => challenges ⟨k.val + 1, Nat.succ_lt_succ k.isLt⟩ with hchTail
+        have hIH := ih chTail q hq_ml hSubstHonest hPreserve j
+        rw [hIH ?_]
+        · have hB0 := hSubstHonest (m := m) r₀ p j
+            (fun k : Fin j.val => chTail ⟨k.val,
+              lt_of_lt_of_le k.isLt (Nat.le_of_lt j.isLt)⟩) (0 : 𝔽)
+          have hB1 := hSubstHonest (m := m) r₀ p j
+            (fun k : Fin j.val => chTail ⟨k.val,
+              lt_of_lt_of_le k.isLt (Nat.le_of_lt j.isLt)⟩) (1 : 𝔽)
+          refine Prod.ext ?_ ?_
+          · convert hB0 using 2
+            funext k
+            rfl
+          · convert hB1 using 2
+            funext k
+            rfl
+        · rw [multilinearProverEvalForm_length]
+          exact j.isLt
+
 end SumcheckProtocol.MultilinearProver
