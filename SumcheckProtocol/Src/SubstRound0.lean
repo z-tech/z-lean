@@ -201,11 +201,10 @@ lemma Polynomial.eval_affine_of_natDegree_le_one
 When `p` is multilinear in variable 0 (`degreeOf 0 p ≤ 1`), evaluating
 `substRound0 w p` at `b` is the linear blend of evaluating `p` at the
 0-prepended and 1-prepended assignments. -/
-theorem CPoly.eval_substRound0_multilinear {n : ℕ} {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽]
-    [BEq 𝔽] [LawfulBEq 𝔽]
-    (w : 𝔽) (p : CPoly.CMvPolynomial (n + 1) 𝔽) (b : Fin n → 𝔽)
-    (hp : CPoly.CMvPolynomial.degreeOf (0 : Fin (n + 1)) p ≤ 1) :
-    (CPoly.substRound0 w p).eval b
+theorem eval_substRound0_multilinear {n : ℕ}
+    (w : 𝔽) (p : CMvPolynomial (n + 1) 𝔽) (b : Fin n → 𝔽)
+    (hp : CMvPolynomial.degreeOf (0 : Fin (n + 1)) p ≤ 1) :
+    (substRound0 w p).eval b
       = (1 - w) * p.eval (Fin.cons 0 b) + w * p.eval (Fin.cons 1 b) := by
   -- Step 1: use eval_substRound0 to convert LHS to p.eval (Fin.cons w b).
   rw [CPoly.eval_substRound0 w p b]

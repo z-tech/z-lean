@@ -1,5 +1,6 @@
 import SumcheckProtocol.Properties.MultilinearProver
 import SumcheckProtocol.Src.EvalForm
+import SumcheckProtocol.Src.SubstRound0
 import SumcheckProtocol.Properties.Lemmas.Hypercube
 
 /-!
@@ -483,7 +484,10 @@ private lemma residual_point_round_zero
         = Fin.castAdd (numOpenVars (n := n+1) ⟨0, Nat.succ_pos n⟩)
             (⟨0, Nat.succ_pos 0⟩ : Fin 1) := by
       apply Fin.ext; rfl
-    rw [h0]
+    change Fin.addCases (Fin.snoc (Fin.elim0 : Fin 0 → 𝔽) c) x
+        (Fin.castAdd (numOpenVars (n := n+1) ⟨0, Nat.succ_pos n⟩)
+          (⟨0, Nat.succ_pos 0⟩ : Fin 1))
+      = Fin.cons (α := fun _ : Fin (n+1) => 𝔽) c x 0
     rw [Fin.addCases_left (motive := fun _ => 𝔽) (m := 1)
         (n := numOpenVars (n := n+1) ⟨0, Nat.succ_pos n⟩)
         (left := Fin.snoc (Fin.elim0 : Fin 0 → 𝔽) c) (right := x)
@@ -502,18 +506,25 @@ private lemma residual_point_round_zero
       apply Fin.ext
       show i'.val + 1 = 1 + i'.val
       omega
-    rw [h0]
-    rw [Fin.addCases_right (motive := fun _ => 𝔽) (m := 1)
-        (n := numOpenVars (n := n+1) ⟨0, Nat.succ_pos n⟩)
-        (left := Fin.snoc (Fin.elim0 : Fin 0 → 𝔽) c) (right := x)
-        (⟨i'.val, by
-          have := i'.isLt
-          show i'.val < numOpenVars (n := n+1) ⟨0, Nat.succ_pos n⟩
-          show i'.val < (n+1) - (0 + 1)
-          omega⟩ : Fin (numOpenVars (n := n+1) ⟨0, Nat.succ_pos n⟩))]
-    rw [Fin.cons_succ]
-    -- Now x ⟨i'.val, _⟩ = x i' since the index has the same value.
-    congr 1
+    let idx : Fin (numOpenVars (n := n+1) ⟨0, Nat.succ_pos n⟩) :=
+      ⟨i'.val, by
+        have := i'.isLt
+        show i'.val < numOpenVars (n := n+1) ⟨0, Nat.succ_pos n⟩
+        show i'.val < (n+1) - (0 + 1)
+        omega⟩
+    calc
+      Fin.addCases (Fin.snoc (Fin.elim0 : Fin 0 → 𝔽) c) x
+          (Fin.cast (snoc_split_eq (n := n+1) ⟨0, Nat.succ_pos n⟩).symm i'.succ)
+          = Fin.addCases (Fin.snoc (Fin.elim0 : Fin 0 → 𝔽) c) x (Fin.natAdd 1 idx) := by
+            exact congrArg (Fin.addCases (Fin.snoc (Fin.elim0 : Fin 0 → 𝔽) c) x) h0
+      _ = x idx := by
+        rw [Fin.addCases_right (motive := fun _ => 𝔽) (m := 1)
+          (n := numOpenVars (n := n+1) ⟨0, Nat.succ_pos n⟩)
+          (left := Fin.snoc (Fin.elim0 : Fin 0 → 𝔽) c) (right := x) idx]
+      _ = Fin.cons (α := fun _ : Fin (n+1) => 𝔽) c x i'.succ := by
+        rw [Fin.cons_succ]
+        -- Now x idx = x i' since the index has the same value.
+        congr 1
 
 omit [BEq 𝔽] [LawfulBEq 𝔽] in
 /-- Unfolding of `honestProverMessageEvalsAt` at round 0 with no prior
@@ -555,13 +566,18 @@ private lemma honestProverMessageEvalsAt_zero_unfold
           (Fin.cons (α := fun _ : Fin (n+1) => 𝔽) c x) p
   congr 1
   funext i
-  rw [residual_point_round_zero c (x ∘ Fin.cast hopen) i]
-  refine Fin.cases ?_ (fun i' => ?_) i
-  · rw [Fin.cons_zero, Fin.cons_zero]
-  · rw [Fin.cons_succ, Fin.cons_succ]
-    show x ((Fin.cast hopen) i') = x i'
-    have : (Fin.cast hopen) i' = i' := by apply Fin.ext; rfl
-    rw [this]
+  calc
+    addCasesFun (Fin.snoc Fin.elim0 c) (x ∘ Fin.cast hopen)
+        (Fin.cast (snoc_split_eq (n := n+1) ⟨0, Nat.succ_pos n⟩).symm i)
+        = Fin.cons (α := fun _ : Fin (n+1) => 𝔽) c (x ∘ Fin.cast hopen) i := by
+          exact residual_point_round_zero c (x ∘ Fin.cast hopen) i
+    _ = Fin.cons (α := fun _ : Fin (n+1) => 𝔽) c x i := by
+      refine Fin.cases ?_ (fun i' => ?_) i
+      · rw [Fin.cons_zero, Fin.cons_zero]
+      · rw [Fin.cons_succ, Fin.cons_succ]
+        show x ((Fin.cast hopen) i') = x i'
+        have : (Fin.cast hopen) i' = i' := by apply Fin.ext; rfl
+        rw [this]
 
 omit [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] in
 /-- Helper: `Fin.cons c (boolFromFin_msb k)` for `k : Fin (2^n)` equals
@@ -867,10 +883,11 @@ theorem multi_round_correctness {n : ℕ}
   induction n with
   | zero => intro i _; exact Fin.elim0 i
   | succ m ih =>
-      intro i _
-      rw [multilinearProverEvalForm_recurse challenges p (hp_ml ⟨0, Nat.succ_pos m⟩)]
+      intro i
       refine Fin.cases ?_ (fun j => ?_) i
       · -- Round 0: use compute_correctness; the challenges-prefix at i=0 is empty.
+        intro hi
+        simp only [multilinearProverEvalForm_recurse challenges p (hp_ml ⟨0, Nat.succ_pos m⟩)]
         show (computeS0S1_msb (toEvalTable (𝔽 := 𝔽) p) :: _)[0]
           = ( honestProverMessageEvalsAt [(0 : 𝔽), 1] p ⟨0, Nat.succ_pos m⟩ _ 0,
               honestProverMessageEvalsAt [(0 : 𝔽), 1] p ⟨0, Nat.succ_pos m⟩ _ 1 )
@@ -878,17 +895,28 @@ theorem multi_round_correctness {n : ℕ}
         convert compute_correctness (𝔽 := 𝔽) p using 2 <;>
           funext j <;> exact Fin.elim0 j
       · -- Round j.succ: apply IH on (substRound0 r₀ p), bridge with hSubstHonest.
-        show (computeS0S1_msb (toEvalTable (𝔽 := 𝔽) p) :: _)[j.val + 1]
-          = ( honestProverMessageEvalsAt [(0 : 𝔽), 1] p ⟨j.val + 1, _⟩ _ 0,
-              honestProverMessageEvalsAt [(0 : 𝔽), 1] p ⟨j.val + 1, _⟩ _ 1 )
-        simp only [List.getElem_cons_succ]
-        set r₀ : 𝔽 := challenges ⟨0, Nat.succ_pos m⟩ with hr₀
-        set q : CPoly.CMvPolynomial m 𝔽 := CPoly.substRound0 r₀ p with hq
+        intro hi
+        simp only [multilinearProverEvalForm_recurse challenges p (hp_ml ⟨0, Nat.succ_pos m⟩)]
+        let r₀ : 𝔽 := challenges ⟨0, Nat.succ_pos m⟩
+        let q : CPoly.CMvPolynomial m 𝔽 := CPoly.substRound0 r₀ p
         have hq_ml : ∀ k : Fin m, q.degreeOf k ≤ 1 := hPreserve r₀ p hp_ml
-        set chTail : Fin m → 𝔽 :=
-          fun k => challenges ⟨k.val + 1, Nat.succ_lt_succ k.isLt⟩ with hchTail
-        have hIH := ih chTail q hq_ml hSubstHonest hPreserve j
-        rw [hIH ?_]
+        let chTail : Fin m → 𝔽 :=
+          fun k => challenges ⟨k.val + 1, Nat.succ_lt_succ k.isLt⟩
+        have htail : j.val < (multilinearProverEvalForm chTail
+            (toEvalTable (𝔽 := 𝔽) q)).length := by
+          rw [multilinearProverEvalForm_length]
+          exact j.isLt
+        change (multilinearProverEvalForm chTail (toEvalTable (𝔽 := 𝔽) q))[j.val]'htail
+          = ( honestProverMessageEvalsAt [(0 : 𝔽), 1] p j.succ
+                (fun j_1 : Fin j.succ.val =>
+                  challenges ⟨j_1.val,
+                    lt_of_lt_of_le j_1.isLt (Nat.le_of_lt j.succ.isLt)⟩) 0,
+              honestProverMessageEvalsAt [(0 : 𝔽), 1] p j.succ
+                (fun j_1 : Fin j.succ.val =>
+                  challenges ⟨j_1.val,
+                    lt_of_lt_of_le j_1.isLt (Nat.le_of_lt j.succ.isLt)⟩) 1 )
+        have hIH := ih chTail q hq_ml j
+        rw [hIH htail]
         · have hB0 := hSubstHonest (m := m) r₀ p j
             (fun k : Fin j.val => chTail ⟨k.val,
               lt_of_lt_of_le k.isLt (Nat.le_of_lt j.isLt)⟩) (0 : 𝔽)
@@ -898,11 +926,13 @@ theorem multi_round_correctness {n : ℕ}
           refine Prod.ext ?_ ?_
           · convert hB0 using 2
             funext k
-            rfl
+            refine Fin.cases ?_ (fun k' => ?_) k
+            · rw [Fin.cons_zero]; rfl
+            · rw [Fin.cons_succ]; rfl
           · convert hB1 using 2
             funext k
-            rfl
-        · rw [multilinearProverEvalForm_length]
-          exact j.isLt
+            refine Fin.cases ?_ (fun k' => ?_) k
+            · rw [Fin.cons_zero]; rfl
+            · rw [Fin.cons_succ]; rfl
 
 end SumcheckProtocol.MultilinearProver
