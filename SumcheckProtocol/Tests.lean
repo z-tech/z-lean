@@ -6,3 +6,4 @@ import SumcheckProtocol.Tests.InteractiveProtocolTests
 import SumcheckProtocol.Tests.SharpSATTests
 import SumcheckProtocol.Tests.EvalFormTests
 import SumcheckProtocol.Tests.MultilinearProverTests
+import SumcheckProtocol.Tests.PartialRunTests
