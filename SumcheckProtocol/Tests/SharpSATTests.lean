@@ -26,18 +26,18 @@ theorem emptyInstance_valid : emptyInstance.Valid := by
 -- `probAccept = 1` statement over ZMod 7.
 theorem smoke_completeness :
     probAccept
-      (sumcheckProtocolFull (𝔽 := 𝔽) (n := 2))
+      (sumcheckProtocol (𝔽 := 𝔽) (n := 2) ⟨2, by decide⟩)
       (emptyInstance.toSumcheckProtocol (𝔽 := 𝔽))
-      sumcheckHonestProverFull = 1 :=
+      (sumcheckHonestProver ⟨2, by decide⟩) = 1 :=
   sharpSAT_completeness emptyInstance emptyInstance_valid
 
 -- Smoke check 2: an invalid instance (claim ≠ true count). In ZMod 7, the
 -- counts 3 and 4 remain distinct, so the soundness-path hypothesis holds.
 def badInstance : SharpSATInstance 2 := { formula := [], count := 3 }
 
-theorem smoke_soundness (P : Prover (sumcheckProtocolFull (𝔽 := 𝔽) (n := 2))) :
+theorem smoke_soundness (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := 2) ⟨2, by decide⟩)) :
     probAccept
-      (sumcheckProtocolFull (𝔽 := 𝔽) (n := 2))
+      (sumcheckProtocol (𝔽 := 𝔽) (n := 2) ⟨2, by decide⟩)
       (badInstance.toSumcheckProtocol (𝔽 := 𝔽))
       P
       ≤ soundnessError (arithmetize (𝔽 := 𝔽) badInstance.formula) := by

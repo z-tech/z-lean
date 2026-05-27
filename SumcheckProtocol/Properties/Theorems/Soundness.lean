@@ -13,7 +13,7 @@ the layer-level / batch-level soundness analysis needs to compose
 per-round bounds. -/
 theorem soundness_per_round {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (st : SumcheckProtocolStatement 𝔽 n)
-  (P : Prover (sumcheckProtocolFull (𝔽 := 𝔽) (n := n)))
+  (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n) ⟨n, Nat.lt_succ_self n⟩))
   (i : Fin n) :
     probOverChallenges (𝔽 := 𝔽) (n := n)
       (fun r =>
@@ -25,7 +25,7 @@ theorem soundness_per_round {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽
 -- Prob verifier accepts transcript when at least one round poly differs from honest one
 theorem soundness {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (st : SumcheckProtocolStatement 𝔽 n)
-  (P : Prover (sumcheckProtocolFull (𝔽 := 𝔽) (n := n))) :
+  (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n) ⟨n, Nat.lt_succ_self n⟩)) :
      probOverChallenges (E := AcceptsAndBadTranscriptOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P)
       ≤ soundnessError st.polynomial := by
   classical
@@ -80,7 +80,7 @@ theorem soundness {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [Decidab
 -- Prob verifier accepts transcript when claim is not honest claim
 theorem soundness_dishonest {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (st : SumcheckProtocolStatement 𝔽 n)
-  (P : Prover (sumcheckProtocolFull (𝔽 := 𝔽) (n := n)))
+  (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n) ⟨n, Nat.lt_succ_self n⟩))
   (h : st.claim ≠ honestClaim st.domain (p := st.polynomial)) :
   probOverChallenges (E := AcceptsOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P)
     ≤ soundnessError st.polynomial := by

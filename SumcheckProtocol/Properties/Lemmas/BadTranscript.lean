@@ -6,14 +6,14 @@ lemma badTranscript_implies_lastBadRound
   {𝔽 : Type _} {n : ℕ}
   [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (st : SumcheckProtocolStatement 𝔽 n)
-  (P : Prover (sumcheckProtocolFull (𝔽 := 𝔽) (n := n)))
+  (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n) ⟨n, Nat.lt_succ_self n⟩))
   (r : Fin n → 𝔽) :
   BadTranscriptEvent ⟨n, Nat.lt_succ_self n⟩ st.domain st.polynomial
-    (proverTranscriptFull st P r) →
+    (proverTranscript ⟨n, Nat.lt_succ_self n⟩ st P r) →
   LastBadRound ⟨n, Nat.lt_succ_self n⟩ st P r := by
   classical
   intro hBad
-  let t : Transcript 𝔽 n := proverTranscriptFull st P r
+  let t : Transcript 𝔽 n := proverTranscript ⟨n, Nat.lt_succ_self n⟩ st P r
 
   -- the set of "bad" rounds (where the prover deviates from the honest round poly)
   let bad : Finset (Fin n) :=

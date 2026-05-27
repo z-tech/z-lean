@@ -96,9 +96,9 @@ def honestTranscript {n : ℕ}
 inner-product claim. -/
 def proverTranscript {n : ℕ}
     (I : InnerProductStatement 𝔽 n)
-    (P : Prover (sumcheckProtocolFull (𝔽 := 𝔽) (n := n)))
+    (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n) ⟨n, Nat.lt_succ_self n⟩))
     (r : Fin n → 𝔽) : Transcript 𝔽 n :=
-  _root_.proverTranscriptFull I.toSumcheckProtocol P r
+  _root_.proverTranscript ⟨n, Nat.lt_succ_self n⟩ I.toSumcheckProtocol P r
 
 end InnerProduct
 
@@ -112,9 +112,9 @@ probability 1. -/
 theorem innerProduct_completeness {n : ℕ}
     (I : InnerProductStatement 𝔽 n) (h : I.Valid) :
     probAccept
-      (sumcheckProtocolFull (𝔽 := 𝔽) (n := n))
+      (sumcheckProtocol (𝔽 := 𝔽) (n := n) ⟨n, Nat.lt_succ_self n⟩)
       I.toSumcheckProtocol
-      sumcheckHonestProverFull = 1 :=
+      (sumcheckHonestProver ⟨n, Nat.lt_succ_self n⟩) = 1 :=
   sumcheck_hasPerfectCompleteness I.toSumcheckProtocol
     ((valid_iff_toSumcheckProtocol_claim_correct I).mp h)
 
@@ -124,9 +124,9 @@ than the sumcheck soundness error on `f * g`. -/
 theorem innerProduct_soundness {n : ℕ}
     (I : InnerProductStatement 𝔽 n)
     (h : I.claim ≠ honestClaim I.domain (I.f * I.g))
-    (P : Prover (sumcheckProtocolFull (𝔽 := 𝔽) (n := n))) :
+    (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n) ⟨n, Nat.lt_succ_self n⟩)) :
     probAccept
-      (sumcheckProtocolFull (𝔽 := 𝔽) (n := n))
+      (sumcheckProtocol (𝔽 := 𝔽) (n := n) ⟨n, Nat.lt_succ_self n⟩)
       I.toSumcheckProtocol
       P
       ≤ soundnessError (I.f * I.g) := by

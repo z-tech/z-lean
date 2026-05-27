@@ -8,27 +8,27 @@ import SumcheckProtocol.Properties.Probability
 
 theorem sumcheck_hasSoundnessError {𝔽 : Type*} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] :
     hasSoundnessError
-      (sumcheckProtocolFull (𝔽 := 𝔽) (n := n))
+      (sumcheckProtocol (𝔽 := 𝔽) (n := n) ⟨n, Nat.lt_succ_self n⟩)
       sumcheckClaimIsCorrect
       (fun st => soundnessError st.polynomial) := by
   intro st P hFalse
   unfold probAccept
-  -- AcceptsOnChallenges IS sumcheckProtocolFull.verifierAccepts ∘ generateTranscript
-  have hEq : (fun r => sumcheckProtocolFull.verifierAccepts st
-      (generateTranscript sumcheckProtocolFull st P r))
+  -- AcceptsOnChallenges IS (sumcheckProtocol ⟨n, Nat.lt_succ_self n⟩).verifierAccepts ∘ generateTranscript
+  have hEq : (fun r => (sumcheckProtocol ⟨n, Nat.lt_succ_self n⟩).verifierAccepts st
+      (generateTranscript (sumcheckProtocol ⟨n, Nat.lt_succ_self n⟩) st P r))
     = (fun r => AcceptsOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P r) := rfl
   rw [hEq]
   exact soundness_dishonest st P (by unfold sumcheckClaimIsCorrect at hFalse; exact hFalse)
 
 theorem sumcheck_hasPerfectCompleteness {𝔽 : Type*} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] :
     hasPerfectCompleteness
-      (sumcheckProtocolFull (𝔽 := 𝔽) (n := n))
+      (sumcheckProtocol (𝔽 := 𝔽) (n := n) ⟨n, Nat.lt_succ_self n⟩)
       sumcheckClaimIsCorrect
-      sumcheckHonestProverFull := by
+      (sumcheckHonestProver ⟨n, Nat.lt_succ_self n⟩) := by
   intro st hTrue
   unfold probAccept
-  have hEq : (fun r => sumcheckProtocolFull.verifierAccepts st
-      (generateTranscript sumcheckProtocolFull st sumcheckHonestProverFull r))
+  have hEq : (fun r => (sumcheckProtocol ⟨n, Nat.lt_succ_self n⟩).verifierAccepts st
+      (generateTranscript (sumcheckProtocol ⟨n, Nat.lt_succ_self n⟩) st (sumcheckHonestProver ⟨n, Nat.lt_succ_self n⟩) r))
     = (fun r => AcceptsEvent ⟨n, Nat.lt_succ_self n⟩ st.domain st.polynomial st.claim
         (generateHonestTranscript st.domain st.polynomial st.claim r)) := by
     rfl

@@ -307,7 +307,7 @@ lemma filter_card_le_of_implies {𝔽 : Type _} [CommRing 𝔽] [DecidableEq �
 -- differs from honest but agrees at the challenge, then the probability of
 -- this happening (over the random challenge at round i) is ≤ maxIndDegree(p) / |𝔽|
 theorem prob_single_round_accepts_and_disagree_le {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
-(st : SumcheckProtocolStatement 𝔽 n) (P : Prover (sumcheckProtocolFull (𝔽 := 𝔽) (n := n))) (i : Fin n) :
+(st : SumcheckProtocolStatement 𝔽 n) (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n) ⟨n, Nat.lt_succ_self n⟩)) (i : Fin n) :
   probOverChallenges (𝔽 := 𝔽) (n := n)
     (fun r =>
       AcceptsAndBadTranscriptOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P r ∧
@@ -329,7 +329,7 @@ theorem prob_single_round_accepts_and_disagree_le {𝔽 : Type _} {n : ℕ} [Fie
         classical
         -- reference challenges: use 0 at position i (choice doesn't matter for g, h)
         let r0 : Fin (n' + 1) → 𝔽 := Fin.insertNth i (0 : 𝔽) rRest
-        let g : CPoly.CMvPolynomial 1 𝔽 := (proverTranscriptFull st P r0).roundPolys i
+        let g : CPoly.CMvPolynomial 1 𝔽 := (proverTranscript ⟨n' + 1, Nat.lt_succ_self _⟩ st P r0).roundPolys i
         let h : CPoly.CMvPolynomial 1 𝔽 := honestRoundPoly st.domain (p := st.polynomial) (ch := r0) i
         let S : Finset 𝔽 := (Finset.univ : Finset 𝔽).filter (fun a => E (Fin.insertNth i a rRest))
 
@@ -339,7 +339,7 @@ theorem prob_single_round_accepts_and_disagree_le {𝔽 : Type _} {n : ℕ} [Fie
           -- pick a witness where the event holds
           rcases Finset.nonempty_iff_ne_empty.2 hS with ⟨a0, ha0⟩
           have ha0E : E (Fin.insertNth i a0 rRest) := (Finset.mem_filter.1 ha0).2
-          let adv_tr_a0 := proverTranscriptFull st P (Fin.insertNth i a0 rRest)
+          let adv_tr_a0 := proverTranscript ⟨n' + 1, Nat.lt_succ_self _⟩ st P (Fin.insertNth i a0 rRest)
 
           -- key: challenges before round i don't depend on the challenge at i
           have hchal_eq (a : 𝔽) :
@@ -351,7 +351,7 @@ theorem prob_single_round_accepts_and_disagree_le {𝔽 : Type _} {n : ℕ} [Fie
 
           -- so g and h don't depend on the challenge at position i
           have hg_eq (a : 𝔽) :
-              (proverTranscriptFull st P (Fin.insertNth i a rRest)).roundPolys i = g := by
+              (proverTranscript ⟨n' + 1, Nat.lt_succ_self _⟩ st P (Fin.insertNth i a rRest)).roundPolys i = g := by
             simp [proverTranscript, g, hchal_eq a]
           have hh_eq (a : 𝔽) :
               honestRoundPoly st.domain (p := st.polynomial) (ch := Fin.insertNth i a rRest) i = h := by
@@ -410,7 +410,7 @@ theorem prob_single_round_accepts_and_disagree_le {𝔽 : Type _} {n : ℕ} [Fie
 -- union bound over all rounds: the total probability of some round having
 -- a disagree-but-agree event is ≤ n * maxIndDegree(p) / |𝔽| = soundnessError
 theorem sum_accepts_and_round_disagree_but_agree_bound {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
-(st : SumcheckProtocolStatement 𝔽 n) (P : Prover (sumcheckProtocolFull (𝔽 := 𝔽) (n := n))) :
+(st : SumcheckProtocolStatement 𝔽 n) (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n) ⟨n, Nat.lt_succ_self n⟩)) :
   (∑ i : Fin n,
       probOverChallenges (𝔽 := 𝔽) (n := n)
         (fun r =>
@@ -477,7 +477,7 @@ lemma all_rounds_honest_of_not_bad
   {𝔽 : Type _} {n : ℕ}
   [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (st : SumcheckProtocolStatement 𝔽 n)
-  (P : Prover (sumcheckProtocolFull (𝔽 := 𝔽) (n := n)))
+  (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n) ⟨n, Nat.lt_succ_self n⟩))
   (r : Fin n → 𝔽) :
   generateHonestClaims st.claim (fun i => P.respond st i (challengeSubset r i)) r (0 : Fin (n+1))
     = st.claim := by
@@ -487,9 +487,9 @@ lemma all_rounds_honest_of_not_bad
   {𝔽 : Type _} {n : ℕ}
   [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (st : SumcheckProtocolStatement 𝔽 n)
-  (P : Prover (sumcheckProtocolFull (𝔽 := 𝔽) (n := n)))
+  (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n) ⟨n, Nat.lt_succ_self n⟩))
   (r : Fin n → 𝔽) :
-  (proverTranscriptFull st P r).claims st.claim ⟨0, Nat.succ_pos n⟩ = st.claim := by
+  (proverTranscript ⟨n, Nat.lt_succ_self n⟩ st P r).claims st.claim ⟨0, Nat.succ_pos n⟩ = st.claim := by
   simp [proverTranscript, Transcript.claims]
 
 
@@ -497,8 +497,10 @@ lemma all_rounds_honest_of_not_bad
   {𝔽 : Type _} {n' : ℕ}
   [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (st : SumcheckProtocolStatement 𝔽 (Nat.succ n'))
-  (P : Prover (sumcheckProtocolFull (𝔽 := 𝔽) (n := Nat.succ n'))) (r : Fin (Nat.succ n') → 𝔽) :
-  (proverTranscriptFull st P r).claims st.claim (Fin.castSucc (⟨0, Nat.succ_pos n'⟩))
+  (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := Nat.succ n') ⟨Nat.succ n', Nat.lt_succ_self _⟩))
+  (r : Fin (Nat.succ n') → 𝔽) :
+  (proverTranscript ⟨Nat.succ n', Nat.lt_succ_self _⟩ st P r).claims st.claim
+      (Fin.castSucc (⟨0, Nat.succ_pos n'⟩))
     = st.claim := by
   simp [proverTranscript, Transcript.claims]
 
@@ -600,16 +602,16 @@ lemma claim_eq_honest_claim_of_accepts_and_all_rounds_honest
   {𝔽 : Type _} {n : ℕ}
   [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (st : SumcheckProtocolStatement 𝔽 n)
-  (P : Prover (sumcheckProtocolFull (𝔽 := 𝔽) (n := n)))
+  (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n) ⟨n, Nat.lt_succ_self n⟩))
   (r : Fin n → 𝔽)
   (hall :
     ∀ i : Fin n,
-      (proverTranscriptFull st P r).roundPolys i
-        = honestRoundPoly st.domain (p := st.polynomial) (ch := (proverTranscriptFull st P r).challenges) i)
-  (hAcc : AcceptsEvent ⟨n, Nat.lt_succ_self n⟩ st.domain st.polynomial st.claim (proverTranscriptFull st P r)) :
+      (proverTranscript ⟨n, Nat.lt_succ_self n⟩ st P r).roundPolys i
+        = honestRoundPoly st.domain (p := st.polynomial) (ch := (proverTranscript ⟨n, Nat.lt_succ_self n⟩ st P r).challenges) i)
+  (hAcc : AcceptsEvent ⟨n, Nat.lt_succ_self n⟩ st.domain st.polynomial st.claim (proverTranscript ⟨n, Nat.lt_succ_self n⟩ st P r)) :
   st.claim = honestClaim st.domain (p := st.polynomial) := by
   classical
-  let t : Transcript 𝔽 n := proverTranscriptFull st P r
+  let t : Transcript 𝔽 n := proverTranscript ⟨n, Nat.lt_succ_self n⟩ st P r
 
   cases n with
   | zero =>
@@ -721,18 +723,18 @@ lemma accepts_on_challenges_dishonest_implies_bad
   {𝔽 : Type _} {n : ℕ}
   [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (st : SumcheckProtocolStatement 𝔽 n)
-  (P : Prover (sumcheckProtocolFull (𝔽 := 𝔽) (n := n)))
+  (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n) ⟨n, Nat.lt_succ_self n⟩))
   (r : Fin n → 𝔽)
   (hDish : st.claim ≠ honestClaim st.domain (p := st.polynomial))
-  (hAcc : AcceptsEvent ⟨n, Nat.lt_succ_self n⟩ st.domain st.polynomial st.claim (proverTranscriptFull st P r)) :
-  BadTranscriptEvent ⟨n, Nat.lt_succ_self n⟩ st.domain st.polynomial (proverTranscriptFull st P r) := by
+  (hAcc : AcceptsEvent ⟨n, Nat.lt_succ_self n⟩ st.domain st.polynomial st.claim (proverTranscript ⟨n, Nat.lt_succ_self n⟩ st P r)) :
+  BadTranscriptEvent ⟨n, Nat.lt_succ_self n⟩ st.domain st.polynomial (proverTranscript ⟨n, Nat.lt_succ_self n⟩ st P r) := by
   classical
 
   -- Pin canonical BEq/LawfulBEq locally (so honestRoundPoly types line up).
   letI : BEq 𝔽 := instBEqOfDecidableEq
   letI : LawfulBEq 𝔽 := CPoly.lawfulBEqOfDecidableEq
 
-  let t : Transcript 𝔽 n := proverTranscriptFull st P r
+  let t : Transcript 𝔽 n := proverTranscript ⟨n, Nat.lt_succ_self n⟩ st P r
 
   by_contra hNoBad
 
@@ -745,9 +747,9 @@ lemma accepts_on_challenges_dishonest_implies_bad
   -- transport to the exact "hall" shape for the bridge lemma (proverTranscript ...).challenges
   have hall' :
       ∀ i : Fin n,
-        (proverTranscriptFull st P r).roundPolys i
+        (proverTranscript ⟨n, Nat.lt_succ_self n⟩ st P r).roundPolys i
           =
-        honestRoundPoly st.domain (p := st.polynomial) (ch := (proverTranscriptFull st P r).challenges) i := by
+        honestRoundPoly st.domain (p := st.polynomial) (ch := (proverTranscript ⟨n, Nat.lt_succ_self n⟩ st P r).challenges) i := by
     intro i
     -- t is definitional equal to the prover transcript
     simpa [t] using hall i

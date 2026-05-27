@@ -75,30 +75,3 @@ def proverTranscript
     (r : Fin k.val → 𝔽) (i : Fin k.val) :
     (proverTranscript k st P r).roundPolys i = P.respond st i (challengeSubset r i) := rfl
 
-/-! ### Full-run aliases
-
-Backward-compatibility shims for callers that pre-date the partial-run
-refactor. `sumcheckProtocolFull n` and `proverTranscriptFull` are
-`sumcheckProtocol ⟨n, _⟩` and `proverTranscript ⟨n, _⟩` specialised to the
-full-run case (`k = n`); both are `abbrev`s so they're definitionally
-transparent for typeclass resolution and tactic rewriting.
-
-These will be removed in Step 3 of the partial-run epic when soundness and
-completeness theorems get properly k-parameterized. -/
-
-/-- Full-run sumcheck protocol: `sumcheckProtocol ⟨n, _⟩`. -/
-abbrev sumcheckProtocolFull {𝔽 : Type*} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] :
-    PublicCoinProtocol (SumcheckProtocolStatement 𝔽 n) 𝔽 n :=
-  sumcheckProtocol ⟨n, Nat.lt_succ_self n⟩
-
-/-- Full-run prover transcript: `proverTranscript ⟨n, _⟩`. -/
-abbrev proverTranscriptFull {𝔽 : Type*} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
-    (st : SumcheckProtocolStatement 𝔽 n)
-    (P : Prover (sumcheckProtocolFull (𝔽 := 𝔽) (n := n)))
-    (r : Fin n → 𝔽) : Transcript 𝔽 n :=
-  proverTranscript ⟨n, Nat.lt_succ_self n⟩ st P r
-
-/-- Full-run honest prover: `sumcheckHonestProver ⟨n, _⟩`. -/
-abbrev sumcheckHonestProverFull {𝔽 : Type*} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] :
-    Prover (sumcheckProtocolFull (𝔽 := 𝔽) (n := n)) :=
-  sumcheckHonestProver ⟨n, Nat.lt_succ_self n⟩

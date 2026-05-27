@@ -60,15 +60,15 @@ def honestStatement : SumcheckProtocolStatement (ZMod 19) 2 where
 
 -- The generic verifier accepts the honest transcript.
 lemma honest_claim_accepted :
-    sumcheckProtocolFull.verifierAccepts honestStatement
-      (generateTranscript sumcheckProtocolFull honestStatement
-        sumcheckHonestProverFull challenges) := by
+    (sumcheckProtocol ⟨2, by decide⟩).verifierAccepts honestStatement
+      (generateTranscript (sumcheckProtocol ⟨2, by decide⟩) honestStatement
+        (sumcheckHonestProver ⟨2, by decide⟩) challenges) := by
   -- Rewrite through the bridge lemma to reach the computable verifier,
   -- then unfold the generic prover to its concrete implementation.
   show AcceptsOnChallenges _ _ _ _
   simp only [AcceptsOnChallenges_unfold, AcceptsEvent, isVerifierAccepts,
-             Transcript.claims, proverTranscript, proverTranscriptFull,
-             sumcheckHonestProver, sumcheckHonestProverFull, residualSum_full_eq_eval]
+             Transcript.claims, proverTranscript,
+             sumcheckHonestProver, residualSum_full_eq_eval]
   native_decide
 
 /-! ## Wrong claim: sum = 18
@@ -87,13 +87,13 @@ def dishonestStatement : SumcheckProtocolStatement (ZMod 19) 2 where
 
 -- The generic verifier rejects the dishonest claim.
 lemma wrong_claim_rejected :
-    ¬ sumcheckProtocolFull.verifierAccepts dishonestStatement
-      (generateTranscript sumcheckProtocolFull dishonestStatement
-        sumcheckHonestProverFull challenges) := by
+    ¬ (sumcheckProtocol ⟨2, by decide⟩).verifierAccepts dishonestStatement
+      (generateTranscript (sumcheckProtocol ⟨2, by decide⟩) dishonestStatement
+        (sumcheckHonestProver ⟨2, by decide⟩) challenges) := by
   show ¬ AcceptsOnChallenges _ _ _ _
   simp only [AcceptsOnChallenges_unfold, AcceptsEvent, isVerifierAccepts,
-             Transcript.claims, proverTranscript, proverTranscriptFull,
-             sumcheckHonestProver, sumcheckHonestProverFull, residualSum_full_eq_eval]
+             Transcript.claims, proverTranscript,
+             sumcheckHonestProver, residualSum_full_eq_eval]
   native_decide
 
 end __InteractiveProtocolTests__
