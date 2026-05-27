@@ -1,5 +1,6 @@
 import SumcheckProtocol.IP.InteractiveProtocol
 import Mathlib.Data.ZMod.Basic
+import Mathlib.Algebra.Field.ZMod
 
 set_option maxHeartbeats 200000
 

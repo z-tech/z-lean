@@ -9,6 +9,7 @@ import InteractiveProtocol.Properties.IPClass
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Logic.Equiv.Fin.Basic
 import Mathlib.Data.ZMod.Basic
+import Mathlib.Algebra.Field.ZMod
 import Mathlib.Data.Nat.Prime.Infinite
 
 namespace SharpSAT

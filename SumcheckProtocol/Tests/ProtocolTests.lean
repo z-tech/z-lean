@@ -1,7 +1,6 @@
 import Mathlib.Algebra.Field.ZMod
 import Mathlib.Data.ZMod.Basic
 
-import SumcheckProtocol.Properties.Probability.CountingPolynomials
 import SumcheckProtocol.Src.Prover
 import SumcheckProtocol.Src.Verifier
 

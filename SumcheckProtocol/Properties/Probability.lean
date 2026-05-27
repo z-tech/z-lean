@@ -1,7 +1,3 @@
 import SumcheckProtocol.Properties.Probability.Fields
-import SumcheckProtocol.Properties.Probability.Universe
-import SumcheckProtocol.Properties.Probability.CountingAgreement
-import SumcheckProtocol.Properties.Probability.CountingPolynomials
-import SumcheckProtocol.Properties.Probability.Agreement
 import SumcheckProtocol.Properties.Probability.Challenges
 import SumcheckProtocol.Properties.Probability.Soundness

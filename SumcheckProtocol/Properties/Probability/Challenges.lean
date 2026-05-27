@@ -1,4 +1,5 @@
-import SumcheckProtocol.Properties.Probability.Universe
+import InteractiveProtocol.Properties.Probability
+import CompPoly.Multivariate.CMvPolynomial
 
 -- probOverChallenges is just probEvent
 -- kept as alias for backwards compatibility during migration

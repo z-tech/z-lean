@@ -1,4 +1,3 @@
-import SumcheckProtocol.Properties.Events.Agreement
 import SumcheckProtocol.Properties.Events.BadRound
 import SumcheckProtocol.Properties.Events.BadTranscript
 import SumcheckProtocol.Properties.Events.Accepts
