@@ -13,7 +13,7 @@ lemma acceptsEvent_rounds_ok
   (p : CPoly.CMvPolynomial n 𝔽)
   (claim : 𝔽)
   (t : Transcript 𝔽 n) :
-  AcceptsEvent domain p claim t →
+  AcceptsEvent ⟨n, Nat.lt_succ_self n⟩ domain p claim t →
     (List.finRange n).all (fun i : Fin n =>
       verifierCheck domain (indDegreeK p i) (t.claims claim (Fin.castSucc i)) (t.roundPolys i)
       &&
@@ -40,7 +40,7 @@ lemma acceptsEvent_final_ok
   (p : CPoly.CMvPolynomial n 𝔽)
   (claim : 𝔽)
   (t : Transcript 𝔽 n) :
-  AcceptsEvent domain p claim t →
+  AcceptsEvent ⟨n, Nat.lt_succ_self n⟩ domain p claim t →
     decide (t.claims claim (Fin.last n) = CPoly.CMvPolynomial.eval t.challenges p) = true := by
   intro hAcc
   dsimp [AcceptsEvent] at hAcc
@@ -79,7 +79,7 @@ lemma acceptsEvent_round_facts
   (claim : 𝔽)
   (t : Transcript 𝔽 n)
   (i : Fin n) :
-  AcceptsEvent domain p claim t →
+  AcceptsEvent ⟨n, Nat.lt_succ_self n⟩ domain p claim t →
     verifierCheck domain (indDegreeK p i) (t.claims claim (Fin.castSucc i)) (t.roundPolys i) = true
     ∧
     t.claims claim i.succ = nextClaim (t.challenges i) (t.roundPolys i) := by
@@ -114,7 +114,7 @@ lemma acceptsEvent_domain_sum_eq_claim
   (claim : 𝔽)
   (t : Transcript 𝔽 n)
   (i : Fin n) :
-  AcceptsEvent domain p claim t →
+  AcceptsEvent ⟨n, Nat.lt_succ_self n⟩ domain p claim t →
     domain.foldl (fun acc a =>
       acc + CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a) (t.roundPolys i)) 0
       =
@@ -140,7 +140,7 @@ lemma acceptsEvent_domain_sum_eq_claim_of_honest
   (t : Transcript 𝔽 n)
   (i : Fin n)
   (hi : t.roundPolys i = honestRoundPoly domain p r i) :
-  AcceptsEvent domain p claim t →
+  AcceptsEvent ⟨n, Nat.lt_succ_self n⟩ domain p claim t →
     domain.foldl (fun acc a =>
       acc + CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a) (honestRoundPoly domain p r i)) 0
       =

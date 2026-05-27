@@ -16,7 +16,7 @@ theorem sumcheck_hasSoundnessError {𝔽 : Type*} {n : ℕ} [Field 𝔽] [Fintyp
   -- AcceptsOnChallenges IS sumcheckProtocolFull.verifierAccepts ∘ generateTranscript
   have hEq : (fun r => sumcheckProtocolFull.verifierAccepts st
       (generateTranscript sumcheckProtocolFull st P r))
-    = (fun r => AcceptsOnChallenges st P r) := rfl
+    = (fun r => AcceptsOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P r) := rfl
   rw [hEq]
   exact soundness_dishonest st P (by unfold sumcheckClaimIsCorrect at hFalse; exact hFalse)
 
@@ -29,7 +29,7 @@ theorem sumcheck_hasPerfectCompleteness {𝔽 : Type*} {n : ℕ} [Field 𝔽] [F
   unfold probAccept
   have hEq : (fun r => sumcheckProtocolFull.verifierAccepts st
       (generateTranscript sumcheckProtocolFull st sumcheckHonestProverFull r))
-    = (fun r => AcceptsEvent st.domain st.polynomial st.claim
+    = (fun r => AcceptsEvent ⟨n, Nat.lt_succ_self n⟩ st.domain st.polynomial st.claim
         (generateHonestTranscript st.domain st.polynomial st.claim r)) := by
     rfl
   rw [hEq, hTrue]

@@ -17,8 +17,8 @@ theorem soundness_per_round {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽
   (i : Fin n) :
     probOverChallenges (𝔽 := 𝔽) (n := n)
       (fun r =>
-        AcceptsAndBadTranscriptOnChallenges st P r ∧
-        RoundDisagreeButAgreeAtChallenge st P r i)
+        AcceptsAndBadTranscriptOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P r ∧
+        RoundDisagreeButAgreeAtChallenge ⟨n, Nat.lt_succ_self n⟩ st P r i)
       ≤ (maxIndDegree st.polynomial) / fieldSize (𝔽 := 𝔽) :=
   prob_single_round_accepts_and_disagree_le (𝔽 := 𝔽) (n := n) st P i
 
@@ -26,20 +26,20 @@ theorem soundness_per_round {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽
 theorem soundness {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (st : SumcheckProtocolStatement 𝔽 n)
   (P : Prover (sumcheckProtocolFull (𝔽 := 𝔽) (n := n))) :
-     probOverChallenges (E := AcceptsAndBadTranscriptOnChallenges st P)
+     probOverChallenges (E := AcceptsAndBadTranscriptOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P)
       ≤ soundnessError st.polynomial := by
   classical
 
   -- Keep AcceptsAndBad in the per-round event.
   let E : Fin n → (Fin n → 𝔽) → Prop :=
     fun i r =>
-      AcceptsAndBadTranscriptOnChallenges st P r ∧
-        RoundDisagreeButAgreeAtChallenge st P r i
+      AcceptsAndBadTranscriptOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P r ∧
+        RoundDisagreeButAgreeAtChallenge ⟨n, Nat.lt_succ_self n⟩ st P r i
 
   -- Step 1: Accepts∧Bad implies ∃ i, (Accepts∧Bad ∧ RoundDisagreeButAgreeAtChallenge i).
   have hImp :
       ∀ r : (Fin n → 𝔽),
-        AcceptsAndBadTranscriptOnChallenges st P r →
+        AcceptsAndBadTranscriptOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P r →
           ∃ i : Fin n, E i r := by
     intro r hAB
     rcases
@@ -50,7 +50,7 @@ theorem soundness {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [Decidab
 
   have hmono :
       probOverChallenges (𝔽 := 𝔽) (n := n)
-          (fun r => AcceptsAndBadTranscriptOnChallenges st P r)
+          (fun r => AcceptsAndBadTranscriptOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P r)
         ≤
       probOverChallenges (𝔽 := 𝔽) (n := n)
           (fun r => ∃ i : Fin n, E i r) :=
@@ -82,19 +82,20 @@ theorem soundness_dishonest {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽
   (st : SumcheckProtocolStatement 𝔽 n)
   (P : Prover (sumcheckProtocolFull (𝔽 := 𝔽) (n := n)))
   (h : st.claim ≠ honestClaim st.domain (p := st.polynomial)) :
-  probOverChallenges (E := AcceptsOnChallenges st P)
+  probOverChallenges (E := AcceptsOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P)
     ≤ soundnessError st.polynomial := by
   classical
 
   -- Key reduction: dishonest claim ⇒ (accept → bad), hence accept ⊆ (accept ∧ bad).
   have hImp :
       ∀ r : (Fin n → 𝔽),
-        AcceptsOnChallenges st P r →
-          AcceptsAndBadTranscriptOnChallenges st P r := by
+        AcceptsOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P r →
+          AcceptsAndBadTranscriptOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P r := by
     intro r hAcc
     refine ⟨?hAccEvent, ?hBad⟩
     · -- acceptance part
-      simpa [AcceptsOnChallenges, AcceptsAndBadTranscriptOnChallenges] using hAcc
+      simpa [AcceptsOnChallenges, AcceptsAndBadTranscriptOnChallenges]
+        using hAcc
     · -- badness part
       exact
         accepts_on_challenges_dishonest_implies_bad
@@ -102,16 +103,16 @@ theorem soundness_dishonest {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽
 
   have hmono :
       probOverChallenges (𝔽 := 𝔽) (n := n)
-          (fun r => AcceptsOnChallenges st P r)
+          (fun r => AcceptsOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P r)
         ≤
       probOverChallenges (𝔽 := 𝔽) (n := n)
-          (fun r => AcceptsAndBadTranscriptOnChallenges st P r) :=
+          (fun r => AcceptsAndBadTranscriptOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P r) :=
     prob_over_challenges_mono (𝔽 := 𝔽) (n := n) hImp
 
   -- Now just reuse your existing soundness_accept_bad_transcript theorem.
   have hsound :
       probOverChallenges (𝔽 := 𝔽) (n := n)
-          (fun r => AcceptsAndBadTranscriptOnChallenges st P r)
+          (fun r => AcceptsAndBadTranscriptOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P r)
         ≤ soundnessError st.polynomial :=
     soundness (𝔽 := 𝔽) (n := n) (st := st) (P := P)
 

@@ -229,7 +229,7 @@ theorem prob_over_challenges_fiber_le {𝔽 : Type _} {n : ℕ} [Fintype 𝔽] [
 -- if the verifier accepts a transcript, the round-i polynomial has degree ≤ maxIndDegree
 lemma adversary_poly_degree_le_max_ind_degree {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
     (domain : List 𝔽) (p : CPoly.CMvPolynomial n 𝔽) (claim : 𝔽) (t : Transcript 𝔽 n) (i : Fin n)
-    (hAcc : AcceptsEvent domain p claim t) :
+    (hAcc : AcceptsEvent ⟨n, Nat.lt_succ_self n⟩ domain p claim t) :
     CPoly.CMvPolynomial.degreeOf (0 : Fin 1) (t.roundPolys i) ≤ maxIndDegree p := by
   have hcheck :
       verifierCheck domain (indDegreeK p i) (t.claims claim (Fin.castSucc i)) (t.roundPolys i) = true :=
@@ -310,16 +310,16 @@ theorem prob_single_round_accepts_and_disagree_le {𝔽 : Type _} {n : ℕ} [Fie
 (st : SumcheckProtocolStatement 𝔽 n) (P : Prover (sumcheckProtocolFull (𝔽 := 𝔽) (n := n))) (i : Fin n) :
   probOverChallenges (𝔽 := 𝔽) (n := n)
     (fun r =>
-      AcceptsAndBadTranscriptOnChallenges st P r ∧
-      RoundDisagreeButAgreeAtChallenge st P r i)
+      AcceptsAndBadTranscriptOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P r ∧
+      RoundDisagreeButAgreeAtChallenge ⟨n, Nat.lt_succ_self n⟩ st P r i)
     ≤ (maxIndDegree st.polynomial) / fieldSize (𝔽 := 𝔽) := by
   classical
   cases n with
   | zero => exact Fin.elim0 i
   | succ n' =>
       let E : (Fin (n' + 1) → 𝔽) → Prop := fun r =>
-        AcceptsAndBadTranscriptOnChallenges st P r ∧
-        RoundDisagreeButAgreeAtChallenge st P r i
+        AcceptsAndBadTranscriptOnChallenges ⟨n' + 1, Nat.lt_succ_self _⟩ st P r ∧
+        RoundDisagreeButAgreeAtChallenge ⟨n' + 1, Nat.lt_succ_self _⟩ st P r i
       letI : DecidablePred E := Classical.decPred _
 
       have hfiber : ∀ rRest : (Fin n' → 𝔽),
@@ -360,10 +360,17 @@ theorem prob_single_round_accepts_and_disagree_le {𝔽 : Type _} {n : ℕ} [Fie
               (fun cs => honestProverMessageAt st.domain (p := st.polynomial) (i := i) (challenges := cs))
               (hchal_eq a)
 
+          -- Bridging: convert `honestRoundPolyAtK ⟨n'+1, _⟩` (from the event)
+          -- to `honestRoundPoly` (the form `hh_eq` produces).
+          have hh_eqK (a : 𝔽) :
+              honestRoundPolyAtK ⟨n' + 1, Nat.lt_succ_self _⟩ st.domain st.polynomial
+                (Fin.insertNth i a rRest) i = h := by
+            simpa using hh_eq a
+
           -- g ≠ h (from the witness a0 where the event holds)
           have hgh_ne : g ≠ h := by
             intro hgh
-            exact (ha0E.2).1 (by rw [hg_eq a0, hh_eq a0, hgh])
+            exact (ha0E.2).1 (by rw [hg_eq a0, hh_eqK a0, hgh])
 
           -- degree bounds
           have hgdeg : CPoly.CMvPolynomial.degreeOf (0 : Fin 1) g ≤ maxIndDegree st.polynomial := by
@@ -391,7 +398,7 @@ theorem prob_single_round_accepts_and_disagree_le {𝔽 : Type _} {n : ℕ} [Fie
             refine Finset.mem_filter.2 ⟨by simp, ?_⟩
             have h1 := (haE.2).2
             simp only [nextClaim] at h1 ⊢
-            rw [Fin.insertNth_apply_same, hg_eq a, hh_eq a] at h1
+            rw [Fin.insertNth_apply_same, hg_eq a, hh_eqK a] at h1
             exact h1
 
           exact le_trans hS_le hagree_card
@@ -407,8 +414,8 @@ theorem sum_accepts_and_round_disagree_but_agree_bound {𝔽 : Type _} {n : ℕ}
   (∑ i : Fin n,
       probOverChallenges (𝔽 := 𝔽) (n := n)
         (fun r =>
-          AcceptsAndBadTranscriptOnChallenges st P r ∧
-          RoundDisagreeButAgreeAtChallenge st P r i))
+          AcceptsAndBadTranscriptOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P r ∧
+          RoundDisagreeButAgreeAtChallenge ⟨n, Nat.lt_succ_self n⟩ st P r i))
     ≤ soundnessError st.polynomial := by
   classical
   -- Sum the pointwise bounds.
@@ -416,8 +423,8 @@ theorem sum_accepts_and_round_disagree_but_agree_bound {𝔽 : Type _} {n : ℕ}
       (∑ i : Fin n,
           probOverChallenges (𝔽 := 𝔽) (n := n)
             (fun r =>
-              AcceptsAndBadTranscriptOnChallenges st P r ∧
-              RoundDisagreeButAgreeAtChallenge st P r i))
+              AcceptsAndBadTranscriptOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P r ∧
+              RoundDisagreeButAgreeAtChallenge ⟨n, Nat.lt_succ_self n⟩ st P r i))
         ≤ ∑ i : Fin n, ((maxIndDegree st.polynomial : ℚ) / (fieldSize (𝔽 := 𝔽) : ℚ)) := by
     refine Fintype.sum_mono ?_
     intro i
@@ -429,8 +436,8 @@ theorem sum_accepts_and_round_disagree_but_agree_bound {𝔽 : Type _} {n : ℕ}
     (∑ i : Fin n,
         probOverChallenges (𝔽 := 𝔽) (n := n)
           (fun r =>
-            AcceptsAndBadTranscriptOnChallenges st P r ∧
-            RoundDisagreeButAgreeAtChallenge st P r i))
+            AcceptsAndBadTranscriptOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P r ∧
+            RoundDisagreeButAgreeAtChallenge ⟨n, Nat.lt_succ_self n⟩ st P r i))
         ≤ ∑ i : Fin n, ((maxIndDegree st.polynomial : ℚ) / (fieldSize (𝔽 := 𝔽) : ℚ)) := hsum
     _ = (n : ℚ) * ((maxIndDegree st.polynomial : ℚ) / (fieldSize (𝔽 := 𝔽) : ℚ)) := by
       simp
@@ -444,7 +451,7 @@ lemma all_rounds_honest_of_not_bad
   (p : CPoly.CMvPolynomial n 𝔽)
   (t : Transcript 𝔽 n)
   (domain : List 𝔽)
-  (hNoBad : ¬ BadTranscriptEvent domain p t) :
+  (hNoBad : ¬ BadTranscriptEvent ⟨n, Nat.lt_succ_self n⟩ domain p t) :
   ∀ i : Fin n,
     t.roundPolys i = honestRoundPoly domain (p := p) (ch := t.challenges) i := by
   classical
@@ -599,7 +606,7 @@ lemma claim_eq_honest_claim_of_accepts_and_all_rounds_honest
     ∀ i : Fin n,
       (proverTranscriptFull st P r).roundPolys i
         = honestRoundPoly st.domain (p := st.polynomial) (ch := (proverTranscriptFull st P r).challenges) i)
-  (hAcc : AcceptsEvent st.domain st.polynomial st.claim (proverTranscriptFull st P r)) :
+  (hAcc : AcceptsEvent ⟨n, Nat.lt_succ_self n⟩ st.domain st.polynomial st.claim (proverTranscriptFull st P r)) :
   st.claim = honestClaim st.domain (p := st.polynomial) := by
   classical
   let t : Transcript 𝔽 n := proverTranscriptFull st P r
@@ -717,8 +724,8 @@ lemma accepts_on_challenges_dishonest_implies_bad
   (P : Prover (sumcheckProtocolFull (𝔽 := 𝔽) (n := n)))
   (r : Fin n → 𝔽)
   (hDish : st.claim ≠ honestClaim st.domain (p := st.polynomial))
-  (hAcc : AcceptsEvent st.domain st.polynomial st.claim (proverTranscriptFull st P r)) :
-  BadTranscriptEvent st.domain st.polynomial (proverTranscriptFull st P r) := by
+  (hAcc : AcceptsEvent ⟨n, Nat.lt_succ_self n⟩ st.domain st.polynomial st.claim (proverTranscriptFull st P r)) :
+  BadTranscriptEvent ⟨n, Nat.lt_succ_self n⟩ st.domain st.polynomial (proverTranscriptFull st P r) := by
   classical
 
   -- Pin canonical BEq/LawfulBEq locally (so honestRoundPoly types line up).

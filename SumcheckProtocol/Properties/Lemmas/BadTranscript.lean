@@ -8,8 +8,9 @@ lemma badTranscript_implies_lastBadRound
   (st : SumcheckProtocolStatement 𝔽 n)
   (P : Prover (sumcheckProtocolFull (𝔽 := 𝔽) (n := n)))
   (r : Fin n → 𝔽) :
-  BadTranscriptEvent st.domain st.polynomial (proverTranscriptFull st P r) →
-  LastBadRound st P r := by
+  BadTranscriptEvent ⟨n, Nat.lt_succ_self n⟩ st.domain st.polynomial
+    (proverTranscriptFull st P r) →
+  LastBadRound ⟨n, Nat.lt_succ_self n⟩ st P r := by
   classical
   intro hBad
   let t : Transcript 𝔽 n := proverTranscriptFull st P r

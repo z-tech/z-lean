@@ -12,7 +12,8 @@ theorem perfect_completeness
   (p : CPoly.CMvPolynomial n 𝔽) :
   probOverChallenges (𝔽 := 𝔽) (n := n)
     (fun r =>
-      AcceptsEvent (𝔽 := 𝔽) (n := n) domain p (honestClaim domain p)
+      AcceptsEvent (𝔽 := 𝔽) (n := n) ⟨n, Nat.lt_succ_self n⟩
+        domain p (honestClaim domain p)
         (generateHonestTranscript (𝔽 := 𝔽) (n := n) domain p (honestClaim domain p) r))
   = 1 := by
   classical
@@ -20,7 +21,7 @@ theorem perfect_completeness
 
   -- First, prove every honest transcript is accepted
   have hE : ∀ r : Fin n → 𝔽,
-      AcceptsEvent domain p (honestClaim domain p) (generateHonestTranscript domain p (honestClaim domain p) r) := by
+      AcceptsEvent ⟨n, Nat.lt_succ_self n⟩ domain p (honestClaim domain p) (generateHonestTranscript domain p (honestClaim domain p) r) := by
     intro r
     simp only [AcceptsEvent, isVerifierAccepts, Transcript.claims, Bool.and_eq_true,
       residualSum_full_eq_eval]
@@ -51,7 +52,7 @@ theorem perfect_completeness
       -- Use the helper lemma that handles dependent types via induction
       exact honest_transcript_final_eq_eval n domain p r
   have hfilter :
-      (Finset.univ.filter (fun r => AcceptsEvent domain p (honestClaim domain p) (generateHonestTranscript domain p (honestClaim domain p) r)) : Finset (Fin n → 𝔽))
+      (Finset.univ.filter (fun r => AcceptsEvent ⟨n, Nat.lt_succ_self n⟩ domain p (honestClaim domain p) (generateHonestTranscript domain p (honestClaim domain p) r)) : Finset (Fin n → 𝔽))
         = Finset.univ := by
     ext r
     simp [hE r]
