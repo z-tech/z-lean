@@ -136,9 +136,9 @@ prover convinces the verifier with probability 1. -/
 theorem sharpSAT_completeness {n : ℕ}
     (I : SharpSATInstance n) (h : I.Valid) :
     probAccept
-      (sumcheckProtocol (𝔽 := 𝔽) (n := n))
+      (sumcheckProtocolFull (𝔽 := 𝔽) (n := n))
       (I.toSumcheckProtocol (𝔽 := 𝔽))
-      sumcheckHonestProver = 1 :=
+      sumcheckHonestProverFull = 1 :=
   sumcheck_hasPerfectCompleteness
     (I.toSumcheckProtocol (𝔽 := 𝔽))
     (toSumcheckProtocol_valid_claim_correct (𝔽 := 𝔽) h)
@@ -150,9 +150,9 @@ See `sharpSAT_soundnessError_le` in `Degree.lean` for a concrete bound. -/
 theorem sharpSAT_soundness {n : ℕ}
     (I : SharpSATInstance n)
     (h : (I.count : 𝔽) ≠ (numSatisfying I.formula : 𝔽))
-    (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n))) :
+    (P : Prover (sumcheckProtocolFull (𝔽 := 𝔽) (n := n))) :
     probAccept
-      (sumcheckProtocol (𝔽 := 𝔽) (n := n))
+      (sumcheckProtocolFull (𝔽 := 𝔽) (n := n))
       (I.toSumcheckProtocol (𝔽 := 𝔽))
       P
       ≤ soundnessError (arithmetize (𝔽 := 𝔽) I.formula) := by
@@ -202,9 +202,9 @@ theorem sharpSAT_inIPFamily
   refine InIPFamily.of_hasProperties
     (S := fun k => SumcheckProtocolStatement (F k) k)
     (C := F) (n := fun k => k)
-    (ip := fun k => sumcheckProtocol (𝔽 := F k) (n := k))
+    (ip := fun k => sumcheckProtocolFull (𝔽 := F k) (n := k))
     (encode := fun _ I => I.instance_.toSumcheckProtocol (𝔽 := F _))
-    (honest := fun _ => sumcheckHonestProver)
+    (honest := fun _ => sumcheckHonestProverFull)
     (isTrue := fun _ => sumcheckClaimIsCorrect)
     (ε_S := fun _ st => soundnessError st.polynomial)
     ?hcorrespond ?hcomplete ?hsound ?hεbound

@@ -3,6 +3,7 @@ import SumcheckProtocol.Properties.Events.Accepts
 import SumcheckProtocol.Properties.Events.BadRound
 import SumcheckProtocol.Src.Verifier
 import SumcheckProtocol.Src.Transcript
+import SumcheckProtocol.Src.Hypercube
 
 set_option maxHeartbeats 10000000
 
@@ -21,7 +22,7 @@ lemma acceptsEvent_rounds_ok
     ) = true := by
   intro hAcc
   dsimp [AcceptsEvent] at hAcc
-  simp [isVerifierAccepts] at hAcc
+  simp [isVerifierAccepts, residualSum_full_eq_eval] at hAcc
   -- turn (roundsOk && finalOk) = true into roundsOk = true ∧ finalOk = true
   have h' : ( (List.finRange n).all (fun i : Fin n =>
       verifierCheck domain (indDegreeK p i) (t.claims claim (Fin.castSucc i)) (t.roundPolys i)
@@ -44,7 +45,7 @@ lemma acceptsEvent_final_ok
     decide (t.claims claim (Fin.last n) = CPoly.CMvPolynomial.eval t.challenges p) = true := by
   intro hAcc
   dsimp [AcceptsEvent] at hAcc
-  simp [isVerifierAccepts] at hAcc
+  simp [isVerifierAccepts, residualSum_full_eq_eval] at hAcc
   have h' :
       (List.finRange n).all (fun i : Fin n =>
         verifierCheck domain (indDegreeK p i) (t.claims claim (Fin.castSucc i)) (t.roundPolys i)

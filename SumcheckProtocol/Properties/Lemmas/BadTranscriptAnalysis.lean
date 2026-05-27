@@ -15,14 +15,14 @@ import SumcheckProtocol.Properties.Lemmas.HonestRoundProofs
 lemma accepts_and_bad_implies_exists_round_disagree_but_agree
   {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (st : SumcheckProtocolStatement 𝔽 n)
-  (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n)))
+  (P : Prover (sumcheckProtocolFull (𝔽 := 𝔽) (n := n)))
   (r : Fin n → 𝔽) :
   AcceptsAndBadTranscriptOnChallenges st P r →
     ∃ i : Fin n, RoundDisagreeButAgreeAtChallenge st P r i := by
   classical
   intro h
   rcases h with ⟨hAcc, hBad⟩
-  let t : Transcript 𝔽 n := proverTranscript st P r
+  let t : Transcript 𝔽 n := proverTranscriptFull st P r
 
   -- pick the last bad round
   have hLast : LastBadRound st P r := by

@@ -22,7 +22,8 @@ theorem perfect_completeness
   have hE : ∀ r : Fin n → 𝔽,
       AcceptsEvent domain p (honestClaim domain p) (generateHonestTranscript domain p (honestClaim domain p) r) := by
     intro r
-    simp only [AcceptsEvent, isVerifierAccepts, Transcript.claims, Bool.and_eq_true]
+    simp only [AcceptsEvent, isVerifierAccepts, Transcript.claims, Bool.and_eq_true,
+      residualSum_full_eq_eval]
     constructor
     · -- roundsOk: each round passes verifierCheck and claims consistency
       rw [List.all_eq_true]
