@@ -21,6 +21,7 @@ import SumcheckProtocol.Src.Verifier
 import SumcheckProtocol.Src.CMvPolynomial
 import SumcheckProtocol.Properties.Probability.Fields
 import CompPoly.Data.ExtTreeMap.ExtTreeMap
+import CompPoly.Data.Classes.LawfulBEq
 import Std.Data.ExtTreeMap
 import Std.Data.ExtTreeMap.Lemmas
 import SumcheckProtocol.Properties.Lemmas.BadTranscript
@@ -264,7 +265,9 @@ lemma difference_poly_degree_le {𝔽 : Type _} [Field 𝔽] [Fintype 𝔽] [Dec
   simpa [differencePoly, i0] using le_trans hsub_le hmax_le
 
 -- Schwartz-Zippel core for univariate: distinct polynomials g ≠ h with deg(g-h) ≤ d
--- agree on at most d field elements (evaluated via nextClaim)
+-- agree on at most d field elements (evaluated via nextClaim). Contrapositive
+-- of `CPoly.CMvPolynomial.eval_ext_univariate`: if the agreement set were larger
+-- than `d`, the helper would conclude `g = h`, contradicting `hgh_ne`.
 lemma agreement_set_card_le {𝔽 : Type _} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
     (g h : CPoly.CMvPolynomial 1 𝔽) (d : ℕ)
     (hgh_ne : g ≠ h)
@@ -273,54 +276,14 @@ lemma agreement_set_card_le {𝔽 : Type _} [Field 𝔽] [Fintype 𝔽] [Decidab
         nextClaim (𝔽 := 𝔽) (roundChallenge := a) g =
           nextClaim (𝔽 := 𝔽) (roundChallenge := a) h}).card ≤ d := by
   classical
-  let agreeA : Finset 𝔽 :=
-    {a ∈ (Finset.univ : Finset 𝔽) |
-      nextClaim (𝔽 := 𝔽) (roundChallenge := a) g =
-        nextClaim (𝔽 := 𝔽) (roundChallenge := a) h}
-  let agreeF : Finset (Fin 1 → 𝔽) :=
-    {assignment ∈ (Finset.univ : Finset (Fin 1 → 𝔽)) |
-      CPoly.CMvPolynomial.eval assignment g = CPoly.CMvPolynomial.eval assignment h}
-
-  -- map scalar agreement to function-space agreement
-  have hmap : agreeA.card ≤ agreeF.card := by
-    have hmaps : Set.MapsTo (fun a : 𝔽 => (fun _ : Fin 1 => a)) (agreeA : Set 𝔽) (agreeF : Set (Fin 1 → 𝔽)) := by
-      intro a ha
-      have haEq := (Finset.mem_filter.1 ha).2
-      exact Finset.mem_filter.2 ⟨by simp, by simpa [agreeF, nextClaim] using haEq⟩
-    have hinj : Set.InjOn (fun a : 𝔽 => (fun _ : Fin 1 => a)) (agreeA : Set 𝔽) := by
-      intro a1 _ a2 _ hEq
-      simpa using congrArg (fun f => f (0 : Fin 1)) hEq
-    exact Finset.card_le_card_of_injOn _ hmaps hinj
-
-  -- use Schwartz-Zippel to bound the function-space agreement count
-  have hAgreeF : agreeF.card = countAssignmentsCausingAgreement g h := by
-    simp [countAssignmentsCausingAgreement, agreeF, allAssignmentsN, allChallenges,
-      AgreementAtEvent, AgreementEvent, -AgreementEvent_eval_equiv]
-    rfl
-  have hprob := prob_agreement_le_degree_over_field_size (𝔽 := 𝔽) g h hgh_ne
-  have hprob' :
-      (countAssignmentsCausingAgreement g h : ℚ) / (countAllAssignmentsN (𝔽 := 𝔽) 1 : ℚ) ≤
-      (MvPolynomial.degreeOf (⟨0, by decide⟩ : Fin 1) (differencePoly g h) : ℚ) / (fieldSize (𝔽 := 𝔽) : ℚ) := by
-    simpa [probAgreementAtRandomChallenge] using hprob
-  have hdenom : countAllAssignmentsN (𝔽 := 𝔽) 1 = fieldSize (𝔽 := 𝔽) := by
-    simp [countAllAssignmentsN, fieldSize, allAssignmentsN]
-  have hpos : 0 < (fieldSize (𝔽 := 𝔽) : ℚ) := by
-    exact_mod_cast (show 0 < fieldSize (𝔽 := 𝔽) by
-      simpa [fieldSize] using (Fintype.card_pos_iff.2 ⟨(0 : 𝔽)⟩))
-  have hcount_le_deg :
-      (countAssignmentsCausingAgreement g h : ℚ) ≤
-      (MvPolynomial.degreeOf (⟨0, by decide⟩ : Fin 1) (differencePoly g h) : ℚ) := by
-    have hprob'' : (countAssignmentsCausingAgreement g h : ℚ) / (fieldSize (𝔽 := 𝔽) : ℚ) ≤
-        (MvPolynomial.degreeOf (⟨0, by decide⟩ : Fin 1) (differencePoly g h) : ℚ) / (fieldSize (𝔽 := 𝔽) : ℚ) := by
-      simpa [hdenom] using hprob'
-    have := mul_le_mul_of_nonneg_right hprob'' (le_of_lt hpos)
-    simpa [div_eq_mul_inv, mul_assoc, mul_left_comm, mul_comm, ne_of_gt hpos] using this
-  have hcount_nat : countAssignmentsCausingAgreement g h ≤
-      MvPolynomial.degreeOf (⟨0, by decide⟩ : Fin 1) (differencePoly g h) := by
-    exact_mod_cast hcount_le_deg
-  have hagreeF_le : agreeF.card ≤ d := by
-    exact le_trans (by simpa [hAgreeF] using hcount_nat) hdiffdeg
-  exact le_trans hmap hagreeF_le
+  letI : BEq 𝔽 := instBEqOfDecidableEq
+  letI : LawfulBEq 𝔽 := CPoly.lawfulBEqOfDecidableEq
+  by_contra hgt
+  push Not at hgt
+  apply hgh_ne
+  exact CPoly.CMvPolynomial.eval_ext_univariate (d := d) (S := Finset.univ)
+    (by simpa [differencePoly] using hdiffdeg)
+    (by simpa [nextClaim] using hgt)
 
 -- the set of challenges where the adversary "disagrees but agrees at the challenge point"
 -- is a subset of the polynomial agreement set
@@ -758,7 +721,7 @@ lemma accepts_on_challenges_dishonest_implies_bad
 
   -- Pin canonical BEq/LawfulBEq locally (so honestRoundPoly types line up).
   letI : BEq 𝔽 := instBEqOfDecidableEq
-  letI : LawfulBEq 𝔽 := by classical exact (inferInstance)
+  letI : LawfulBEq 𝔽 := CPoly.lawfulBEqOfDecidableEq
 
   let t : Transcript 𝔽 n := proverTranscript st P r
 

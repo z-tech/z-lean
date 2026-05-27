@@ -6,6 +6,7 @@ import SumcheckProtocol.Properties.Lemmas.Hypercube
 import SumcheckProtocol.Properties.Lemmas.Eval
 import SumcheckProtocol.Properties.Lemmas.Nat
 import SumcheckProtocol.Properties.Lemmas.Fin
+import CompPoly.Data.Classes.LawfulBEq
 
 theorem eval_honest_round_poly_eq_sum_eval {𝔽 : Type _} {n : ℕ}
   [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
@@ -405,21 +406,7 @@ lemma honestTranscript_roundPoly_eq_honestRoundPoly
 
   -- Force the same `==` that `generateHonestTranscript` uses.
   letI : BEq 𝔽 := instBEqOfDecidableEq (α := 𝔽)
-
-  -- Make it lawful using decide.
-  letI : LawfulBEq 𝔽 :=
-  { rfl := by
-      intro a
-      simp
-    eq_of_beq := by
-      intro a b h
-      have hdec : decide (a = b) = true := by
-        simpa [instBEqOfDecidableEq] using h
-      have : (decide (a = b) = true) = (a = b) := by
-        simp
-      have hab : a = b := by
-        simpa [this] using hdec
-      exact hab }
+  letI : LawfulBEq 𝔽 := CPoly.lawfulBEqOfDecidableEq
 
   cases i with
   | mk k hk => simp [generateHonestTranscript, honestRoundPoly, honestProverMessageAt]
