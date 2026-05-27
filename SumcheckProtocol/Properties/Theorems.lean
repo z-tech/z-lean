@@ -1,0 +1,2 @@
+import SumcheckProtocol.Properties.Theorems.Soundness
+import SumcheckProtocol.Properties.Theorems.Completeness
