@@ -242,6 +242,29 @@ lemma adversary_poly_degree_le_max_ind_degree {𝔽 : Type _} {n : ℕ} [Field �
       (roundP := t.roundPolys i)).1 hcheck).2
   exact le_trans hdeg (ind_degree_k_le_max_ind_degree p i)
 
+/-- K-parameterized version: round-`i` polynomial degree bound from a
+partial-run acceptance. -/
+lemma adversary_poly_degree_le_max_ind_degree_k
+    {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+    (k : Fin (n + 1))
+    (domain : List 𝔽) (p : CPoly.CMvPolynomial n 𝔽) (claim : 𝔽)
+    (t : Transcript 𝔽 k.val) (i : Fin k.val)
+    (hAcc : AcceptsEvent k domain p claim t) :
+    CPoly.CMvPolynomial.degreeOf (0 : Fin 1) (t.roundPolys i) ≤ maxIndDegree p := by
+  have hk_le : k.val ≤ n := Nat.le_of_lt_succ k.isLt
+  let iN : Fin n := ⟨i.val, lt_of_lt_of_le i.isLt hk_le⟩
+  have hcheck :
+      verifierCheck domain (indDegreeK p iN)
+        (t.claims claim (Fin.castSucc i)) (t.roundPolys i) = true :=
+    (acceptsEvent_round_facts_k k domain (p := p) (claim := claim) (t := t) (i := i) hAcc).1
+  have hdeg :
+      CPoly.CMvPolynomial.degreeOf ⟨0, by decide⟩ (t.roundPolys i) ≤ indDegreeK p iN :=
+    ((verifier_check_eq_true_iff (𝔽 := 𝔽) domain
+      (maxDegree := indDegreeK p iN)
+      (roundClaim := t.claims claim (Fin.castSucc i))
+      (roundP := t.roundPolys i)).1 hcheck).2
+  exact le_trans hdeg (ind_degree_k_le_max_ind_degree p iN)
+
 -- deg(g - h) ≤ d when deg(g) ≤ d and deg(h) ≤ d (for univariate CMvPolynomials)
 lemma difference_poly_degree_le {𝔽 : Type _} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
     (g h : CPoly.CMvPolynomial 1 𝔽) (d : ℕ)
