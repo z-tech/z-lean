@@ -76,11 +76,11 @@ The remaining content (proving (b) and (c) against the symbolic prover) needs:
    in symbolic terms; transferring to `CMvPolynomial.eval` is a non-trivial
    additional bridge.
 
-3. The MSB↔LSB bridge of Phase 3, which we already have at the *symbolic*
-   prover level (`honestProverMessageAtConv`), but not at the eval-form level.
-   A small helper `honestProverMessageEvalsAtConv` analogous to the symbolic
-   one would tie this together. We do not introduce it here because (1) and
-   (2) are the load-bearing missing pieces.
+3. The MSB↔LSB bridge at the symbolic prover level
+   (`honestProverMessageAtMSB`); an eval-form analogue
+   (`honestProverMessageEvalsAtMSB`) also lives in `Src/Convention.lean`.
+   These wrap the LSB spec via `rename reverseFin`; tying the table-form
+   prover directly to either still requires (1) and (2).
 
 These are listed for the next phase. -/
 

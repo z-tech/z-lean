@@ -264,12 +264,12 @@ example : indDegreeK p ⟨0, by decide⟩ = 2 := by native_decide
 
 end Example3
 
-/-! ## Example 4 — MSB vs LSB convention on an asymmetric multilinear
+/-! ## Example 4 — MSB wrapper on an asymmetric multilinear
 
-Lean's spec convention is LSB (round-`i` binds `Fin n` position `i`); `effsc`'s
+Lean's spec is LSB (round-`i` binds `Fin n` position `i`); `effsc`'s
 multilinear prover is MSB (round-`0` splits the table into halves of high-bit
-0 vs 1). For symmetric polynomials the two conventions produce the same
-round messages, so testing the convention layer needs an *asymmetric* poly.
+0 vs 1). For symmetric polynomials the two orderings produce the same round
+messages, so testing the MSB wrapper needs an *asymmetric* poly.
 
 Here `p(x₀, x₁) = 1 + 2·x₀ + 3·x₁ + 5·x₀·x₁`.
 * LSB round 0 binds `x₀`. The round message is
@@ -277,11 +277,11 @@ Here `p(x₀, x₁) = 1 + 2·x₀ + 3·x₁ + 5·x₀·x₁`.
 * MSB round 0 binds `x₁`. The round message is
   `G_0^MSB(c) = Σ_x p(x, c) = (1 + 3c) + (1 + 2 + 3c + 5c) = 4 + 11c`.
 
-These differ at c=1 (LSB: 14; MSB: 15), confirming the convention parameter
-actually changes the prover's output and is not vacuous. The
-`honestProverMessageEvalsAtConv_MSB_eq_LSB_rename` theorem says MSB on `p`
-is LSB on `rename reverseFin p`; this file pins the corresponding `#eval`
-values so any regression in the convention plumbing breaks here. -/
+`honestProverMessageEvalsAtMSB` wraps the symbolic spec via
+`rename reverseFin`; this file pins the MSB outputs at c=0,1 so any
+regression in the wrapper breaks here. The raw LSB spec outputs are
+pinned alongside to document that the wrapper is non-vacuous (the two
+orderings disagree on asymmetric polynomials). -/
 
 namespace Example4
 
@@ -297,51 +297,52 @@ def p : CPoly.CMvPolynomial 2 𝔽 :=
 
 #eval honestClaim domain p                                                              -- 2 (= 19 mod 17)
 
--- LSB round-0 evaluations: G_0^LSB(c) = 5 + 9c.
-#eval honestProverMessageEvalsAtConv Convention.LSB domain p ⟨0, by decide⟩ Fin.elim0 (0 : 𝔽)  -- 5
-#eval honestProverMessageEvalsAtConv Convention.LSB domain p ⟨0, by decide⟩ Fin.elim0 (1 : 𝔽)  -- 14
--- MSB round-0 evaluations: G_0^MSB(c) = 4 + 11c.
-#eval honestProverMessageEvalsAtConv Convention.MSB domain p ⟨0, by decide⟩ Fin.elim0 (0 : 𝔽)  -- 4
-#eval honestProverMessageEvalsAtConv Convention.MSB domain p ⟨0, by decide⟩ Fin.elim0 (1 : 𝔽)  -- 15
+-- Raw LSB-spec round-0 evaluations: G_0^LSB(c) = 5 + 9c.
+#eval honestProverMessageEvalsAt domain p ⟨0, by decide⟩ Fin.elim0 (0 : 𝔽)  -- 5
+#eval honestProverMessageEvalsAt domain p ⟨0, by decide⟩ Fin.elim0 (1 : 𝔽)  -- 14
+-- MSB-wrapper round-0 evaluations: G_0^MSB(c) = 4 + 11c.
+#eval honestProverMessageEvalsAtMSB domain p ⟨0, by decide⟩ Fin.elim0 (0 : 𝔽)  -- 4
+#eval honestProverMessageEvalsAtMSB domain p ⟨0, by decide⟩ Fin.elim0 (1 : 𝔽)  -- 15
 
 example :
-    honestProverMessageEvalsAtConv Convention.LSB domain p ⟨0, by decide⟩ Fin.elim0 (0 : 𝔽)
+    honestProverMessageEvalsAt domain p ⟨0, by decide⟩ Fin.elim0 (0 : 𝔽)
       = (5 : 𝔽) := by native_decide
 
 example :
-    honestProverMessageEvalsAtConv Convention.LSB domain p ⟨0, by decide⟩ Fin.elim0 (1 : 𝔽)
+    honestProverMessageEvalsAt domain p ⟨0, by decide⟩ Fin.elim0 (1 : 𝔽)
       = (14 : 𝔽) := by native_decide
 
 example :
-    honestProverMessageEvalsAtConv Convention.MSB domain p ⟨0, by decide⟩ Fin.elim0 (0 : 𝔽)
+    honestProverMessageEvalsAtMSB domain p ⟨0, by decide⟩ Fin.elim0 (0 : 𝔽)
       = (4 : 𝔽) := by native_decide
 
 example :
-    honestProverMessageEvalsAtConv Convention.MSB domain p ⟨0, by decide⟩ Fin.elim0 (1 : 𝔽)
+    honestProverMessageEvalsAtMSB domain p ⟨0, by decide⟩ Fin.elim0 (1 : 𝔽)
       = (15 : 𝔽) := by native_decide
 
-/-- The conventions disagree on this polynomial — confirms the convention
-parameter is non-vacuous on asymmetric multilinears. -/
+/-- LSB-spec and MSB-wrapper disagree on this polynomial — confirms the
+MSB wrapper is non-vacuous on asymmetric multilinears. -/
 example :
-    honestProverMessageEvalsAtConv Convention.LSB domain p ⟨0, by decide⟩ Fin.elim0 (1 : 𝔽)
-      ≠ honestProverMessageEvalsAtConv Convention.MSB domain p ⟨0, by decide⟩ Fin.elim0 (1 : 𝔽) := by
+    honestProverMessageEvalsAt domain p ⟨0, by decide⟩ Fin.elim0 (1 : 𝔽)
+      ≠ honestProverMessageEvalsAtMSB domain p ⟨0, by decide⟩ Fin.elim0 (1 : 𝔽) := by
   native_decide
 
-/-- Both conventions compute the same total claim (sum over the full hypercube
+/-- Both orderings compute the same total claim (sum over the full hypercube
 is permutation-invariant). `Σ_x p(x) = p(0,0) + p(1,0) + p(0,1) + p(1,1)
 = 1 + 3 + 4 + 11 = 19 ≡ 2 mod 17`. -/
 example : honestClaim (n := 2) domain p = (2 : 𝔽) := by native_decide
 
-/-- Both conventions satisfy the round-0 sumcheck identity
+/-- LSB-spec satisfies the round-0 sumcheck identity
 `G_0(0) + G_0(1) = honestClaim`. -/
 example :
-    honestProverMessageEvalsAtConv Convention.LSB domain p ⟨0, by decide⟩ Fin.elim0 (0 : 𝔽)
-      + honestProverMessageEvalsAtConv Convention.LSB domain p ⟨0, by decide⟩ Fin.elim0 (1 : 𝔽)
+    honestProverMessageEvalsAt domain p ⟨0, by decide⟩ Fin.elim0 (0 : 𝔽)
+      + honestProverMessageEvalsAt domain p ⟨0, by decide⟩ Fin.elim0 (1 : 𝔽)
         = honestClaim (n := 2) domain p := by native_decide
 
+/-- MSB-wrapper satisfies the round-0 sumcheck identity. -/
 example :
-    honestProverMessageEvalsAtConv Convention.MSB domain p ⟨0, by decide⟩ Fin.elim0 (0 : 𝔽)
-      + honestProverMessageEvalsAtConv Convention.MSB domain p ⟨0, by decide⟩ Fin.elim0 (1 : 𝔽)
+    honestProverMessageEvalsAtMSB domain p ⟨0, by decide⟩ Fin.elim0 (0 : 𝔽)
+      + honestProverMessageEvalsAtMSB domain p ⟨0, by decide⟩ Fin.elim0 (1 : 𝔽)
         = honestClaim (n := 2) domain p := by native_decide
 
 end Example4

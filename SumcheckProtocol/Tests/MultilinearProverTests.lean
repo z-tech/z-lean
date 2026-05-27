@@ -24,8 +24,8 @@ consequence, when paired with `computeS0S1_msb` (low half / high
 half of the table) and `fold_msb_succ` (in-place fold), the
 table-form prover's `(s0, s1)` round message matches the **plain
 LSB** symbolic prover at the round-`0`/`1` evaluation points
-`(c = 0, c = 1)`. (No `Convention.MSB` in this file — that's a
-separate sanity check pinned in `EvalFormTests.lean`.)
+`(c = 0, c = 1)`. (The MSB wrapper `honestProverMessageEvalsAtMSB`
+is exercised separately in `EvalFormTests.lean`.)
 
 ## How to use these as golden tests for `effsc`
 

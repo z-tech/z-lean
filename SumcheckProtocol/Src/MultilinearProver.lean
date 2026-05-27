@@ -14,8 +14,9 @@ indexed by Boolean assignments to `n` variables.
 
 We use the **MSB convention** natively (round 0 splits the table into low half
 `[0, 2^(n-1))` and high half `[2^(n-1), 2^n)`, binding the high-order variable
-first). The Phase 3 `Convention` layer (LSB↔MSB via `reverseFin`) is imported
-to keep us interoperable with the LSB-style symbolic prover in `Src/Prover.lean`.
+first). `Src/Convention.lean` provides `reverseFin` (and the MSB wrapper
+`honestProverMessage{At,EvalsAt}MSB`) so we stay interoperable with the
+LSB-style symbolic prover in `Src/Prover.lean`.
 
 ## Outline of definitions in this file
 
@@ -23,8 +24,7 @@ to keep us interoperable with the LSB-style symbolic prover in `Src/Prover.lean`
   per CompPoly (we re-use `CMlPolynomialEval`).
 * `boolPoint_msb` — turns an index `i : Fin (2^n)` into a Boolean point
   `Fin n → 𝔽` under the **MSB** convention (bit `n-1-j` of `i` is the value at
-  variable `j`). The Phase 3 plan calls for using `reverseFin` to convert the
-  CompPoly LSB indexing to MSB; we encode that directly here.
+  variable `j`), composing CompPoly's little-endian indexing with `reverseFin`.
 * `toEvalTable` — turns a `CMvPolynomial n 𝔽` into its MSB evaluation table
   by evaluating at every Boolean point.
 * `computeS0S1_msb` — the `(s0, s1)` pair from `compute_sumcheck_polynomial`:

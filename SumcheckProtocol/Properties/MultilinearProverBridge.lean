@@ -49,16 +49,22 @@ def boolFromFin_msb [Zero 𝔽] [One 𝔽]
   fun j => if k.val.testBit (n - 1 - j.val) then (1 : 𝔽) else (0 : 𝔽)
 
 /-- The MSB Boolean point we just defined matches the existing `boolPoint_msb`
-    from `SumcheckProtocol/Src/MultilinearProver.lean`. -/
+    from `SumcheckProtocol/Src/MultilinearProver.lean`. The contents of the
+    `if`s line up via two named bridge facts: `BitVec.toNat_ofFin` collapses
+    `(BitVec.ofFin k).toNat` to `k.val`, and `reverseFin_val` collapses
+    `(reverseFin j).val` to `n - 1 - j.val`. -/
 lemma boolFromFin_msb_eq_boolPoint_msb [Zero 𝔽] [One 𝔽]
     {n : ℕ} (k : Fin (2^n)) :
     boolFromFin_msb (𝔽 := 𝔽) k = boolPoint_msb (𝔽 := 𝔽) k := by
   funext j
   show (if k.val.testBit (n - 1 - j.val) then (1 : 𝔽) else 0)
       = if (BitVec.ofFin k).getLsb (reverseFin j) then (1 : 𝔽) else 0
-  -- (BitVec.ofFin k).getLsb i = k.val.testBit i.val (definitional)
-  -- and (reverseFin j).val = n - 1 - j.val (by `reverseFin_val`).
-  rfl
+  have h : (BitVec.ofFin k).getLsb (reverseFin j)
+      = k.val.testBit (n - 1 - j.val) := by
+    show (BitVec.ofFin k).toNat.testBit (reverseFin j).val
+        = k.val.testBit (n - 1 - j.val)
+    rw [BitVec.toNat_ofFin, reverseFin_val]
+  rw [h]
 
 /-! ### Task 1: `sumOverDomainRecursive [0,1]` as a finite sum over `Fin (2^n)`
 
