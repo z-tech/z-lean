@@ -133,3 +133,55 @@ def honestClaim
   (domain : List 𝔽)
   (p : CPoly.CMvPolynomial n 𝔽) : 𝔽 :=
   residualSum (𝔽 := 𝔽) domain (k := 0) (numVars := n) Fin.elim0 p (Nat.zero_le n)
+
+/-- Auxiliary form: when `openVars = 0`, the residual sum (in
+`residualSumWithOpenVars` shape) collapses to a single polynomial
+evaluation. Proves the underlying combinatorial fact without the
+arithmetic dance that `residualSum`'s `n - n = 0` shape requires. -/
+lemma residualSumWithOpenVars_zero_eq_eval
+  {𝔽 : Type*} [CommRing 𝔽] [DecidableEq 𝔽]
+  {n : ℕ} (domain : List 𝔽) (hn : n + 0 = n)
+  (ch : Fin n → 𝔽) (p : CPoly.CMvPolynomial n 𝔽) :
+  residualSumWithOpenVars (𝔽 := 𝔽) (k := n) (n := n) domain 0 hn ch p
+    = CPoly.CMvPolynomial.eval ch p := by
+  unfold residualSumWithOpenVars
+  rw [sumOverDomainRecursive.eq_zero]
+  -- After .eq_zero, goal has a `have point := ...` let-binding; flatten with dsimp.
+  show CPoly.CMvPolynomial.eval
+        (fun i => addCasesFun ch Fin.elim0 (Fin.cast hn.symm i)) p
+      = CPoly.CMvPolynomial.eval ch p
+  congr 1
+  funext i
+  -- After unfolding addCasesFun: `Fin.addCases ch Fin.elim0 (Fin.cast hn.symm i) = ch i`.
+  -- The cast has `i.val < n`, so `addCases` picks the left branch.
+  show Fin.addCases (motive := fun _ => 𝔽) ch Fin.elim0 (Fin.cast hn.symm i) = ch i
+  have heq : (Fin.cast hn.symm i : Fin (n + 0)) = i.castAdd 0 := by
+    apply Fin.ext; simp
+  rw [heq, Fin.addCases_left]
+
+/-- Helper for `residualSum_full_eq_eval`: the openVars-generalised form
+that takes the `openVars = 0` evidence as a hypothesis so `subst` works. -/
+lemma residualSumWithOpenVars_collapse_eq_eval
+  {𝔽 : Type*} [CommRing 𝔽] [DecidableEq 𝔽]
+  {n openVars : ℕ} (domain : List 𝔽)
+  (hOV : openVars = 0)
+  (ch : Fin n → 𝔽) (p : CPoly.CMvPolynomial n 𝔽) :
+  residualSumWithOpenVars (𝔽 := 𝔽) (k := n) (n := n) domain openVars (by omega) ch p
+    = CPoly.CMvPolynomial.eval ch p := by
+  subst hOV
+  exact residualSumWithOpenVars_zero_eq_eval domain (by omega) ch p
+
+/-- **Full-run residual collapses to eval.** When all `n` variables are
+bound (`k = n`), the residual sum is over the empty hypercube and reduces
+to a single polynomial evaluation at the bound assignment.
+
+This is the bridge that lets the partial-run verifier (which checks
+`claims (Fin.last k) = residualSum domain challenges p _`) recover the
+existing full-run verifier behavior (`claims (Fin.last n) = p.eval challenges`)
+at `k = n`. -/
+lemma residualSum_full_eq_eval
+  {𝔽 : Type*} [CommRing 𝔽] [DecidableEq 𝔽]
+  {n : ℕ} (domain : List 𝔽) (ch : Fin n → 𝔽) (p : CPoly.CMvPolynomial n 𝔽) :
+  residualSum (𝔽 := 𝔽) (k := n) (numVars := n) domain ch p (Nat.le_refl n)
+    = CPoly.CMvPolynomial.eval ch p :=
+  residualSumWithOpenVars_collapse_eq_eval domain (Nat.sub_self n) ch p
