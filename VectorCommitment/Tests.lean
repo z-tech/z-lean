@@ -1,0 +1,4 @@
+import VectorCommitment.Tests.HasherTests
+import VectorCommitment.Tests.ShapeTests
+import VectorCommitment.Tests.SchemeTests
+import VectorCommitment.Tests.TraitTests

@@ -1,0 +1,3 @@
+import VectorCommitment.Src
+import VectorCommitment.Properties
+import VectorCommitment.Tests

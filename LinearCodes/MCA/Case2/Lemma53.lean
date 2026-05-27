@@ -238,8 +238,8 @@ to deliver paper-tight `|T̃| ≥ n(1-γ)`.
 
 ### Attempt 1: family `{B_x = {i : combine x us i = combine x cstars i}}`
 
-Direct application of `Finset.corradi_unconditional` /
-`Finset.corradi_ratio` (in `Upstream/Combinatorics/Corradi.lean`) with
+Direct application of `Finset.corradi_mul_le` /
+`Finset.corradi_card_le` (in `Upstream/Combinatorics/Corradi.lean`) with
 each `|B_x| ≥ n(1-γ)` and pairwise `|B_x ∩ B_y| ≤ ℓ - 1` would yield
 `|B_set| ≤ n·γ·(ℓ-1)` — paper-tight.
 

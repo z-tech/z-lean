@@ -29,7 +29,11 @@ lean_lib «LinearCodes.Research» where
 lean_lib «LinearCodes.Examples» where
   roots := #[`LinearCodes.Examples.RSSmokeTest]
 
-lean_lib «VC» where
+lean_lib «VectorCommitment» where
+
+lean_lib «PCP» where
+
+lean_lib «Kilian» where
 
 require "leanprover-community" / mathlib @ git "v4.29.1"
 -- Pinned to a specific rev (not `master`) so upstream churn doesn't break CI.

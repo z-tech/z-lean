@@ -25,6 +25,7 @@ and `Mathlib.Analysis.SpecialFunctions.Pow.Real`.
 
 import LinearCodes.MCA.ListDecoding.Core
 import LinearCodes.MCA.ConcreteMDS
+import Upstream.Combinatorics.Corradi
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Algebra.Order.Chebyshev
 import Mathlib.LinearAlgebra.Dimension.Finite
@@ -95,196 +96,21 @@ theorem IsListDecodable_at_unique_decoding_threshold
 The classical Johnson bound: any MDS code of dimension `k` is
 `(τ, n²)`-list-decodable whenever `(n − τ)² > n·k`.
 
-## Proof outline (Cauchy-Schwarz double-counting)
+## Proof outline
 
 For received word `u : Fin n → F`, let `L : Finset (Fin n → F)` be the
-candidate codewords (`v ∈ c` with `hammingDistance u v ≤ τ`). For each
-coordinate `x : Fin n`, set `nₓ := |{v ∈ L : v x = u x}|`. Then:
+candidate codewords (`v ∈ c` with `hammingDistance u v ≤ τ`). Each
+`agreementSet u v ⊆ Fin n` has size `≥ n - τ` (from the distance bound),
+and pairwise intersections have size `≤ k - 1` for `v ≠ w` in the code
+(`MDS_pairwise_agreement_bound`). Applying Corrádi's intersection lemma
+(`Finset.corradi_mul_le_of_card_ge` in `Upstream/Combinatorics/Corradi.lean`,
+the lower-bound variant) to this family yields:
+`|L|² · (n - τ)² ≤ |L| · n² + |L|·(|L| - 1)·n·(k - 1)`.
 
-- **(α) Lower bound**: `S := ∑_x nₓ = ∑_v |agree(u, v)| ≥ |L| · (n - τ)`.
-- **(β) Cauchy-Schwarz** (`coverCount_cauchy_schwarz` / `sq_sum_le_card_mul_sum_sq`):
-  `S² ≤ n · ∑_x nₓ²`.
-- **(γ) Pairwise upper bound** (uses MDS): `∑_x nₓ² ≤ n · |L| + |L| · (|L| - 1) · (k - 1)`.
-  Diagonal `∑_v |As v|` is bounded by `n·|L|`; off-diagonal pairs are
-  bounded by `k - 1` via `MDS_pairwise_agreement_bound`.
+The arithmetic finish `johnson_final_arithmetic` cancels one `|L|` and
+applies the hypothesis `(n - τ)² > n·k` to conclude `|L| ≤ n²`. -/
 
-Combining (α)+(β)+(γ): `|L|² · (n - τ)² ≤ n² · |L| + n · |L| · (|L| - 1) · (k - 1)`.
-Dividing by `|L|` and simplifying:
-`|L| · ((n - τ)² - n·(k - 1)) ≤ n² - n·(k - 1)`.
-Under hypothesis `(n - τ)² > n·k`, the LHS coefficient is `≥ 1`, so
-`|L| ≤ n² - n·(k - 1) ≤ n² = JohnsonListSize 0 n`. ✓
-
-The four atomic helpers below capture each step. -/
-
-/-- J6-α (lower bound): for any list `L` of codewords each within `τ` of `u`,
-`∑_x nₓ ≥ |L| · (n - τ)`. -/
-theorem johnson_S_lower_bound
-    {F : Type*} [DecidableEq F] {n : ℕ} (τ : ℕ)
-    (u : Fin n → F)
-    (L : Finset (Fin n → F))
-    (hL : ∀ v ∈ L, hammingDistance u v ≤ τ) :
-    L.card * (n - τ) ≤
-      ∑ x : Fin n, (L.filter (fun v => v x = u x)).card := by
-  classical
-  -- Step 1: rewrite each filter.card as ∑_v indicator.
-  have h_filter_eq : ∀ x : Fin n,
-      (L.filter (fun v => v x = u x)).card =
-        ∑ v ∈ L, (if v x = u x then (1 : ℕ) else 0) := fun x => by
-    rw [Finset.card_eq_sum_ones, Finset.sum_filter]
-  -- Step 2: swap sums via Fubini.
-  have h_swap : ∑ x : Fin n, (L.filter (fun v => v x = u x)).card =
-      ∑ v ∈ L, ∑ x : Fin n, (if v x = u x then (1 : ℕ) else 0) := by
-    simp_rw [h_filter_eq]
-    rw [Finset.sum_comm]
-  rw [h_swap]
-  -- Step 3: for each v ∈ L, ∑ x, [v x = u x] = |agreementSet u v|.
-  have h_inner : ∀ v ∈ L,
-      ∑ x : Fin n, (if v x = u x then (1 : ℕ) else 0) =
-        (agreementSet u v).card := by
-    intro v _
-    rw [Finset.card_eq_sum_ones, ← Finset.sum_filter]
-    -- Show the two filter sets are equal as Finsets.
-    have h_set : (Finset.univ.filter fun x : Fin n => v x = u x) = agreementSet u v := by
-      ext x
-      simp [agreementSet, eq_comm]
-    rw [h_set]
-  have h_inner_le : ∀ v ∈ L, n - τ ≤
-      ∑ x : Fin n, (if v x = u x then (1 : ℕ) else 0) := by
-    intro v hv
-    rw [h_inner v hv]
-    -- |agreementSet u v| + hammingDistance u v = n, and dist ≤ τ.
-    have h_eq := agreementSet_card_add_hammingDistance u v
-    have h_dist : hammingDistance u v ≤ τ := hL v hv
-    omega
-  -- Step 4: sum over v ∈ L of constant `n - τ` gives `L.card * (n - τ)`.
-  calc L.card * (n - τ)
-      = ∑ _v ∈ L, (n - τ) := by rw [Finset.sum_const]; ring
-    _ ≤ ∑ v ∈ L, ∑ x : Fin n, (if v x = u x then (1 : ℕ) else 0) :=
-        Finset.sum_le_sum h_inner_le
-
-/-- J6-β (Cauchy-Schwarz): `(∑ x, nₓ)² ≤ n · ∑ x, nₓ²`. Direct application of
-Mathlib's `sq_sum_le_card_mul_sum_sq` (in `Mathlib.Algebra.Order.Chebyshev`). -/
-theorem johnson_cauchy_schwarz
-    {F : Type*} [DecidableEq F] {n : ℕ}
-    (u : Fin n → F)
-    (L : Finset (Fin n → F)) :
-    (∑ x : Fin n, (L.filter (fun v => v x = u x)).card) ^ 2 ≤
-      n * ∑ x : Fin n, ((L.filter (fun v => v x = u x)).card) ^ 2 := by
-  have h := sq_sum_le_card_mul_sum_sq
-    (s := (Finset.univ : Finset (Fin n)))
-    (f := fun x : Fin n => ((L.filter (fun v => v x = u x)).card : ℕ))
-  simpa [Finset.card_univ, Fintype.card_fin] using h
-
-/-- J6-γ (pairwise upper bound on Q): `∑ x, nₓ² ≤ n·|L| + |L|·(|L|-1)·(k-1)`,
-using the MDS pairwise-agreement bound.
-
-**Proof.** Expand `Q = ∑_x nₓ² = ∑_{v,w ∈ L} #(agree(u,v) ∩ agree(u,w))`
-(double counting). Split into diagonal `v = w` (which contributes
-`∑_v #(agree(u,v)) ≤ n·|L|`) and off-diagonal `v ≠ w` (each term bounded
-by `k - 1` via `MDS_pairwise_agreement_bound`). Off-diagonal has
-`|L|·(|L|-1)` pairs. -/
-theorem johnson_Q_upper_bound
-    {F : Type*} [Field F] [DecidableEq F] [Fintype F] {n k : ℕ}
-    {c : Submodule F (Fin n → F)} (h_MDS : IsMDS c k)
-    (u : Fin n → F)
-    (L : Finset (Fin n → F))
-    (hL_in_c : ∀ v ∈ L, v ∈ c) :
-    ∑ x : Fin n, ((L.filter (fun v => v x = u x)).card) ^ 2 ≤
-      n * L.card + L.card * (L.card - 1) * (k - 1) := by
-  -- Step γ.1: Q expansion as nested sum over L × L.
-  have h_Q_expansion :
-      (∑ x : Fin n, ((L.filter (fun v => v x = u x)).card) ^ 2) =
-        ∑ v ∈ L, ∑ w ∈ L, (agreementSet u v ∩ agreementSet u w).card := by
-    simp_rw [sq, Finset.card_filter, Finset.sum_mul_sum]
-    rw [Finset.sum_comm (s := Finset.univ)]
-    apply Finset.sum_congr rfl
-    intro v _
-    rw [Finset.sum_comm (s := Finset.univ)]
-    apply Finset.sum_congr rfl
-    intro w _
-    have hfilter : agreementSet u v ∩ agreementSet u w =
-        Finset.univ.filter (fun x : Fin n => v x = u x ∧ w x = u x) := by
-      ext x; simp [agreementSet, eq_comm]
-    rw [hfilter, Finset.card_filter]
-    apply Finset.sum_congr rfl
-    intro x _
-    by_cases hv : v x = u x
-    · by_cases hw : w x = u x
-      · simp [hv, hw]
-      · simp [hv, hw]
-    · simp [hv]
-  -- Step γ.2: split into diagonal (v = w) and off-diagonal (v ≠ w).
-  have h_diag_offdiag :
-      (∑ v ∈ L, ∑ w ∈ L, (agreementSet u v ∩ agreementSet u w).card) =
-        (∑ v ∈ L, (agreementSet u v).card) +
-        (∑ v ∈ L, ∑ w ∈ L.erase v,
-            (agreementSet u v ∩ agreementSet u w).card) := by
-    rw [← Finset.sum_add_distrib]
-    apply Finset.sum_congr rfl
-    intro v hv
-    rw [show (agreementSet u v).card =
-        (agreementSet u v ∩ agreementSet u v).card from by rw [Finset.inter_self]]
-    exact (Finset.add_sum_erase L
-      (fun w => (agreementSet u v ∩ agreementSet u w).card) hv).symm
-  -- Step γ.3a: diagonal ≤ n · |L|.
-  have h_diag_le : (∑ v ∈ L, (agreementSet u v).card) ≤ n * L.card := by
-    calc (∑ v ∈ L, (agreementSet u v).card)
-        ≤ ∑ _v ∈ L, n := by
-          apply Finset.sum_le_sum
-          intro v _
-          calc (agreementSet u v).card
-              ≤ Finset.univ.card := Finset.card_le_card (Finset.subset_univ _)
-            _ = n := by rw [Finset.card_univ, Fintype.card_fin]
-      _ = n * L.card := by
-          rw [Finset.sum_const, smul_eq_mul, Nat.mul_comm]
-  -- Step γ.3b: off-diagonal ≤ |L| · (|L| - 1) · (k - 1) via MDS pairwise.
-  have h_offdiag_le :
-      (∑ v ∈ L, ∑ w ∈ L.erase v,
-          (agreementSet u v ∩ agreementSet u w).card) ≤
-        L.card * (L.card - 1) * (k - 1) := by
-    by_cases hk : k = 0
-    · -- k = 0: MDS pairwise gives `< 0`, impossible — each off-diagonal term is 0.
-      subst hk
-      have h_zero : (∑ v ∈ L, ∑ w ∈ L.erase v,
-          (agreementSet u v ∩ agreementSet u w).card) = 0 := by
-        apply Finset.sum_eq_zero
-        intro v hv
-        apply Finset.sum_eq_zero
-        intro w hw
-        have hw_in : w ∈ L := (Finset.mem_erase.mp hw).2
-        have h_ne : v ≠ w := (Finset.mem_erase.mp hw).1.symm
-        have h_pair := MDS_pairwise_agreement_bound h_MDS u
-          (hL_in_c v hv) (hL_in_c w hw_in) h_ne
-        omega
-      rw [h_zero]
-      exact Nat.zero_le _
-    · -- k ≥ 1: each off-diagonal term ≤ k - 1; there are |L|·(|L|-1) terms.
-      have h_inner : ∀ v ∈ L,
-          (∑ w ∈ L.erase v, (agreementSet u v ∩ agreementSet u w).card) ≤
-            (L.card - 1) * (k - 1) := by
-        intro v hv
-        calc (∑ w ∈ L.erase v, (agreementSet u v ∩ agreementSet u w).card)
-            ≤ ∑ _w ∈ L.erase v, (k - 1) := by
-              apply Finset.sum_le_sum
-              intro w hw
-              have hw_in : w ∈ L := (Finset.mem_erase.mp hw).2
-              have h_ne : v ≠ w := (Finset.mem_erase.mp hw).1.symm
-              have h_pair := MDS_pairwise_agreement_bound h_MDS u
-                (hL_in_c v hv) (hL_in_c w hw_in) h_ne
-              omega
-          _ = (L.erase v).card * (k - 1) := by rw [Finset.sum_const, smul_eq_mul]
-          _ = (L.card - 1) * (k - 1) := by rw [Finset.card_erase_of_mem hv]
-      calc (∑ v ∈ L, ∑ w ∈ L.erase v,
-              (agreementSet u v ∩ agreementSet u w).card)
-          ≤ ∑ _v ∈ L, (L.card - 1) * (k - 1) := Finset.sum_le_sum h_inner
-        _ = L.card * ((L.card - 1) * (k - 1)) := by
-            rw [Finset.sum_const, smul_eq_mul]
-        _ = L.card * (L.card - 1) * (k - 1) := by ring
-  -- Combine.
-  rw [h_Q_expansion, h_diag_offdiag]
-  exact Nat.add_le_add h_diag_le h_offdiag_le
-
-/-- J6-δ (final arithmetic): combining (α), (β), (γ) yields `|L| ≤ n²`.
+/-- J6-δ (final arithmetic): closes the Corrádi-shaped chain to `|L| ≤ n²`.
 
 The combined chain (in ℕ):
   `(Lcard * (n - τ))² ≤ n * (n * Lcard + Lcard * (Lcard - 1) * (k - 1))`
@@ -362,9 +188,9 @@ theorem johnson_final_arithmetic
 
 /-- J6: Squared Johnson bound for MDS submodules. If `(n - τ)² > n·k`, then
 the code is `(τ, n²)`-list-decodable, i.e., every Hamming ball of radius `τ`
-contains at most `n²` codewords. Composes the four atomic helpers
-`johnson_S_lower_bound` (α), `johnson_cauchy_schwarz` (β),
-`johnson_Q_upper_bound` (γ), and `johnson_final_arithmetic` (δ).
+contains at most `n²` codewords. Built by applying
+`Finset.corradi_mul_le_of_card_ge` to the agreement-set family
+`{agreementSet u v}_{v ∈ L}` and finishing with `johnson_final_arithmetic`.
 
 Edge case `k = 0` is dispatched directly: an MDS code of dimension 0 is
 `⊥ = {0}`, and the singleton case fits in `n²` (since `n ≥ 1` from `h_johnson`). -/
@@ -392,7 +218,7 @@ theorem IsListDecodable_squared_johnson_MDS
       have : 1 ≤ n * n := Nat.mul_le_mul hn_pos hn_pos
       omega
     exact h_one.mono_L h_one_le
-  -- Main case k ≥ 1: apply the four helpers.
+  -- Main case k ≥ 1: apply Corrádi's lemma + final arithmetic.
   have hk_pos : 1 ≤ k := Nat.one_le_iff_ne_zero.mpr hk
   intro u
   classical
@@ -408,29 +234,31 @@ theorem IsListDecodable_squared_johnson_MDS
     (Finset.mem_filter.mp hv).2.1
   have hL_in_ball : ∀ v ∈ L, hammingDistance u v ≤ τ := fun v hv =>
     (Finset.mem_filter.mp hv).2.2
-  -- (α) S lower bound.
-  have h_alpha : L.card * (n - τ) ≤
-      ∑ x : Fin n, (L.filter (fun v => v x = u x)).card :=
-    johnson_S_lower_bound τ u L hL_in_ball
-  -- (β) Cauchy-Schwarz.
-  have h_beta :
-      (∑ x : Fin n, (L.filter (fun v => v x = u x)).card) ^ 2 ≤
-        n * ∑ x : Fin n, ((L.filter (fun v => v x = u x)).card) ^ 2 :=
-    johnson_cauchy_schwarz u L
-  -- (γ) Q upper bound.
-  have h_gamma :
-      ∑ x : Fin n, ((L.filter (fun v => v x = u x)).card) ^ 2 ≤
-        n * L.card + L.card * (L.card - 1) * (k - 1) :=
-    johnson_Q_upper_bound h_MDS u L hL_in_c
-  -- Chain α + β + γ to a single Cauchy-Schwarz inequality on Lcard.
+  -- Apply `corradi_mul_le_of_card_ge` to the family
+  -- `{agreementSet u v}_{v ∈ L}`, with `a := n - τ`, `b := k - 1`,
+  -- ambient `A := univ : Finset (Fin n)`.
+  have h_card_ge : ∀ v : ↥L, (n - τ) ≤ (agreementSet u v.val).card := by
+    rintro ⟨v, hv⟩
+    show (n - τ) ≤ (agreementSet u v).card
+    have h_eq := agreementSet_card_add_hammingDistance u v
+    have h_dist : hammingDistance u v ≤ τ := hL_in_ball v hv
+    omega
+  have h_pairwise : ∀ v w : ↥L, v ≠ w →
+      (agreementSet u v.val ∩ agreementSet u w.val).card ≤ k - 1 := by
+    rintro ⟨v, hv⟩ ⟨w, hw⟩ h_ne
+    show (agreementSet u v ∩ agreementSet u w).card ≤ k - 1
+    have h_ne_val : v ≠ w := fun h => h_ne (Subtype.ext h)
+    have := MDS_pairwise_agreement_bound h_MDS u (hL_in_c v hv) (hL_in_c w hw) h_ne_val
+    omega
+  have h_corradi := Finset.corradi_mul_le_of_card_ge
+    (α := Fin n) (ι := ↥L) (A := (Finset.univ : Finset (Fin n)))
+    (As := fun v => agreementSet u v.val) (a := n - τ) (b := k - 1)
+    (fun _ => Finset.subset_univ _) h_card_ge h_pairwise
+  rw [Fintype.card_coe L, Finset.card_univ, Fintype.card_fin] at h_corradi
+  -- Translate Corrádi's conclusion into δ's input shape.
   have h_chain : (L.card * (n - τ))^2 ≤
       n * (n * L.card + L.card * (L.card - 1) * (k - 1)) := by
-    calc (L.card * (n - τ))^2
-        ≤ (∑ x : Fin n, (L.filter (fun v => v x = u x)).card) ^ 2 :=
-          Nat.pow_le_pow_left h_alpha _
-      _ ≤ n * ∑ x : Fin n, ((L.filter (fun v => v x = u x)).card) ^ 2 := h_beta
-      _ ≤ n * (n * L.card + L.card * (L.card - 1) * (k - 1)) :=
-          Nat.mul_le_mul_left n h_gamma
+    nlinarith [h_corradi]
   -- (δ) Final arithmetic.
   have h_delta : L.card ≤ n^2 :=
     johnson_final_arithmetic hk_pos h_johnson h_chain

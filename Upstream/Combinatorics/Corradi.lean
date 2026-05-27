@@ -1,56 +1,41 @@
 /-
-Copyright (c) 2026. All rights reserved.
+Copyright (c) 2026 Andrew Zitek-Estrada. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-
-# The Corrádi intersection lemma
-
-Corrádi's lemma (Corrádi 1969) bounds the number of subsets of a fixed
-ground set when those subsets all share a common density and have
-bounded pairwise intersection density.
-
-Concretely: if `A₁, …, Aₘ ⊆ A` each have size `a` and pairwise
-intersections of size at most `b`, then
-`m · (a² − b · |A|) ≤ |A| · (a − b)`,
-which yields `m ≤ (a − b) / (a² − b·|A|)` as a corollary when
-`a² > b · |A|`.
-
-The lemma is the key counting tool used in the BCGM25 mutual-correlated-
-agreement framework (Bordage–Chiesa–Guan–Manzur 2026, Lemma 3.23). It
-appears in Jukna's *Extremal Combinatorics* (Lemma 5.5) and is a
-standard double-counting + Cauchy–Schwarz argument.
-
-This file is staged for upstreaming to
-`Mathlib/Combinatorics/SetFamily/Corradi.lean` — the file structure
-mirrors Mathlib's tree so it can be lifted verbatim later.
-
-## Main statements
-
-* `Finset.corradi_unconditional` — the multiplicative inequality
-  `m² · a² + m · N · b ≤ m · N · a + m² · N · b`, valid for all `m ≥ 0`.
-* `Finset.corradi_div` — the standard ratio bound under `a² > b · N`.
-
-## Proof sketch
-
-Let `f : α → ℕ` count how many `Aᵢ` contain a given point. Then
-`Σ f = m · a` and `Σ f² = Σ_{i,j} |Aᵢ ∩ Aⱼ| ≤ m · a + m(m−1) · b`.
-Cauchy–Schwarz on the constant 1 vs `f` over `A` gives
-`(m · a)² ≤ |A| · Σ f²`, and rearranging produces the conclusion.
+Authors: Andrew Zitek-Estrada, Ziyi Guan, Ignacio Manzur.
 -/
-
-import Mathlib.Combinatorics.SetFamily.Intersecting
-import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Algebra.Order.Chebyshev
-import Mathlib.Algebra.BigOperators.Pi
-import Mathlib.Data.Finset.Card
-import Mathlib.Data.Fintype.Card
-import Mathlib.Data.Fintype.Prod
+import Mathlib.Combinatorics.SetFamily.Intersecting
+import Mathlib.Data.Real.Basic
 import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Ring
 
+/-!
+# Corrádi's intersection lemma
 
--- File-level `variable` block is used by most theorems but legitimately
--- unused in a few. Suppression kept rather than narrowing per-theorem.
-set_option linter.unusedSectionVars false
+If `A₁, …, Aₘ ⊆ A` each have cardinality `a` and pairwise intersections of
+cardinality at most `b`, then `m · (a² − b·|A|) ≤ |A| · (a − b)`.
+This is Corrádi (1969); see Jukna, *Extremal Combinatorics*, Lemma 5.5.
+
+The proof is double-counting followed by Cauchy–Schwarz on the cover-count
+function `x ↦ #{i | x ∈ Aᵢ}`.
+
+## Main results
+
+* `Finset.corradi_mul_le`: `m² a² + m N b ≤ m N a + m² N b`, unconditional.
+* `Finset.corradi_mul_le_of_card_ge`: lower-bound variant
+  `m² a² ≤ m N² + m (m−1) N b`, used to derive the classical Johnson bound
+  on list-decoding radius in MDS codes.
+* `Finset.corradi_card_le`: `m · (a² − bN) ≤ N · (a − b)` (integer form,
+  assuming `b · N ≤ a²` and `b ≤ a`).
+* `Finset.corradi_card_le_real`: the same ratio bound, stated in `ℝ`.
+
+## References
+
+* K. Corrádi, *Mat. Lapok* 20 (1969).
+* S. Jukna, *Extremal Combinatorics* (Springer, 2011), Lemma 5.5.
+* S. M. Johnson, "A new upper bound for error-correcting codes",
+  *IEEE Trans. Inform. Theory* 8 (1962) — the prototypical coding-theoretic
+  application.
+-/
 
 namespace Finset
 
@@ -58,193 +43,182 @@ variable {α ι : Type*} [DecidableEq α] [Fintype ι] [DecidableEq ι]
 
 /-- The number of indices `i` such that `x ∈ As i`. -/
 def coverCount (As : ι → Finset α) (x : α) : ℕ :=
-  (Finset.univ.filter fun i => x ∈ As i).card
+  #(univ.filter fun i => x ∈ As i)
 
-/-! ### Step 1: sum of `coverCount` over `A` equals `m · a` -/
+variable {A : Finset α} {As : ι → Finset α} {a b : ℕ}
 
-/-- **Sum-of-degrees identity (double-counting).** Summing the cover-count
-over the ground set `A` equals the total size of the family. -/
-theorem sum_coverCount_eq_sum_card
-    {A : Finset α} (As : ι → Finset α) (h_sub : ∀ i, As i ⊆ A) :
-    ∑ x ∈ A, coverCount As x = ∑ i, (As i).card := by
-  have h₁ : ∀ x, coverCount As x = ∑ i, (if x ∈ As i then 1 else 0 : ℕ) := by
-    intro x
-    rw [coverCount, Finset.card_eq_sum_ones, Finset.sum_filter]
-  have h₂ : ∀ i, (As i).card = ∑ x ∈ A, (if x ∈ As i then 1 else 0 : ℕ) := by
-    intro i
-    rw [← Finset.sum_filter, ← Finset.card_eq_sum_ones]
-    congr 1
-    ext x
-    simp only [Finset.mem_filter]
-    exact ⟨fun h => ⟨h_sub i h, h⟩, fun h => h.2⟩
-  simp_rw [h₁, h₂]
-  exact Finset.sum_comm
+/-! ### Double-counting identities -/
 
-/-- Specialised form: when every subset has size `a`. -/
-theorem sum_coverCount_eq_card_mul
-    {A : Finset α} (As : ι → Finset α) (h_sub : ∀ i, As i ⊆ A)
-    {a : ℕ} (h_size : ∀ i, (As i).card = a) :
+omit [DecidableEq ι] in
+/-- Summing `coverCount` over `A` equals the total family size. -/
+lemma sum_coverCount_eq_sum_card (h_sub : ∀ i, As i ⊆ A) :
+    ∑ x ∈ A, coverCount As x = ∑ i, #(As i) := by
+  simp_rw [coverCount, card_filter]
+  rw [sum_comm]
+  refine sum_congr rfl fun i _ => ?_
+  rw [← card_filter, filter_mem_eq_inter, inter_eq_right.mpr (h_sub i)]
+
+omit [DecidableEq ι] in
+lemma sum_coverCount_eq_card_mul (h_sub : ∀ i, As i ⊆ A)
+    (h_size : ∀ i, #(As i) = a) :
     ∑ x ∈ A, coverCount As x = Fintype.card ι * a := by
-  rw [sum_coverCount_eq_sum_card As h_sub]
-  rw [Finset.sum_congr rfl (fun i _ => h_size i)]
-  rw [Finset.sum_const, Finset.card_univ, smul_eq_mul]
+  rw [sum_coverCount_eq_sum_card h_sub, sum_congr rfl (fun i _ => h_size i)]
+  rw [sum_const, card_univ, smul_eq_mul]
 
-/-! ### Step 2: sum of `coverCount²` equals total pairwise intersection -/
-
-/-- **Sum-of-squares-of-degrees identity.** The sum of squared cover-counts
-over `A` equals the total cardinality of the pairwise intersection family
-(including the diagonal `i = j`). -/
-theorem sum_coverCount_sq_eq_sum_inter_card
-    {A : Finset α} (As : ι → Finset α) (h_sub : ∀ i, As i ⊆ A) :
-    ∑ x ∈ A, (coverCount As x)^2 = ∑ p : ι × ι, ((As p.1) ∩ (As p.2)).card := by
-  have h_pow : ∀ x, (coverCount As x)^2
-      = ∑ p : ι × ι, (if x ∈ As p.1 ∧ x ∈ As p.2 then 1 else 0 : ℕ) := by
-    intro x
+omit [DecidableEq ι] in
+/-- Sum of squared cover-counts equals the total pairwise-intersection size
+(diagonal included). -/
+lemma sum_coverCount_sq_eq_sum_inter_card (h_sub : ∀ i, As i ⊆ A) :
+    ∑ x ∈ A, (coverCount As x) ^ 2 = ∑ p : ι × ι, #(As p.1 ∩ As p.2) := by
+  have hpow (x : α) :
+      (coverCount As x) ^ 2 = ∑ p : ι × ι, if x ∈ As p.1 ∧ x ∈ As p.2 then (1 : ℕ) else 0 := by
     simp only [coverCount]
-    rw [sq, Finset.card_eq_sum_ones, Finset.sum_filter, Finset.sum_mul_sum,
-        ← Finset.sum_product', Finset.univ_product_univ]
-    apply Finset.sum_congr rfl
-    intros p _
+    rw [sq, card_eq_sum_ones, sum_filter, sum_mul_sum, ← sum_product', univ_product_univ]
+    refine sum_congr rfl fun p _ => ?_
     by_cases h₁ : x ∈ As p.1 <;> by_cases h₂ : x ∈ As p.2 <;> simp [h₁, h₂]
-  have h_inter : ∀ (i j : ι), ((As i) ∩ (As j)).card
-      = ∑ x ∈ A, (if x ∈ As i ∧ x ∈ As j then 1 else 0 : ℕ) := by
-    intros i j
-    rw [← Finset.sum_filter, ← Finset.card_eq_sum_ones]
-    congr 1
-    ext x
-    simp only [Finset.mem_inter, Finset.mem_filter]
-    exact ⟨fun ⟨h₁, h₂⟩ => ⟨h_sub i h₁, h₁, h₂⟩, fun ⟨_, h₁, h₂⟩ => ⟨h₁, h₂⟩⟩
-  simp_rw [h_pow, h_inter]
-  exact Finset.sum_comm
+  simp_rw [hpow]
+  rw [sum_comm]
+  refine sum_congr rfl fun p _ => ?_
+  rw [← sum_filter, ← card_eq_sum_ones]
+  congr 1
+  ext x
+  simp only [mem_filter, mem_inter]
+  exact ⟨fun ⟨_, h₁, h₂⟩ => ⟨h₁, h₂⟩, fun ⟨h₁, h₂⟩ => ⟨h_sub _ h₁, h₁, h₂⟩⟩
 
-/-! ### Step 3: bound the pairwise-intersection sum -/
-
-theorem sum_inter_card_le
-    (As : ι → Finset α)
-    {a b : ℕ}
-    (h_size : ∀ i, (As i).card = a)
-    (h_pairwise : ∀ i j, i ≠ j → ((As i) ∩ (As j)).card ≤ b) :
-    ∑ p : ι × ι, ((As p.1) ∩ (As p.2)).card ≤
-      Fintype.card ι * a + Fintype.card ι * (Fintype.card ι - 1) * b := by
-  rw [← Finset.univ_product_univ, Finset.sum_product]
-  have h_inner : ∀ i : ι, ∑ j, ((As i) ∩ (As j)).card ≤ a + (Fintype.card ι - 1) * b := by
+/-- Diagonal contributes `m · a`, off-diagonal at most `m(m-1) · b`. -/
+lemma sum_inter_card_le (h_size : ∀ i, #(As i) = a)
+    (h_pairwise : ∀ i j, i ≠ j → #(As i ∩ As j) ≤ b) :
+    ∑ p : ι × ι, #(As p.1 ∩ As p.2)
+      ≤ Fintype.card ι * a + Fintype.card ι * (Fintype.card ι - 1) * b := by
+  rw [← univ_product_univ, sum_product]
+  have h_inner : ∀ i : ι, ∑ j, #(As i ∩ As j) ≤ a + (Fintype.card ι - 1) * b := by
     intro i
-    rw [← Finset.add_sum_erase Finset.univ _ (Finset.mem_univ i)]
-    have h_diag : ((As i) ∩ (As i)).card = a := by
-      rw [Finset.inter_self]; exact h_size i
-    rw [h_diag]
-    have h_off : ∑ j ∈ Finset.univ.erase i, ((As i) ∩ (As j)).card
-        ≤ (Fintype.card ι - 1) * b := by
-      calc ∑ j ∈ Finset.univ.erase i, ((As i) ∩ (As j)).card
-          ≤ ∑ j ∈ Finset.univ.erase i, b := by
-            apply Finset.sum_le_sum
-            intro j hj
-            rw [Finset.mem_erase] at hj
-            exact h_pairwise i j (Ne.symm hj.1)
-        _ = (Finset.univ.erase i).card * b := by
-            rw [Finset.sum_const, smul_eq_mul]
-        _ = (Fintype.card ι - 1) * b := by
-            rw [Finset.card_erase_of_mem (Finset.mem_univ i), Finset.card_univ]
-    exact Nat.add_le_add_left h_off a
-  calc ∑ i, ∑ j, ((As i) ∩ (As j)).card
-      ≤ ∑ _i : ι, (a + (Fintype.card ι - 1) * b) :=
-        Finset.sum_le_sum (fun i _ => h_inner i)
-    _ = Fintype.card ι * (a + (Fintype.card ι - 1) * b) := by
-        rw [Finset.sum_const, Finset.card_univ, smul_eq_mul]
-    _ = Fintype.card ι * a + Fintype.card ι * (Fintype.card ι - 1) * b := by
-        rw [Nat.mul_add, ← Nat.mul_assoc]
+    rw [← add_sum_erase _ _ (mem_univ i), inter_self, h_size]
+    refine Nat.add_le_add_left ?_ a
+    calc ∑ j ∈ univ.erase i, #(As i ∩ As j)
+        ≤ ∑ _j ∈ univ.erase i, b :=
+          sum_le_sum fun j hj => h_pairwise i j (ne_of_mem_erase hj).symm
+      _ = (Fintype.card ι - 1) * b := by
+          rw [sum_const, card_erase_of_mem (mem_univ i), card_univ, smul_eq_mul]
+  calc ∑ i, ∑ j, #(As i ∩ As j)
+      ≤ ∑ _i : ι, (a + (Fintype.card ι - 1) * b) := sum_le_sum fun i _ => h_inner i
+    _ = _ := by rw [sum_const, card_univ, smul_eq_mul, mul_add, ← mul_assoc]
 
-/-! ### Step 4: Cauchy–Schwarz reduction -/
+/-- Variant without the equal-size hypothesis: diagonal bounded by `|A|` per set. -/
+lemma sum_inter_card_le_of_subset (h_sub : ∀ i, As i ⊆ A)
+    (h_pairwise : ∀ i j, i ≠ j → #(As i ∩ As j) ≤ b) :
+    ∑ p : ι × ι, #(As p.1 ∩ As p.2)
+      ≤ Fintype.card ι * #A + Fintype.card ι * (Fintype.card ι - 1) * b := by
+  rw [← univ_product_univ, sum_product]
+  have h_inner : ∀ i : ι, ∑ j, #(As i ∩ As j) ≤ #A + (Fintype.card ι - 1) * b := by
+    intro i
+    rw [← add_sum_erase _ _ (mem_univ i), inter_self]
+    refine Nat.add_le_add (card_le_card (h_sub i)) ?_
+    calc ∑ j ∈ univ.erase i, #(As i ∩ As j)
+        ≤ ∑ _j ∈ univ.erase i, b :=
+          sum_le_sum fun j hj => h_pairwise i j (ne_of_mem_erase hj).symm
+      _ = (Fintype.card ι - 1) * b := by
+          rw [sum_const, card_erase_of_mem (mem_univ i), card_univ, smul_eq_mul]
+  calc ∑ i, ∑ j, #(As i ∩ As j)
+      ≤ ∑ _i : ι, (#A + (Fintype.card ι - 1) * b) := sum_le_sum fun i _ => h_inner i
+    _ = _ := by rw [sum_const, card_univ, smul_eq_mul, mul_add, ← mul_assoc]
 
-/-- Cauchy–Schwarz applied to the constant function 1 against `coverCount`. -/
-theorem coverCount_cauchy_schwarz
-    {A : Finset α} (As : ι → Finset α) :
-    (∑ x ∈ A, coverCount As x)^2 ≤ A.card * ∑ x ∈ A, (coverCount As x)^2 := by
-  -- (Σ 1 · f)² ≤ (Σ 1²) · (Σ f²) = |A| · Σ f². Specialise the standard
-  -- Cauchy-Schwarz lemma from Mathlib.Algebra.Order.Chebyshev.
-  exact sq_sum_le_card_mul_sum_sq
+/-! ### Main results -/
 
-/-! ### Main theorem -/
+/-- **Corrádi's lemma (integer, unconditional form).**
+Suppose `A₁, …, Aₘ ⊆ A` each have size `a` with pairwise intersections of
+size at most `b`. With `m := |ι|` and `N := |A|`:
+`m² · a² + m · N · b ≤ m · N · a + m² · N · b`. -/
+theorem corradi_mul_le (h_sub : ∀ i, As i ⊆ A)
+    (h_size : ∀ i, #(As i) = a)
+    (h_pairwise : ∀ i j, i ≠ j → #(As i ∩ As j) ≤ b) :
+    (Fintype.card ι) ^ 2 * a ^ 2 + Fintype.card ι * #A * b ≤
+      Fintype.card ι * #A * a + (Fintype.card ι) ^ 2 * #A * b := by
+  set m := Fintype.card ι
+  set N := #A
+  have hCS : (m * a) ^ 2 ≤ N * (m * a + m * (m - 1) * b) :=
+    calc (m * a) ^ 2
+        = (∑ x ∈ A, coverCount As x) ^ 2 := by
+          rw [sum_coverCount_eq_card_mul h_sub h_size]
+      _ ≤ #A * ∑ x ∈ A, (coverCount As x) ^ 2 := sq_sum_le_card_mul_sum_sq
+      _ ≤ N * (m * a + m * (m - 1) * b) := by
+          rw [sum_coverCount_sq_eq_sum_inter_card h_sub]
+          exact Nat.mul_le_mul_left N (sum_inter_card_le h_size h_pairwise)
+  rcases Nat.eq_zero_or_pos m with hm | hm
+  · simp [hm]
+  · have h_succ : m - 1 + 1 = m := Nat.sub_add_cancel hm
+    calc m ^ 2 * a ^ 2 + m * N * b
+        = (m * a) ^ 2 + m * N * b := by ring
+      _ ≤ N * (m * a + m * (m - 1) * b) + m * N * b := by linarith [hCS]
+      _ = m * N * a + m * N * b * (m - 1 + 1) := by ring
+      _ = m * N * a + m * N * b * m := by rw [h_succ]
+      _ = m * N * a + m ^ 2 * N * b := by ring
 
-/-- **Corrádi's lemma (unconditional, integer form).**
+/-- **Corrádi's lemma, lower-bound variant.**
+When the `As i` only satisfy `a ≤ #(As i)` (rather than equality) and lie
+inside a common `A`, the inequality becomes the slightly looser
+`m² · a² ≤ m · N² + m · (m − 1) · N · b`. This is the form used in the
+classical Johnson bound on list-decoding radius. -/
+theorem corradi_mul_le_of_card_ge (h_sub : ∀ i, As i ⊆ A)
+    (h_ge : ∀ i, a ≤ #(As i))
+    (h_pairwise : ∀ i j, i ≠ j → #(As i ∩ As j) ≤ b) :
+    (Fintype.card ι) ^ 2 * a ^ 2 ≤
+      Fintype.card ι * #A ^ 2 + Fintype.card ι * (Fintype.card ι - 1) * #A * b := by
+  set m := Fintype.card ι
+  set N := #A
+  have hS : m * a ≤ ∑ x ∈ A, coverCount As x := by
+    rw [sum_coverCount_eq_sum_card h_sub]
+    calc m * a = ∑ _i : ι, a := by rw [sum_const, card_univ, smul_eq_mul]
+      _ ≤ ∑ i, #(As i) := sum_le_sum fun i _ => h_ge i
+  calc m ^ 2 * a ^ 2
+      = (m * a) ^ 2 := by ring
+    _ ≤ (∑ x ∈ A, coverCount As x) ^ 2 := Nat.pow_le_pow_left hS _
+    _ ≤ #A * ∑ x ∈ A, (coverCount As x) ^ 2 := sq_sum_le_card_mul_sum_sq
+    _ ≤ N * (m * N + m * (m - 1) * b) := by
+        rw [sum_coverCount_sq_eq_sum_inter_card h_sub]
+        exact Nat.mul_le_mul_left N (sum_inter_card_le_of_subset h_sub h_pairwise)
+    _ = m * N ^ 2 + m * (m - 1) * N * b := by ring
 
-Suppose `A₁, …, Aₘ ⊆ A` each have size exactly `a`, and pairwise
-intersections of size at most `b`. Then
-`m² · a² + m · |A| · b ≤ m · |A| · a + m² · |A| · b`,
-or equivalently (for `m ≥ 1`)
-`m · a² + |A| · b ≤ |A| · a + m · |A| · b`,
-i.e. `m · (a² − b·|A|) ≤ |A| · (a − b)`. -/
-theorem corradi_unconditional
-    {A : Finset α} (As : ι → Finset α) (h_sub : ∀ i, As i ⊆ A)
-    {a b : ℕ}
-    (h_size : ∀ i, (As i).card = a)
-    (h_pairwise : ∀ i j, i ≠ j → ((As i) ∩ (As j)).card ≤ b) :
-    let m := Fintype.card ι
-    let N := A.card
-    m^2 * a^2 + m * N * b ≤ m * N * a + m^2 * N * b := by
-  intro m N
-  have h_cs : (∑ x ∈ A, coverCount As x)^2 ≤ A.card * ∑ x ∈ A, (coverCount As x)^2 :=
-    coverCount_cauchy_schwarz As
-  have h_sum : ∑ x ∈ A, coverCount As x = m * a :=
-    sum_coverCount_eq_card_mul As h_sub h_size
-  have h_sq : ∑ x ∈ A, (coverCount As x)^2 = ∑ p : ι × ι, ((As p.1) ∩ (As p.2)).card :=
-    sum_coverCount_sq_eq_sum_inter_card As h_sub
-  have h_bd : ∑ p : ι × ι, ((As p.1) ∩ (As p.2)).card ≤ m * a + m * (m - 1) * b :=
-    sum_inter_card_le As h_size h_pairwise
-  have h_main : (m * a)^2 ≤ N * (m * a + m * (m - 1) * b) := by
-    calc (m * a)^2
-        = (∑ x ∈ A, coverCount As x)^2 := by rw [h_sum]
-      _ ≤ A.card * ∑ x ∈ A, (coverCount As x)^2 := h_cs
-      _ = N * ∑ p : ι × ι, ((As p.1) ∩ (As p.2)).card := by rw [h_sq]
-      _ ≤ N * (m * a + m * (m - 1) * b) := Nat.mul_le_mul_left N h_bd
-  rcases Nat.eq_zero_or_pos m with hm0 | hm1
-  · rw [hm0]; simp
-  · have hkey : m * (m - 1) + m = m^2 := by
-      have h : m - 1 + 1 = m := Nat.sub_add_cancel hm1
-      calc m * (m - 1) + m
-          = m * ((m - 1) + 1) := by ring
-        _ = m * m := by rw [h]
-        _ = m^2 := by ring
-    have h2 : m^2 * a^2 ≤ N * m * a + N * m * (m - 1) * b := by
-      nlinarith [h_main]
-    have hb : N * m * (m - 1) * b + m * N * b = m^2 * N * b := by
-      have heq : N * m * (m - 1) * b + m * N * b = N * b * (m * (m - 1) + m) := by ring
-      rw [heq, hkey]; ring
-    linarith [h2, hb]
+/-- **Corrádi's lemma, integer ratio form.**
+Under `b · N ≤ a²` and `b ≤ a`, `m · (a² − b·N) ≤ N · (a − b)`. -/
+theorem corradi_card_le (h_sub : ∀ i, As i ⊆ A)
+    (h_size : ∀ i, #(As i) = a)
+    (h_pairwise : ∀ i j, i ≠ j → #(As i ∩ As j) ≤ b)
+    (h_bN : b * #A ≤ a ^ 2) (h_ba : b ≤ a) :
+    Fintype.card ι * (a ^ 2 - b * #A) ≤ #A * (a - b) := by
+  set m := Fintype.card ι
+  set N := #A
+  rcases Nat.eq_zero_or_pos m with hm | hm
+  · simp [hm]
+  have key := corradi_mul_le h_sub h_size h_pairwise (a := a) (b := b)
+  have e1 : m ^ 2 * (a ^ 2 - b * N) + m ^ 2 * (b * N) = m ^ 2 * a ^ 2 := by
+    rw [← Nat.mul_add, Nat.sub_add_cancel h_bN]
+  have e2 : m * N * (a - b) + m * N * b = m * N * a := by
+    rw [← Nat.mul_add, Nat.sub_add_cancel h_ba]
+  have step : m ^ 2 * (a ^ 2 - b * N) ≤ m * N * (a - b) := by nlinarith [key, e1, e2]
+  have : m * (m * (a ^ 2 - b * N)) ≤ m * (N * (a - b)) := by
+    calc m * (m * (a ^ 2 - b * N))
+        = m ^ 2 * (a ^ 2 - b * N) := by ring
+      _ ≤ m * N * (a - b) := step
+      _ = m * (N * (a - b)) := by ring
+  exact Nat.le_of_mul_le_mul_left this hm
 
-/-- **Corrádi's lemma, ratio form.** Under the strict hypothesis
-`a² > b · |A|`, the family size is bounded by
-`m ≤ (a − b) / (a² − b·|A|)` — stated as an integer inequality after
-clearing denominators. -/
-theorem corradi_ratio
-    {A : Finset α} (As : ι → Finset α) (h_sub : ∀ i, As i ⊆ A)
-    {a b : ℕ}
-    (h_size : ∀ i, (As i).card = a)
-    (h_pairwise : ∀ i j, i ≠ j → ((As i) ∩ (As j)).card ≤ b)
-    (h_strict : a^2 > b * A.card)
+/-- **Corrádi's lemma, real-valued ratio form.**
+The same ratio bound, stated in `ℝ` — no Nat-subtraction caveat on the
+left-hand side. Still needs `b ≤ a` for the right-hand side. -/
+theorem corradi_card_le_real (h_sub : ∀ i, As i ⊆ A)
+    (h_size : ∀ i, #(As i) = a)
+    (h_pairwise : ∀ i j, i ≠ j → #(As i ∩ As j) ≤ b)
     (h_ba : b ≤ a) :
-    Fintype.card ι * (a^2 - b * A.card) ≤ A.card * (a - b) := by
-  have key : (Fintype.card ι)^2 * a^2 + Fintype.card ι * A.card * b ≤
-      Fintype.card ι * A.card * a + (Fintype.card ι)^2 * A.card * b :=
-    corradi_unconditional As h_sub h_size h_pairwise
-  set m := Fintype.card ι with hm_def
-  set N := A.card with hN_def
-  have h1 : b * N ≤ a^2 := le_of_lt h_strict
-  rcases Nat.eq_zero_or_pos m with hm0 | hmpos
-  · simp [hm0]
-  · have ha2 : a^2 - b * N + b * N = a^2 := Nat.sub_add_cancel h1
-    have hab : a - b + b = a := Nat.sub_add_cancel h_ba
-    have e1 : m^2 * (a^2 - b * N) + m^2 * (b * N) = m^2 * a^2 := by
-      rw [← Nat.mul_add, ha2]
-    have e2 : m * N * (a - b) + m * N * b = m * N * a := by
-      rw [← Nat.mul_add, hab]
-    have step1 : m^2 * (a^2 - b * N) ≤ m * N * (a - b) := by
-      nlinarith [key, e1, e2]
-    have step2 : m * (m * (a^2 - b * N)) ≤ m * (N * (a - b)) := by
-      calc m * (m * (a^2 - b * N))
-          = m^2 * (a^2 - b * N) := by ring
-        _ ≤ m * N * (a - b) := step1
-        _ = m * (N * (a - b)) := by ring
-    exact Nat.le_of_mul_le_mul_left step2 hmpos
+    (Fintype.card ι : ℝ) * ((a : ℝ) ^ 2 - (b : ℝ) * #A) ≤ (#A : ℝ) * ((a : ℝ) - b) := by
+  have key_real : ((Fintype.card ι : ℝ)) ^ 2 * (a : ℝ) ^ 2 + (Fintype.card ι) * #A * b ≤
+      (Fintype.card ι : ℝ) * #A * a + ((Fintype.card ι : ℝ)) ^ 2 * #A * b := by
+    exact_mod_cast corradi_mul_le h_sub h_size h_pairwise (a := a) (b := b)
+  rcases Nat.eq_zero_or_pos (Fintype.card ι) with hm | hm
+  · simp only [hm, Nat.cast_zero, zero_mul]
+    have : (0 : ℝ) ≤ (a : ℝ) - b := sub_nonneg.mpr (by exact_mod_cast h_ba)
+    positivity
+  · have hmR : (1 : ℝ) ≤ (Fintype.card ι : ℝ) := by exact_mod_cast hm
+    nlinarith [key_real, hmR, sq_nonneg ((Fintype.card ι : ℝ) - 1)]
 
 end Finset
