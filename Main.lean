@@ -1,1 +1,1 @@
-import Sumcheck
+import SumcheckProtocol

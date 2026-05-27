@@ -8,20 +8,24 @@ backing it).
 ## What you import
 
 ```lean
-import Sumcheck     -- the sumcheck protocol
+import SumcheckProtocol     -- the sumcheck protocol
 import LinearCodes  -- LinearCode typeclass, Reed-Solomon, BCGM25 MCA framework
 ```
 
 ## The two sub-trees
 
-### [`Sumcheck/`](Sumcheck/) — sumcheck protocol
+### [`SumcheckProtocol/`](SumcheckProtocol/) — sumcheck protocol
 
 Machine-checked completeness and soundness for the canonical
 sumcheck protocol on multivariate polynomials, built on
 [`CMvPolynomial`](https://github.com/Verified-zkEVM/CompPoly).
-Fully-computable transcript generation; inner-product sumcheck
-specialisation with a multilinear soundness-error bound of
-`n · 2 / |𝔽|`. **See [`Sumcheck/README.md`](Sumcheck/README.md).**
+Prover, verifier, and transcript generation are fully computable
+(`#eval`-able end-to-end). Inner-product sumcheck specialisation
+with a multilinear soundness-error bound of `n · 2 / |𝔽|`.
+**0 `sorry`**, **0 axioms**, enforced by CI.
+**See [`SumcheckProtocol/README.md`](SumcheckProtocol/README.md)**
+and stability tiers at
+[`SumcheckProtocol/doc/stability.md`](SumcheckProtocol/doc/stability.md).
 
 ### [`LinearCodes/`](LinearCodes/) — linear codes + MCA framework
 

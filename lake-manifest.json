@@ -8,7 +8,7 @@
    "rev": "01609714fa06e8f83485fe663f953d59c229477f",
    "name": "CompPoly",
    "manifestFile": "lake-manifest.json",
-   "inputRev": "master",
+   "inputRev": "01609714fa06e8f83485fe663f953d59c229477f",
    "inherited": false,
    "configFile": "lakefile.lean"},
   {"url": "https://github.com/leanprover-community/mathlib4",

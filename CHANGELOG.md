@@ -28,7 +28,7 @@ enforced by CI.
   **`JohnsonListSizeWithSlack ℓ n := (ℓ+1)·n²`** (caller-supplied
   slack). Previously the slack form was the only one and was
   misleadingly called `JohnsonListSize`.
-- **Per-subtree READMEs**: `Sumcheck/README.md`, `LinearCodes/README.md`;
+- **Per-subtree READMEs**: `SumcheckProtocol/README.md`, `LinearCodes/README.md`;
   top-level `README.md` slimmed to a summary that links to both.
 - **Getting-started doc** at `LinearCodes/doc/getting-started.md` with
   three runnable snippets (encode, security bounds, STIR profiler).
@@ -36,7 +36,7 @@ enforced by CI.
 - **CI**: rejects user-declared `axiom` (in addition to the existing
   `sorry` rejection); builds `LinearCodes`, `Upstream`,
   `LinearCodes.Research`, `LinearCodes.Examples` as default lake
-  targets (previously CI only built `Sumcheck` — LinearCodes was
+  targets (previously CI only built `SumcheckProtocol` — LinearCodes was
   silently unchecked).
 
 ### Changed
@@ -92,7 +92,7 @@ enforced by CI.
 
 ### Fixed
 
-- **CI now actually builds `LinearCodes/`.** Before, only `Sumcheck`
+- **CI now actually builds `LinearCodes/`.** Before, only `SumcheckProtocol`
   was a default lake target; `lake build` (which CI runs) never
   type-checked the LinearCodes tree.
 - **`private instance Fact (Nat.Prime 7)`** in `MCA/RS/MCABound.lean`
@@ -109,8 +109,8 @@ enforced by CI.
 
 ## 2026-04-21 — TQBF cleanup
 
-- Removed TQBF scaffolding from the main tree (`Sumcheck/IP/TQBF/`,
-  `Sumcheck/IP/TQBF.lean`, `Sumcheck/Tests/TQBFTests.lean`). The work — in
+- Removed TQBF scaffolding from the main tree (`SumcheckProtocol/IP/TQBF/`,
+  `SumcheckProtocol/IP/TQBF.lean`, `SumcheckProtocol/Tests/TQBFTests.lean`). The work — in
   particular the fully-proved multilinear-extension library in `Linearize.lean`
   (specialize0, linearize0, linearize_i, linearizeAll, degree bounds,
   specialize0_commute, eval_arithmetizeLeavingFirst) — remains in git
@@ -119,8 +119,8 @@ enforced by CI.
 
 ## 2026-04-21 — Inner-product sumcheck
 
-- Added `Sumcheck/IP/InnerProduct.lean`: `InnerProductStatement` +
-  `toSumcheck` reduction to a `SumcheckStatement` on `f * g`;
+- Added `SumcheckProtocol/IP/InnerProduct.lean`: `InnerProductStatement` +
+  `toSumcheckProtocol` reduction to a `SumcheckProtocolStatement` on `f * g`;
   `innerProduct_completeness`, `innerProduct_soundness` as corollaries of
   `sumcheck_hasPerfectCompleteness` / `sumcheck_hasSoundnessError`.
 - `innerProduct_soundnessError_le_multilinear`: when both factors are
@@ -141,7 +141,7 @@ enforced by CI.
   `InIPFamily.mk`, `InIPFamily.of_hasProperties`. Needed because a fixed
   field can't meet `ε ≤ 1/3` for unbounded-size languages — classical IP
   lets the protocol grow with input size.
-- **#SAT ∈ IP proved unconditionally** (`Sumcheck/IP/SharpSAT/`):
+- **#SAT ∈ IP proved unconditionally** (`SumcheckProtocol/IP/SharpSAT/`):
   - 3-CNF type, `arithmetize`, `sharpSAT_completeness`,
     `sharpSAT_soundness`, `sharpSAT_soundnessError_le` (concrete
     Schwartz–Zippel bound via individual-degree analysis).
@@ -150,7 +150,7 @@ enforced by CI.
   - `sharpSAT_inIPFamily_concrete` — discharges both hypotheses with
     `sharpSATField k := ZMod p_k` where `p_k` is a prime
     `≥ max(2^k + 1, 9k² + 1)` selected via `Nat.exists_infinite_primes`.
-- TQBF / Shamir scaffolding (`Sumcheck/IP/TQBF/`):
+- TQBF / Shamir scaffolding (`SumcheckProtocol/IP/TQBF/`):
   - `QBF` datatype, `arithmetizeQBF` + correctness vs `boolToField Q.value`.
   - Full multilinear-extension library (`Linearize.lean`): `specialize0`,
     `linearize0`, `linearize_i`, `linearizeAll`, with evaluation and
@@ -163,8 +163,8 @@ enforced by CI.
   - Shamir protocol defined with raw-degree round polynomials; field-size
     hypothesis `3·2^n ≤ |𝔽|`. `tqbf_inIP` still sorry pending honest-round/
     final-check identities (blocked on a `tqbfHonestMessage` cast refactor).
-- Test modules: `Sumcheck/Tests/SharpSATTests.lean`,
-  `Sumcheck/Tests/TQBFTests.lean`.
+- Test modules: `SumcheckProtocol/Tests/SharpSATTests.lean`,
+  `SumcheckProtocol/Tests/TQBFTests.lean`.
 
 ## 2026-04-17 — Canonical Cleanup & eval Migration
 
@@ -190,7 +190,7 @@ enforced by CI.
 
 - Adopted zkEVM `CompPoly` library for computable multivariate polynomials
 
-## 2026-01-02 — End-to-End Sumcheck
+## 2026-01-02 — End-to-End SumcheckProtocol
 
 - Complete sumcheck implementation over `CMvPolynomial` with computable transcripts
 - Prover, verifier, and test suite over concrete fields (ZMod 19)
