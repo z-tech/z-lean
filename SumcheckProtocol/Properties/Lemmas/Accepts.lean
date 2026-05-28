@@ -167,6 +167,38 @@ lemma acceptsEvent_domain_sum_eq_claim
   have hprops := hiff.mp hcheck
   exact hprops.1
 
+/-- K-parameterized version of `acceptsEvent_final_ok`: the partial-run final
+claim equals the residual sum (not `eval`). -/
+lemma acceptsEvent_final_ok_k
+  {𝔽 : Type _} {n : ℕ}
+  [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+  (k : Fin (n + 1))
+  (domain : List 𝔽)
+  (p : CPoly.CMvPolynomial n 𝔽)
+  (claim : 𝔽)
+  (t : Transcript 𝔽 k.val) :
+  AcceptsEvent k domain p claim t →
+    decide (t.claims claim (Fin.last k.val) =
+      residualSum (𝔽 := 𝔽) domain t.challenges p
+        (Nat.le_of_lt_succ k.isLt)) = true := by
+  intro hAcc
+  dsimp [AcceptsEvent] at hAcc
+  simp [isVerifierAccepts] at hAcc
+  have hk_le : k.val ≤ n := Nat.le_of_lt_succ k.isLt
+  have h' :
+      ((List.finRange k.val).all (fun i : Fin k.val =>
+          verifierCheck domain
+            (indDegreeK p ⟨i.val, lt_of_lt_of_le i.isLt hk_le⟩)
+            (t.claims claim (Fin.castSucc i)) (t.roundPolys i)
+          &&
+          decide (t.claims claim i.succ = nextClaim (t.challenges i) (t.roundPolys i))
+        ) = true
+        ∧
+        decide (t.claims claim (Fin.last k.val) =
+          residualSum (𝔽 := 𝔽) domain t.challenges p hk_le) = true) := by
+    simpa [Bool.and_eq_true] using hAcc
+  exact h'.2
+
 /-- K-parameterized per-round facts: for a partial-run-accepted transcript,
 each round-`i` (i < k.val) satisfies the verifier's check and claims consistency. -/
 lemma acceptsEvent_round_facts_k
@@ -229,6 +261,27 @@ lemma acceptsEvent_domain_sum_eq_claim_k
       (roundP := t.roundPolys i))
   have hprops := hiff.mp hcheck
   exact hprops.1
+
+/-- K-parameterized version of `acceptsEvent_domain_sum_eq_claim_of_honest`. -/
+lemma acceptsEvent_domain_sum_eq_claim_of_honest_k
+  {𝔽 : Type _} {n : ℕ}
+  [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+  (k : Fin (n + 1))
+  (domain : List 𝔽)
+  (p : CPoly.CMvPolynomial n 𝔽)
+  (claim : 𝔽)
+  (r : Fin k.val → 𝔽)
+  (t : Transcript 𝔽 k.val)
+  (i : Fin k.val)
+  (hi : t.roundPolys i = honestRoundPolyAtK k domain p r i) :
+  AcceptsEvent k domain p claim t →
+    domain.foldl (fun acc a =>
+      acc + CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a) (honestRoundPolyAtK k domain p r i)) 0
+      =
+    t.claims claim (Fin.castSucc i) := by
+  intro hAcc
+  simpa [hi] using
+    (acceptsEvent_domain_sum_eq_claim_k k domain (p := p) (claim := claim) (t := t) (i := i) hAcc)
 
 lemma acceptsEvent_domain_sum_eq_claim_of_honest
   {𝔽 : Type _} {n : ℕ}
