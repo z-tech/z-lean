@@ -40,4 +40,4 @@ require "leanprover-community" / mathlib @ git "v4.30.0-rc2"
 -- Bump deliberately when picking up new CompPoly features.
 -- Temporarily on the z-tech fork until cmvpoly-univariate-evalext-and-lawfulbeq
 -- merges to Verified-zkEVM/CompPoly master; switch back to upstream then.
-require CompPoly from git "https://github.com/z-tech/CompPoly" @ "e0fd375d4a65116535992e4e78c4e979a4bc37de"
+require CompPoly from git "https://github.com/z-tech/CompPoly" @ "84e478d57f34effce0f46246068b96548975af08"
