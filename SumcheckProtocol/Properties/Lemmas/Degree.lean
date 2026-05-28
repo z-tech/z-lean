@@ -235,7 +235,7 @@ theorem degreeOf_x0_le_one {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] :
     rw [hEq]
     -- use the explicit rewrite first, then compute degree
     rw [hx]
-    simp [MvPolynomial.degreeOf_X, i0]
+    simp [i0]
 
   simpa [i0] using h
 

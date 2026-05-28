@@ -65,12 +65,14 @@ def substRound0 {n : ℕ} (w : 𝔽) (p : CMvPolynomial (n + 1) 𝔽) :
     CMvPolynomial n 𝔽 :=
   bind₁ (substRound0Map w) p
 
+omit [DecidableEq 𝔽] in
 @[simp] lemma substRound0_C {n : ℕ} (w : 𝔽) (c : 𝔽) :
     substRound0 (n := n) w (CMvPolynomial.C (n := n + 1) c)
       = CMvPolynomial.C (n := n) c := by
   unfold substRound0
   exact bind₁_C _ c
 
+omit [DecidableEq 𝔽] in
 @[simp] lemma substRound0_add {n : ℕ} (w : 𝔽) (p q : CMvPolynomial (n + 1) 𝔽) :
     substRound0 w (p + q) = substRound0 w p + substRound0 w q := by
   unfold substRound0
@@ -78,6 +80,7 @@ def substRound0 {n : ℕ} (w : 𝔽) (p : CMvPolynomial (n + 1) 𝔽) :
 
 /-! ## General `eval_bind₁` lemma -/
 
+omit [DecidableEq 𝔽] in
 /-- Universal property of `bind₁`: evaluating the substituted polynomial
 at `b` is the same as evaluating the original at the substituted-then-
 evaluated map. Key technical bridge for `eval_substRound0`. -/
@@ -155,6 +158,7 @@ theorem eval_bind₁_aux {n m : ℕ}
     rw [hLeft, hRO]
     rfl
 
+omit [DecidableEq 𝔽] in
 /-- **`eval_substRound0`** (unconditional).
 
 `(substRound0 w p).eval b = p.eval (Fin.cons w b)`. -/
@@ -196,6 +200,7 @@ lemma Polynomial.eval_affine_of_natDegree_le_one
   simp only [Polynomial.eval_add, Polynomial.eval_mul, Polynomial.eval_C, Polynomial.eval_X]
   ring
 
+omit [DecidableEq 𝔽] in
 /-- **`eval_substRound0_multilinear`** (conditional on multilinearity at var 0).
 
 When `p` is multilinear in variable 0 (`degreeOf 0 p ≤ 1`), evaluating
@@ -262,7 +267,7 @@ theorem eval_substRound0_multilinear {n : ℕ}
          + MvPolynomial.C w * P.eval (MvPolynomial.C 1))
       = (1 - w) * (MvPolynomial.eval b) (Polynomial.eval (MvPolynomial.C 0) P)
         + w * (MvPolynomial.eval b) (Polynomial.eval (MvPolynomial.C 1) P)
-  simp [map_add, map_mul, map_sub, map_one, hCw, P]
+  simp [hCw, P]
 
 end CPoly
 

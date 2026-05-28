@@ -145,6 +145,59 @@ theorem honest_round_poly_degree_le_ind_degree_k {𝔽 : Type _} {n : ℕ} [Fiel
     (degree_eval2Poly_honest_combined_map_le_ind_degree_k (𝔽 := 𝔽) (n := n)
       (p := p) (r := r) (i := i) (b := b))
 
+lemma challengeSubset_of_prefix
+    {𝔽 : Type _} [Zero 𝔽] {n : ℕ} (i : Fin n) (challenges : Fin i.val → 𝔽) :
+    challengeSubset
+        (fun j : Fin n =>
+          if hji : j.val < i.val then challenges ⟨j.val, hji⟩ else 0) i
+      = challenges := by
+  funext j
+  simp [challengeSubset]
+
+/-- The honest round polynomial degree bound with arbitrary previous
+challenges, rather than a `challengeSubset` cut out of a full challenge vector. -/
+theorem degree_eval2Poly_honest_combined_map_le_ind_degree_challenges
+    {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+    (p : CPoly.CMvPolynomial n 𝔽) (i : Fin n)
+    (challenges : Fin i.val → 𝔽)
+    (b : Fin (numOpenVars (n := n) i) → 𝔽) :
+    CPoly.CMvPolynomial.degreeOf (0 : Fin 1)
+        (CPoly.eval₂Poly (𝔽 := 𝔽) (n := n) c1
+          (honestCombinedMap (𝔽 := 𝔽) (n := n) i challenges b) p)
+      ≤ indDegreeK p i := by
+  classical
+  let r : Fin n → 𝔽 := fun j =>
+    if hji : j.val < i.val then challenges ⟨j.val, hji⟩ else 0
+  have hr : challengeSubset r i = challenges := by
+    simpa [r] using challengeSubset_of_prefix (𝔽 := 𝔽) i challenges
+  simpa [hr] using
+    (degree_eval2Poly_honest_combined_map_le_ind_degree_k (𝔽 := 𝔽) (n := n)
+      (p := p) (r := r) (i := i) (b := b))
+
+/-- Partial-run version of `honest_round_poly_degree_le_ind_degree_k`. -/
+theorem honest_round_poly_atK_degree_le_ind_degree_k
+    {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+    (k : Fin (n + 1))
+    (domain : List 𝔽)
+    (p : CPoly.CMvPolynomial n 𝔽) (r : Fin k.val → 𝔽) (i : Fin k.val) :
+    CPoly.CMvPolynomial.degreeOf (0 : Fin 1)
+        (honestRoundPolyAtK k domain p r i)
+      ≤ indDegreeK p ⟨i.val, lt_of_lt_of_le i.isLt (Nat.le_of_lt_succ k.isLt)⟩ := by
+  classical
+  let iN : Fin n := ⟨i.val, lt_of_lt_of_le i.isLt (Nat.le_of_lt_succ k.isLt)⟩
+  dsimp [honestRoundPolyAtK]
+  refine degree_honest_prover_message_at_le_of_per_b (𝔽 := 𝔽) (n := n)
+    domain
+    (p := p) (i := iN)
+    (challenges := fun j : Fin i.val => r ⟨j.val, Nat.lt_trans j.isLt i.isLt⟩)
+    (d := indDegreeK p iN) ?_
+  intro b
+  simpa [iN] using
+    (degree_eval2Poly_honest_combined_map_le_ind_degree_challenges
+      (𝔽 := 𝔽) (n := n) (p := p) (i := iN)
+      (challenges := fun j : Fin i.val => r ⟨j.val, Nat.lt_trans j.isLt i.isLt⟩)
+      (b := b))
+
 -- the set satisfying E injects into the sigma type Σ rRest, fiber(rRest)
 -- via r ↦ (removeNth i r, r i)
 lemma filter_card_le_sigma_fiber {𝔽 : Type _} {n : ℕ} [Fintype 𝔽] [DecidableEq 𝔽]
@@ -430,6 +483,111 @@ theorem prob_single_round_accepts_and_disagree_le {𝔽 : Type _} {n : ℕ} [Fie
         prob_over_challenges_fiber_le (𝔽 := 𝔽) (n := n') (i := i) (d := maxIndDegree st.polynomial)
           (E := E) (hfiber := hfiber)
 
+/-- K-parameterized single-round soundness bound for a partial run. -/
+theorem prob_single_round_accepts_and_disagree_le_k
+    {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+    (k : Fin (n + 1))
+    (st : SumcheckProtocolStatement 𝔽 n)
+    (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n) k))
+    (i : Fin k.val) :
+    probOverChallenges (𝔽 := 𝔽) (n := k.val)
+      (fun r =>
+        AcceptsAndBadTranscriptOnChallenges k st P r ∧
+        RoundDisagreeButAgreeAtChallenge k st P r i)
+      ≤ (maxIndDegree st.polynomial) / fieldSize (𝔽 := 𝔽) := by
+  classical
+  rcases k with ⟨kv, hkv⟩
+  cases kv with
+  | zero => exact Fin.elim0 i
+  | succ m =>
+      let k' : Fin (n + 1) := ⟨m + 1, hkv⟩
+      let E : (Fin (m + 1) → 𝔽) → Prop := fun r =>
+        AcceptsAndBadTranscriptOnChallenges k' st P r ∧
+        RoundDisagreeButAgreeAtChallenge k' st P r i
+      letI : DecidablePred E := Classical.decPred _
+
+      have hfiber : ∀ rRest : (Fin m → 𝔽),
+          ((Finset.univ : Finset 𝔽).filter (fun a => E (Fin.insertNth i a rRest))).card ≤
+            maxIndDegree st.polynomial := by
+        intro rRest
+        classical
+        let r0 : Fin (m + 1) → 𝔽 := Fin.insertNth i (0 : 𝔽) rRest
+        let g : CPoly.CMvPolynomial 1 𝔽 := (proverTranscript k' st P r0).roundPolys i
+        let h : CPoly.CMvPolynomial 1 𝔽 := honestRoundPolyAtK k' st.domain st.polynomial r0 i
+        let S : Finset 𝔽 := (Finset.univ : Finset 𝔽).filter (fun a => E (Fin.insertNth i a rRest))
+
+        by_cases hS : S = ∅
+        · simp [S, hS]
+        ·
+          rcases Finset.nonempty_iff_ne_empty.2 hS with ⟨a0, ha0⟩
+          have ha0E : E (Fin.insertNth i a0 rRest) := (Finset.mem_filter.1 ha0).2
+          let adv_tr_a0 := proverTranscript k' st P (Fin.insertNth i a0 rRest)
+
+          have hchal_eq (a : 𝔽) :
+              challengeSubset (Fin.insertNth i a rRest) i = challengeSubset r0 i := by
+            funext j
+            have hjlt : (⟨j.val, Nat.lt_trans j.isLt i.isLt⟩ : Fin (m + 1)) < i :=
+              Fin.lt_def.mpr j.isLt
+            simp [r0, challengeSubset, Fin.insertNth_apply_below hjlt]
+
+          have hg_eq (a : 𝔽) :
+              (proverTranscript k' st P (Fin.insertNth i a rRest)).roundPolys i = g := by
+            simp [proverTranscript, g, hchal_eq a]
+
+          have hh_eq (a : 𝔽) :
+              honestRoundPolyAtK k' st.domain st.polynomial (Fin.insertNth i a rRest) i = h := by
+            dsimp [honestRoundPolyAtK, h]
+            congr
+            funext j
+            have hjlt : (⟨j.val, Nat.lt_trans j.isLt i.isLt⟩ : Fin (m + 1)) < i :=
+              Fin.lt_def.mpr j.isLt
+            simp [r0, Fin.insertNth_apply_below hjlt]
+
+          have hgh_ne : g ≠ h := by
+            intro hgh
+            exact (ha0E.2).1 (by rw [hg_eq a0, hh_eq a0, hgh])
+
+          have hgdeg : CPoly.CMvPolynomial.degreeOf (0 : Fin 1) g ≤ maxIndDegree st.polynomial := by
+            have hAcc : AcceptsEvent k' st.domain st.polynomial st.claim adv_tr_a0 := by
+              simpa [AcceptsOnChallenges_unfold, adv_tr_a0] using (ha0E.1).1
+            have hround : adv_tr_a0.roundPolys i = g := hg_eq a0
+            simpa [hround] using
+              adversary_poly_degree_le_max_ind_degree_k k' st.domain st.polynomial st.claim adv_tr_a0 i hAcc
+
+          have hhdeg : CPoly.CMvPolynomial.degreeOf (0 : Fin 1) h ≤ maxIndDegree st.polynomial := by
+            have hdeg :
+                CPoly.CMvPolynomial.degreeOf (0 : Fin 1) h ≤
+                  indDegreeK st.polynomial
+                    ⟨i.val, lt_of_lt_of_le i.isLt (Nat.le_of_lt_succ hkv)⟩ := by
+              simpa [h] using
+                honest_round_poly_atK_degree_le_ind_degree_k
+                  k' st.domain st.polynomial r0 i
+            exact le_trans hdeg
+              (ind_degree_k_le_max_ind_degree st.polynomial
+                ⟨i.val, lt_of_lt_of_le i.isLt (Nat.le_of_lt_succ hkv)⟩)
+
+          have hdiffdeg := difference_poly_degree_le g h (maxIndDegree st.polynomial) hgdeg hhdeg
+          have hagree_card := agreement_set_card_le g h (maxIndDegree st.polynomial) hgh_ne hdiffdeg
+
+          have hS_le : S.card ≤
+              ({a ∈ (Finset.univ : Finset 𝔽) |
+                  nextClaim (𝔽 := 𝔽) (roundChallenge := a) g =
+                    nextClaim (𝔽 := 𝔽) (roundChallenge := a) h}).card := by
+            refine Finset.card_le_card ?_
+            intro a ha
+            have haE : E (Fin.insertNth i a rRest) := (Finset.mem_filter.1 ha).2
+            refine Finset.mem_filter.2 ⟨by simp, ?_⟩
+            have h1 := (haE.2).2
+            simp only [nextClaim] at h1 ⊢
+            rw [Fin.insertNth_apply_same, hg_eq a, hh_eq a] at h1
+            exact h1
+
+          exact le_trans hS_le hagree_card
+
+      simpa [E, k'] using
+        prob_over_challenges_fiber_le (𝔽 := 𝔽) (n := m) (i := i)
+          (d := maxIndDegree st.polynomial) (E := E) (hfiber := hfiber)
+
 -- union bound over all rounds: the total probability of some round having
 -- a disagree-but-agree event is ≤ n * maxIndDegree(p) / |𝔽| = soundnessError
 theorem sum_accepts_and_round_disagree_but_agree_bound {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
@@ -466,6 +624,44 @@ theorem sum_accepts_and_round_disagree_but_agree_bound {𝔽 : Type _} {n : ℕ}
       simp
     _ = soundnessError st.polynomial := by
       simp [soundnessError, div_eq_mul_inv, mul_left_comm, mul_comm]
+
+/-- K-parameterized union bound over the rounds of a partial run. -/
+theorem sum_accepts_and_round_disagree_but_agree_bound_k
+    {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+    (k : Fin (n + 1))
+    (st : SumcheckProtocolStatement 𝔽 n)
+    (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n) k)) :
+    (∑ i : Fin k.val,
+        probOverChallenges (𝔽 := 𝔽) (n := k.val)
+          (fun r =>
+            AcceptsAndBadTranscriptOnChallenges k st P r ∧
+            RoundDisagreeButAgreeAtChallenge k st P r i))
+      ≤ soundnessErrorK k st.polynomial := by
+  classical
+  have hsum :
+      (∑ i : Fin k.val,
+          probOverChallenges (𝔽 := 𝔽) (n := k.val)
+            (fun r =>
+              AcceptsAndBadTranscriptOnChallenges k st P r ∧
+              RoundDisagreeButAgreeAtChallenge k st P r i))
+        ≤ ∑ i : Fin k.val, ((maxIndDegree st.polynomial : ℚ) / (fieldSize (𝔽 := 𝔽) : ℚ)) := by
+    refine Fintype.sum_mono ?_
+    intro i
+    simpa using
+      (prob_single_round_accepts_and_disagree_le_k (𝔽 := 𝔽) (n := n)
+        (k := k) (st := st) (P := P) (i := i))
+
+  calc
+    (∑ i : Fin k.val,
+        probOverChallenges (𝔽 := 𝔽) (n := k.val)
+          (fun r =>
+            AcceptsAndBadTranscriptOnChallenges k st P r ∧
+            RoundDisagreeButAgreeAtChallenge k st P r i))
+        ≤ ∑ i : Fin k.val, ((maxIndDegree st.polynomial : ℚ) / (fieldSize (𝔽 := 𝔽) : ℚ)) := hsum
+    _ = (k.val : ℚ) * ((maxIndDegree st.polynomial : ℚ) / (fieldSize (𝔽 := 𝔽) : ℚ)) := by
+      simp
+    _ = soundnessErrorK k st.polynomial := by
+      simp [soundnessErrorK, div_eq_mul_inv, mul_left_comm, mul_comm]
 
 -- contrapositive: if no round is bad, all round polynomials are honest
 lemma all_rounds_honest_of_not_bad

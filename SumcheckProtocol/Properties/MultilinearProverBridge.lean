@@ -768,13 +768,11 @@ The `fold_correctness` theorem ties the table-side `fold_msb_succ` operation
 to the symbolic-side `substRound0` substitution; from there
 `multi_round_correctness` follows by induction on `n`.
 
-Both theorems consume `EvalSubstRound0MultilinearHyp` as a hypothesis: the
-pointwise-evaluation property of `substRound0` for polynomials that are
-multilinear at variable 0, which is the unproven CompPoly upstream piece
-([`SumcheckProtocol/Src/SubstRound0.lean`](../Src/SubstRound0.lean)).
-When that upstream lemma lands, callers supply the proof and these
-theorems become unconditional. -/
+Both theorems are now unconditional: the pointwise-evaluation property of
+`substRound0` for polynomials that are multilinear at variable 0 is proved in
+[`SumcheckProtocol/Src/SubstRound0.lean`](../Src/SubstRound0.lean). -/
 
+omit [DecidableEq 𝔽] in
 /-- **`fold_correctness`** (conditional, multilinear at variable 0).
 
 For `p` multilinear in its high-order variable, the table representation
@@ -805,6 +803,7 @@ theorem fold_correctness {n : ℕ}
   rw [Fin_cons_one_boolFromFin_msb_eq (𝔽 := 𝔽) kFin]
   ring
 
+omit [DecidableEq 𝔽] in
 /-- **Multi-round recurrence (operational).**
 
 The recursive unfolding of `multilinearProverEvalForm` on `toEvalTable p`:
@@ -812,12 +811,9 @@ the head is `computeS0S1_msb` of the input table, and the tail recurses
 on the eval-table of the round-0 substituted polynomial.
 
 This is the operational equation underlying `multi_round_correctness`:
-combined with `compute_correctness` (round 0) and a symbolic-side
-recursion lemma (`HonestProverSubstRound0Hyp` — bridging round-`i` of
-`substRound0 r₀ p` to round-`(i+1)` of `p`), it inducts to the full
-multi-round correctness statement. The latter is the natural next step
-after CompPoly upstreams `eval_substRound0` and the symbolic-recursion
-lemma is added.
+combined with `compute_correctness` (round 0) and the symbolic-side recursion
+lemma `honestProver_substRound0_bridge`, it inducts to the full multi-round
+correctness statement.
 
 Conditional only on `degreeOf 0 p ≤ 1`. -/
 theorem multilinearProverEvalForm_recurse {n : ℕ}
@@ -888,6 +884,7 @@ theorem honestProver_substRound0_bridge :
     · rw [Fin.append_cast_right (xs := Fin.snoc ch c) (ys := x) (m' := a) hab]
       simp [Function.comp_def]
 
+omit [DecidableEq 𝔽] in
 private theorem fromCMvPolynomial_substRound0_symm {m : ℕ}
     (w : 𝔽) (p : MvPolynomial (Fin (m + 1)) 𝔽) :
     CPoly.fromCMvPolynomial
@@ -946,6 +943,7 @@ private theorem fromCMvPolynomial_substRound0_symm {m : ℕ}
         change CPoly.fromCMvPolynomial (CPoly.CMvPolynomial.X (R := 𝔽) k) = MvPolynomial.X k
         exact CPoly.CMvPolynomial.fromCMvPolynomial_X (R := 𝔽) k
 
+omit [DecidableEq 𝔽] in
 private theorem fromCMvPolynomial_substRound0 {m : ℕ}
     (w : 𝔽) (q : CPoly.CMvPolynomial (m + 1) 𝔽) :
     CPoly.fromCMvPolynomial (CPoly.substRound0 w q)
