@@ -35,6 +35,31 @@ def honestRoundPolyAtK
     (i := ⟨i.val, lt_of_lt_of_le i.isLt (Nat.le_of_lt_succ k.isLt)⟩)
     (challenges := fun j : Fin i.val => ch ⟨j.val, Nat.lt_trans j.isLt i.isLt⟩)
 
+/-- **Bridge**: `honestRoundPolyAtK k r i` equals `honestRoundPoly r' iN`
+where `r'` is any `Fin n → 𝔽` extending `r` (extension irrelevant past
+position `i.val`) and `iN = ⟨i.val, _⟩` lifts `i` to `Fin n`. Both reduce
+to the same `honestProverMessageAt` application. -/
+lemma honestRoundPolyAtK_eq_honestRoundPoly_of_extend
+    {𝔽 : Type _} {n : ℕ}
+    [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+    (k : Fin (n + 1))
+    (domain : List 𝔽)
+    (p : CPoly.CMvPolynomial n 𝔽)
+    (r : Fin k.val → 𝔽)
+    (r' : Fin n → 𝔽)
+    (i : Fin k.val)
+    (hext : ∀ j : Fin i.val, r ⟨j.val, Nat.lt_trans j.isLt i.isLt⟩
+              = r' ⟨j.val, Nat.lt_trans j.isLt
+                  (lt_of_lt_of_le i.isLt (Nat.le_of_lt_succ k.isLt))⟩) :
+    honestRoundPolyAtK k domain p r i
+      = honestRoundPoly domain p r'
+          ⟨i.val, lt_of_lt_of_le i.isLt (Nat.le_of_lt_succ k.isLt)⟩ := by
+  unfold honestRoundPolyAtK honestRoundPoly
+  congr 1
+  funext j
+  simp [challengeSubset]
+  exact hext j
+
 /-- At the full-run point, `honestRoundPolyAtK` collapses to the original
 `honestRoundPoly`. Bridges Fin-shape proof obligations in downstream proofs
 that operate on the full-run case. -/
