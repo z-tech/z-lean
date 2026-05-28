@@ -1,26 +1,21 @@
 import SumcheckProtocol.Properties.Lemmas.SoundnessLemmas
 
-/-- **Round-by-round soundness.** For any prover and any single round `i`,
-the probability — over the verifier's random challenges — that the
-transcript accepts AND the prover's round-`i` polynomial disagrees with
-the honest one (but they happen to agree at the challenge point) is at
-most `maxIndDegree(p) / |𝔽|`.
-
-This is the per-round Schwartz–Zippel bound, exported here as a public
-theorem (the union-bounded `soundness` below composes it across rounds).
-Useful for downstream IOP composition — GKR, batched sumcheck — where
-the layer-level / batch-level soundness analysis needs to compose
-per-round bounds. -/
+/-- **Round-by-round soundness (partial-run).** For any partial-run prover
+stopping at `k`, any round `i : Fin k.val`, the probability that the
+transcript accepts AND round-`i` disagrees-but-agrees-at-challenge is
+bounded by `maxIndDegree(p) / |𝔽|`. The bound is `k`-independent —
+useful for GKR/batched-sumcheck composition where per-round bounds compose. -/
 theorem soundness_per_round {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+  (k : Fin (n + 1))
   (st : SumcheckProtocolStatement 𝔽 n)
-  (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n) ⟨n, Nat.lt_succ_self n⟩))
-  (i : Fin n) :
-    probOverChallenges (𝔽 := 𝔽) (n := n)
+  (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n) k))
+  (i : Fin k.val) :
+    probOverChallenges (𝔽 := 𝔽) (n := k.val)
       (fun r =>
-        AcceptsAndBadTranscriptOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P r ∧
-        RoundDisagreeButAgreeAtChallenge ⟨n, Nat.lt_succ_self n⟩ st P r i)
+        AcceptsAndBadTranscriptOnChallenges k st P r ∧
+        RoundDisagreeButAgreeAtChallenge k st P r i)
       ≤ (maxIndDegree st.polynomial) / fieldSize (𝔽 := 𝔽) :=
-  prob_single_round_accepts_and_disagree_le (𝔽 := 𝔽) (n := n) st P i
+  prob_single_round_accepts_and_disagree_le_k (𝔽 := 𝔽) (n := n) k st P i
 
 -- Prob verifier accepts transcript when at least one round poly differs from honest one
 theorem soundness {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
