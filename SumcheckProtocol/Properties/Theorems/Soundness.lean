@@ -47,6 +47,22 @@ theorem soundness {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [Decidab
       sum_accepts_and_round_disagree_but_agree_bound (st := st) (P := P)
   exact le_trans (le_trans hmono hunion) hround
 
+/-- **Partial-run soundness.** K-parameterized version of `soundness` for
+partial runs that stop at `k : Fin (n+1)` rounds. Bound is the partial-run
+soundness error `k.val * maxIndDegree(p) / |𝔽|`. Same union-bound +
+Schwartz–Zippel structure as the full-run case; helpers
+`prob_single_round_accepts_and_disagree_le_k` and
+`sum_accepts_and_round_disagree_but_agree_bound_k` are k-aware. Will need
+a k-version of `accepts_and_bad_implies_exists_round_disagree_but_agree`
+(in `Properties/Lemmas/BadTranscriptAnalysis.lean`). -/
+theorem soundness_k {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+  (k : Fin (n + 1))
+  (st : SumcheckProtocolStatement 𝔽 n)
+  (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n) k)) :
+     probOverChallenges (E := AcceptsAndBadTranscriptOnChallenges k st P)
+      ≤ soundnessErrorK k st.polynomial := by
+  sorry
+
 
 -- Prob verifier accepts transcript when claim is not honest claim
 theorem soundness_dishonest {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
