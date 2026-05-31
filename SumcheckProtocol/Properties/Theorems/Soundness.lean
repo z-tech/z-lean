@@ -24,53 +24,29 @@ theorem soundness {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [Decidab
      probOverChallenges (E := AcceptsAndBadTranscriptOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P)
       ≤ soundnessError st.polynomial := by
   classical
-
-  -- Keep AcceptsAndBad in the per-round event.
-  let E : Fin n → (Fin n → 𝔽) → Prop :=
-    fun i r =>
-      AcceptsAndBadTranscriptOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P r ∧
-        RoundDisagreeButAgreeAtChallenge ⟨n, Nat.lt_succ_self n⟩ st P r i
-
-  -- Step 1: Accepts∧Bad implies ∃ i, (Accepts∧Bad ∧ RoundDisagreeButAgreeAtChallenge i).
+  let E : Fin n → (Fin n → 𝔽) → Prop := fun i r =>
+    AcceptsAndBadTranscriptOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P r ∧
+      RoundDisagreeButAgreeAtChallenge ⟨n, Nat.lt_succ_self n⟩ st P r i
   have hImp :
-      ∀ r : (Fin n → 𝔽),
+      ∀ r,
         AcceptsAndBadTranscriptOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P r →
-          ∃ i : Fin n, E i r := by
+          ∃ i, E i r := by
     intro r hAB
-    rcases
-      accepts_and_bad_implies_exists_round_disagree_but_agree
-        (st := st) (P := P) (r := r) hAB
-      with ⟨i, hi⟩
-    exact ⟨i, ⟨hAB, hi⟩⟩
-
-  have hmono :
-      probOverChallenges (𝔽 := 𝔽) (n := n)
-          (fun r => AcceptsAndBadTranscriptOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P r)
-        ≤
-      probOverChallenges (𝔽 := 𝔽) (n := n)
-          (fun r => ∃ i : Fin n, E i r) :=
-    prob_over_challenges_mono (𝔽 := 𝔽) (n := n) hImp
-
-  -- Step 2: union bound over i.
-  have hunion :
-      probOverChallenges (𝔽 := 𝔽) (n := n)
-          (fun r => ∃ i : Fin n, E i r)
-        ≤
-      (∑ i : Fin n,
-        probOverChallenges (𝔽 := 𝔽) (n := n)
-          (fun r => E i r)) :=
+    rcases accepts_and_bad_implies_exists_round_disagree_but_agree
+        (st := st) (P := P) (r := r) hAB with ⟨i, hi⟩
+    exact ⟨i, hAB, hi⟩
+  have hmono :=
+    prob_over_challenges_mono
+      (E := AcceptsAndBadTranscriptOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P)
+      (F := fun r => ∃ i, E i r)
+      hImp
+  have hunion :=
     prob_over_challenges_exists_le_sum (𝔽 := 𝔽) (n := n) E
-
-  -- Step 3: use the (now-lemma) sumcheck-specific bound.
-  have hround :
-      (∑ i : Fin n,
-        probOverChallenges (𝔽 := 𝔽) (n := n) (fun r => E i r))
-      ≤ soundnessError st.polynomial := by
-    simpa [E, soundnessError] using
-      sum_accepts_and_round_disagree_but_agree_bound
-        (st := st) (P := P)
-
+  have hround := by
+    simpa only [E, soundnessError] using
+      sum_accepts_and_round_disagree_but_agree_bound (st := st) (P := P)
   exact le_trans (le_trans hmono hunion) hround
+
 
 -- Prob verifier accepts transcript when claim is not honest claim
 theorem soundness_dishonest {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
