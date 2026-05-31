@@ -407,12 +407,148 @@ theorem soundness_k {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [Decid
 
 
 
-/-- **Partial-run dishonest-claim soundness.** K-parameterized version of
-`soundness_dishonest`: when the claimed sum is wrong, no partial-run prover
-convinces the verifier with probability more than `soundnessErrorK k`.
-Same reduction-to-`soundness_k` structure as the full-run case; helpers
-needed: a k-version of `accepts_on_challenges_dishonest_implies_bad` in
-`SumcheckProtocol/Properties/Lemmas/SoundnessLemmas.lean`. -/
+theorem all_rounds_honest_of_not_bad_k_aux {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+  (k : Fin (n + 1))
+  (p : CPoly.CMvPolynomial n 𝔽)
+  (t : Transcript 𝔽 k.val)
+  (domain : List 𝔽)
+  (hNoBad : ¬ BadTranscriptEvent k domain p t) :
+  ∀ i : Fin k.val,
+    t.roundPolys i = honestRoundPolyAtK k domain p t.challenges i := by
+  intro i
+  by_contra hneq
+  apply hNoBad
+  refine ⟨i, ?_⟩
+  simpa [BadRound] using hneq
+
+theorem honest_round0_atK_domain_sum_eq_honest_claim_aux {𝔽 : Type _} {n' : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+  (k : Fin (Nat.succ n' + 1))
+  (domain : List 𝔽)
+  (p : CPoly.CMvPolynomial (Nat.succ n') 𝔽)
+  (r : Fin k.val → 𝔽)
+  (hkpos : 0 < k.val) :
+  let i0 : Fin k.val := ⟨0, hkpos⟩
+  domain.foldl (fun acc a =>
+    acc + CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a)
+      (honestRoundPolyAtK k domain p r i0)) 0
+    = honestClaim domain (p := p) := by
+  dsimp
+  let rExt : Fin (Nat.succ n') → 𝔽 := fun _ => 0
+  have hbridge :
+      honestRoundPolyAtK k domain p r ⟨0, hkpos⟩ =
+        honestRoundPoly domain p rExt ⟨0, Nat.succ_pos n'⟩ := by
+    apply honestRoundPolyAtK_eq_honestRoundPoly_of_extend
+    intro j
+    exact Fin.elim0 j
+  rw [hbridge]
+  simpa [rExt] using honest_round0_domain_sum_eq_honest_claim (domain := domain) (p := p) (r := rExt)
+
+theorem claim_eq_honest_claim_of_accepts_and_all_rounds_honest_k_aux {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+  (k : Fin (n + 1))
+  (st : SumcheckProtocolStatement 𝔽 n)
+  (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n) k))
+  (r : Fin k.val → 𝔽)
+  (hall :
+    ∀ i : Fin k.val,
+      (proverTranscript k st P r).roundPolys i
+        = honestRoundPolyAtK k st.domain st.polynomial r i)
+  (hAcc : AcceptsEvent k st.domain st.polynomial st.claim (proverTranscript k st P r)) :
+  st.claim = honestClaim st.domain (p := st.polynomial) := by
+  classical
+  let t : Transcript 𝔽 k.val := proverTranscript k st P r
+  cases hk : k.val with
+  | zero =>
+      have hk0 : k = 0 := by
+        apply Fin.ext
+        simp [hk]
+      subst hk0
+      have hfinal :
+          t.claims st.claim (Fin.last 0) =
+            residualSum (𝔽 := 𝔽) st.domain t.challenges st.polynomial (Nat.zero_le n) := by
+        exact decide_eq_true_eq.mp
+          (acceptsEvent_final_ok_k (k := 0) st.domain (p := st.polynomial) (claim := st.claim) (t := t) hAcc)
+      have hclaim0 : t.claims st.claim (Fin.last 0) = st.claim := by
+        simpa [Transcript.claims] using
+          (generate_honest_claims_zero st.claim t.roundPolys t.challenges)
+      have hchal0 : t.challenges = (fun i : Fin 0 => i.elim0) := by
+        funext i
+        exact i.elim0
+      have hhonest0 :
+          residualSum (𝔽 := 𝔽) st.domain t.challenges st.polynomial (Nat.zero_le n)
+            = honestClaim st.domain (p := st.polynomial) := by
+        simpa [honestClaim, hchal0]
+      calc
+        st.claim = t.claims st.claim (Fin.last 0) := by simpa using hclaim0.symm
+        _ = residualSum (𝔽 := 𝔽) st.domain t.challenges st.polynomial (Nat.zero_le n) := hfinal
+        _ = honestClaim st.domain (p := st.polynomial) := hhonest0
+  | succ m =>
+      have hkpos : 0 < k.val := by
+        simpa [hk]
+      let i0 : Fin k.val := ⟨0, hkpos⟩
+      have hsum0 :
+          st.domain.foldl (fun acc a =>
+            acc + CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a) (t.roundPolys i0)) 0
+          =
+          t.claims st.claim (Fin.castSucc i0) := by
+        exact acceptsEvent_domain_sum_eq_claim_k k st.domain (p := st.polynomial) (claim := st.claim) (t := t) (i := i0) hAcc
+      have hi0 : t.roundPolys i0 = honestRoundPolyAtK k st.domain st.polynomial r i0 := by
+        simpa [t] using hall i0
+      have hcast0 : Fin.castSucc i0 = 0 := by
+        apply Fin.ext
+        simp [i0]
+      have hclaim0 : t.claims st.claim (Fin.castSucc i0) = st.claim := by
+        rw [hcast0]
+        simpa [Transcript.claims] using
+          (generate_honest_claims_zero st.claim t.roundPolys t.challenges)
+      have hn_pos : 0 < n := by
+        omega
+      obtain ⟨n', hn'⟩ : ∃ n' : ℕ, n = Nat.succ n' :=
+        Nat.exists_eq_succ_of_ne_zero (Nat.pos_iff_ne_zero.mp hn_pos)
+      subst hn'
+      have htrue :
+          st.domain.foldl (fun acc a =>
+            acc + CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a)
+              (honestRoundPolyAtK k st.domain st.polynomial r i0)) 0
+          = honestClaim st.domain (p := st.polynomial) := by
+        simpa [i0] using
+          (honest_round0_atK_domain_sum_eq_honest_claim_aux (k := k) (domain := st.domain)
+            (p := st.polynomial) (r := r) hkpos)
+      calc
+        st.claim = t.claims st.claim (Fin.castSucc i0) := by simpa using hclaim0.symm
+        _ = st.domain.foldl (fun acc a =>
+              acc + CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a) (t.roundPolys i0)) 0 := by
+              symm
+              exact hsum0
+        _ = st.domain.foldl (fun acc a =>
+              acc + CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a)
+                (honestRoundPolyAtK k st.domain st.polynomial r i0)) 0 := by
+              simp [hi0]
+        _ = honestClaim st.domain (p := st.polynomial) := htrue
+
+theorem accepts_on_challenges_dishonest_implies_bad_k_aux {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+  (k : Fin (n + 1))
+  (st : SumcheckProtocolStatement 𝔽 n)
+  (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n) k))
+  (r : Fin k.val → 𝔽)
+  (hDish : st.claim ≠ honestClaim st.domain (p := st.polynomial))
+  (hAcc : AcceptsEvent k st.domain st.polynomial st.claim (proverTranscript k st P r)) :
+  BadTranscriptEvent k st.domain st.polynomial (proverTranscript k st P r) := by
+  classical
+  let t := proverTranscript k st P r
+  by_contra hNoBad
+  have hall :
+      ∀ i : Fin k.val,
+        t.roundPolys i = honestRoundPolyAtK k st.domain st.polynomial t.challenges i :=
+    all_rounds_honest_of_not_bad_k_aux k st.polynomial t st.domain hNoBad
+  have hall' :
+      ∀ i : Fin k.val,
+        (proverTranscript k st P r).roundPolys i = honestRoundPolyAtK k st.domain st.polynomial r i := by
+    intro i
+    simpa [t] using hall i
+  have hEq : st.claim = honestClaim st.domain (p := st.polynomial) :=
+    claim_eq_honest_claim_of_accepts_and_all_rounds_honest_k_aux k st P r hall' hAcc
+  exact hDish hEq
+
 theorem soundness_dishonest_k {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (k : Fin (n + 1))
   (st : SumcheckProtocolStatement 𝔽 n)
@@ -420,7 +556,20 @@ theorem soundness_dishonest_k {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype �
   (h : st.claim ≠ honestClaim st.domain (p := st.polynomial)) :
   probOverChallenges (E := AcceptsOnChallenges k st P)
     ≤ soundnessErrorK k st.polynomial := by
-  sorry
+  let hImp : ∀ r, AcceptsOnChallenges k st P r → AcceptsAndBadTranscriptOnChallenges k st P r := by
+    intro r hAcc
+    refine ⟨?_, ?_⟩
+    · simpa [AcceptsOnChallenges, AcceptsAndBadTranscriptOnChallenges] using hAcc
+    ·
+      have hAcc' : AcceptsEvent k st.domain st.polynomial st.claim (proverTranscript k st P r) := by
+        simpa [AcceptsOnChallenges] using hAcc
+      exact accepts_on_challenges_dishonest_implies_bad_k_aux k st P r h hAcc'
+  have hMono :
+      probOverChallenges (E := AcceptsOnChallenges k st P) ≤
+        probOverChallenges (E := AcceptsAndBadTranscriptOnChallenges k st P) := by
+    exact prob_over_challenges_mono hImp
+  exact le_trans hMono (soundness_k k st P)
+
 
 -- Prob verifier accepts transcript when claim is not honest claim
 theorem soundness_dishonest {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
