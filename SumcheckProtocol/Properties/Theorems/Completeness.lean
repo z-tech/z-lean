@@ -4,6 +4,25 @@ import SumcheckProtocol.Properties.Lemmas.Degree
 import SumcheckProtocol.Properties.Lemmas.Accepts
 import SumcheckProtocol.Properties.Lemmas.SoundnessLemmas
 
+/-- **Partial-run perfect completeness.** When the claim matches `honestClaim`,
+the honest partial-run prover (`sumcheckHonestProver k`) convinces the verifier
+with probability 1. Same structure as the full-run `perfect_completeness` but
+with `k : Fin (n+1)` rounds and the final check using `residualSum` instead of
+`eval`. Helpers needed: partial-run versions of `honest_transcript_sum_identity`
+and `honest_transcript_final_eq_eval` (the latter bridges to `residualSum`;
+`honest_last_round_atK` from `Theorems/Soundness.lean` is likely reusable).
+Existing `honest_round_poly_atK_degree_le_ind_degree_k` provides the degree
+bound for partial-run honest round polys. -/
+theorem perfect_completeness_k
+  {𝔽 : Type _} {n : ℕ}
+  [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+  (k : Fin (n + 1))
+  (st : SumcheckProtocolStatement 𝔽 n)
+  (hclaim : st.claim = honestClaim st.domain st.polynomial) :
+  probOverChallenges (E := AcceptsOnChallenges k st (sumcheckHonestProver k))
+    = 1 := by
+  sorry
+
 -- Prob verifier accepts when all round polys are honest (and claim is honest) is one
 theorem perfect_completeness
   {𝔽 : Type _} {n : ℕ}

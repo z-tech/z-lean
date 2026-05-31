@@ -407,6 +407,21 @@ theorem soundness_k {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [Decid
 
 
 
+/-- **Partial-run dishonest-claim soundness.** K-parameterized version of
+`soundness_dishonest`: when the claimed sum is wrong, no partial-run prover
+convinces the verifier with probability more than `soundnessErrorK k`.
+Same reduction-to-`soundness_k` structure as the full-run case; helpers
+needed: a k-version of `accepts_on_challenges_dishonest_implies_bad` in
+`SumcheckProtocol/Properties/Lemmas/SoundnessLemmas.lean`. -/
+theorem soundness_dishonest_k {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+  (k : Fin (n + 1))
+  (st : SumcheckProtocolStatement 𝔽 n)
+  (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n) k))
+  (h : st.claim ≠ honestClaim st.domain (p := st.polynomial)) :
+  probOverChallenges (E := AcceptsOnChallenges k st P)
+    ≤ soundnessErrorK k st.polynomial := by
+  sorry
+
 -- Prob verifier accepts transcript when claim is not honest claim
 theorem soundness_dishonest {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (st : SumcheckProtocolStatement 𝔽 n)
