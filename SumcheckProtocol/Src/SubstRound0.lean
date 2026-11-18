@@ -1,4 +1,5 @@
 import CompPoly.Multivariate.Operations
+import CompPoly.Multivariate.Eval
 import CompPoly.Multivariate.MvPolyEquiv
 import Mathlib.Algebra.MvPolynomial.Polynomial
 import Mathlib.Algebra.MvPolynomial.Equiv
@@ -177,8 +178,7 @@ theorem eval_substRound0 {n : ℕ} (w : 𝔽) (p : CMvPolynomial (n + 1) 𝔽) (
     have hmap : substRound0Map w (0 : Fin (n + 1)) = CMvPolynomial.C (n := n) w := by
       unfold substRound0Map; rfl
     rw [hmap]
-    have := aeval_C (n := n) (R := 𝔽) (σ := 𝔽) b w
-    simpa [aeval] using this
+    simp only [CMvPolynomial.eval_C]
   · -- i = j.succ: (substRound0Map w j.succ).eval b = (X j).eval b = b j = Fin.cons w b j.succ
     show (substRound0Map w j.succ).eval b
         = (Fin.cons (α := fun _ : Fin (n + 1) => 𝔽) w b) j.succ
@@ -187,8 +187,7 @@ theorem eval_substRound0 {n : ℕ} (w : 𝔽) (p : CMvPolynomial (n + 1) 𝔽) (
     have hmap : substRound0Map w j.succ = CMvPolynomial.X (R := 𝔽) j := by
       unfold substRound0Map; rfl
     rw [hmap]
-    have := aeval_X (n := n) (R := 𝔽) (σ := 𝔽) b j
-    simpa [aeval] using this
+    simp only [CMvPolynomial.eval_X]
 
 /-- **Polynomial degree-≤1 linearity.** A univariate polynomial of natDegree
 ≤ 1 evaluates to an affine combination of its values at 0 and 1. -/

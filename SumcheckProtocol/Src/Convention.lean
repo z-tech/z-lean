@@ -1,5 +1,5 @@
 import CompPoly.Multivariate.Rename
-import CompPoly.Multivariate.CMvPolynomialEvalLemmas
+import CompPoly.Multivariate.Eval
 import CompPoly.Multivariate.MvPolyEquiv
 
 import SumcheckProtocol.Src.CMvPolynomial

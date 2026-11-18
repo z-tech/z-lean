@@ -1,4 +1,4 @@
-import CompPoly.Multivariate.CMvPolynomial
+import CompPoly.Multivariate.Basic
 import CompPoly.Multivariate.CMvMonomial
 import CompPoly.Multivariate.Lawful
 import Mathlib.Data.ZMod.Basic

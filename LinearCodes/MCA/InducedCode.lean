@@ -17,6 +17,7 @@ import LinearCodes.MCA.Definitions
 
 import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 import Mathlib.LinearAlgebra.Dimension.Constructions
+import Mathlib.LinearAlgebra.Dimension.Finite
 
 namespace LinearCodes
 namespace Generator
@@ -160,8 +161,9 @@ theorem ZeroEvading_from_inducedCode_min_dist {F : Type*} [Field F] [DecidableEq
 theorem inducedCode_finrank_le {F : Type*} [Field F] {S : Type*} [Fintype S]
     {ℓ : ℕ} (G : Generator F S ℓ) :
     Module.finrank F G.inducedCode ≤ ℓ := by
-  simpa [Generator.inducedCode, Module.finrank_fin_fun] using
-    (LinearMap.finrank_range_le (f := G.dotMap))
+  have h : Module.finrank F G.inducedCode ≤ Module.finrank F (Fin ℓ → F) :=
+    LinearMap.finrank_range_le (f := G.dotMap)
+  rwa [Module.finrank_fin_fun] at h
 
 
 theorem dotMap_injective_iff {F : Type*} [Field F] {S : Type*} {ℓ : ℕ}
@@ -210,7 +212,7 @@ theorem fnSingleton_bound {F : Type*} [Field F] [DecidableEq F] {α : Type*}
     rw [Module.finrank_pi] at h
     omega
   · have hbot : c ≠ ⊥ := by
-      intro h; rw [h] at hc; simp at hc
+      intro h; rw [h] at hc; simp [finrank_bot] at hc
     obtain ⟨v, hv, hv0⟩ := (Submodule.ne_bot_iff c).mp hbot
     have hdcard : d ≤ Fintype.card α :=
       le_trans (hmd v hv hv0) (fnHammingWeight_le_card v)

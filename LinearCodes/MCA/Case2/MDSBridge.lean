@@ -171,7 +171,8 @@ theorem exists_cstars_of_MDS [DecidableEq S]
         if k' = k then (1 : F) else 0 := by
       intro k
       have := congrFun (congrFun hMM k') k
-      simpa [Matrix.mul_apply, Matrix.one_apply, M] using this
+      rw [Matrix.mul_apply, Matrix.one_apply] at this
+      simpa [M] using this
     rw [Generator.combine_apply]
     -- Unfold cstars, then swap sums, apply h_id, collapse the `if`.
     have step1 :

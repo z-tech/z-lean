@@ -44,7 +44,7 @@ theorem addCasesFun_prefix_current_rest_eq_snoc {α : Type _} {n : ℕ}
       Fin.cast (honest_split_eq (n := n) i).symm j := by
     apply Fin.ext
     simp
-  simpa [addCasesFun, Function.comp, hcast] using h.symm
+  simpa [addCasesFun, Function.comp, hcast, Fin.append] using h.symm
 
 theorem eval_lawful_c_univariate {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
 (a c : 𝔽) :
@@ -544,7 +544,7 @@ theorem soundness_dishonest_k {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype �
     · simpa [AcceptsOnChallenges, AcceptsAndBadTranscriptOnChallenges] using hAcc
     ·
       have hAcc' : AcceptsEvent k st.domain st.polynomial st.claim (proverTranscript k st P r) := by
-        simpa [AcceptsOnChallenges] using hAcc
+        exact hAcc
       exact accepts_on_challenges_dishonest_implies_bad_k_aux k st P r h hAcc'
   have hMono :
       probOverChallenges (E := AcceptsOnChallenges k st P) ≤

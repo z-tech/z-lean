@@ -1,4 +1,4 @@
-import CompPoly.Multivariate.CMvPolynomial
+import CompPoly.Multivariate.Basic
 import CompPoly.Multivariate.MvPolyEquiv.Core
 import Mathlib.Algebra.MvPolynomial.Polynomial
 

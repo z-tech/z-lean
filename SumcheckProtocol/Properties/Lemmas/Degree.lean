@@ -1,4 +1,4 @@
-import CompPoly.Multivariate.CMvPolynomial
+import CompPoly.Multivariate.Basic
 import CompPoly.Multivariate.MvPolyEquiv
 
 import SumcheckProtocol.Src.CMvPolynomial
@@ -17,12 +17,9 @@ noncomputable def deg1
 @[simp] lemma fromCMvPolynomial_add
   {𝔽 : Type _} [CommSemiring 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
   {n : ℕ} (p q : CPoly.CMvPolynomial n 𝔽) :
-  CPoly.fromCMvPolynomial (R := 𝔽) (p + q) = CPoly.fromCMvPolynomial (R := 𝔽) p + CPoly.fromCMvPolynomial (R := 𝔽) q := by
-  classical
-  ext s
-  -- unfold *just enough* that coeff is `toFun`. On Mathlib v4.29.1 `simp`
-  -- closes the goal; on older versions a trailing `rfl` was needed.
-  simp [CPoly.fromCMvPolynomial, MvPolynomial.coeff]
+  CPoly.fromCMvPolynomial (R := 𝔽) (p + q) = CPoly.fromCMvPolynomial (R := 𝔽) p + CPoly.fromCMvPolynomial (R := 𝔽) q :=
+  -- Upstream CompPoly now bundles this as `CPoly.map_add`.
+  CPoly.map_add p q
 
 lemma degreeOf_add_le_of_le
   {𝔽 : Type _} [CommSemiring 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
@@ -347,7 +344,7 @@ theorem degreeOf_pow_univariate_le {𝔽 : Type _} [CommRing 𝔽] [BEq 𝔽] [L
         -- to make it reflexive.
         simp [Nat.succ_mul, Nat.add_comm]
       have h2 := le_trans h1 harith
-      simpa [powUnivariate] using h2
+      exact h2
 
 
 theorem degree_subst_monomial_honest_combined_le_exp_i {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
@@ -393,7 +390,8 @@ theorem degree_subst_monomial_honest_combined_le_exp_i {𝔽 : Type _} {n : ℕ}
     have h := hfold (L := List.finRange n) (acc := c1 (𝔽 := 𝔽) (1 : 𝔽))
     have h' := h
     rw [h0] at h'
-    simpa [substMonomial, term, degPow, deg] using h'
+    rw [Nat.zero_add] at h'
+    exact h'
 
   -- rewrite list sum as a Fintype sum
   have hsum_univ : (∑ j : Fin n, degPow j) = ((List.finRange n).map degPow).sum := by
@@ -431,8 +429,8 @@ theorem degree_subst_monomial_honest_combined_le_exp_i {𝔽 : Type _} {n : ℕ}
         | zero =>
             exfalso
             have hjEq : j = i := by
-              have := congrArg (Fin.cast (honest_split_eq (n := n) i)) h
-              simpa [honest_current_index_eq (n := n) i] using this
+              have hval := congrArg Fin.val h
+              exact Fin.ext (by simpa [Fin.natAdd] using hval)
             exact hj hjEq
         | succ t' =>
             cases t' with

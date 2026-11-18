@@ -321,7 +321,7 @@ lemma honest_last_round
         rfl
       simp [hmap, challengeSubset, htj, c1]
       show CPoly.CMvPolynomial.eval (fun _ : Fin 1 => r i) (CPoly.CMvPolynomial.C _) = _
-      exact CPoly.eval_C _ _
+      exact CPoly.CMvPolynomial.eval_C _ _
 
   -- final assembly
   calc

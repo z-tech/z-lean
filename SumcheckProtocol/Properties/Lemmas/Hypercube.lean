@@ -1,4 +1,4 @@
-import CompPoly.Multivariate.CMvPolynomial
+import CompPoly.Multivariate.Basic
 import CompPoly.Multivariate.MvPolyEquiv
 
 import SumcheckProtocol.Src.Hypercube
@@ -94,8 +94,8 @@ lemma sum_over_hypercube_recursive_deg_le
         ih (F := fun x => F (Fin.cons b1 x))
            (hF := fun x => hF (Fin.cons b1 x))
       -- now combine the two branches using hadd
-      simpa [sum_over_hypercube_recursive_succ (𝔽 := 𝔽) (β := β) b0 b1 add (m := m) (F := F)]
-        using hadd
+      rw [sum_over_hypercube_recursive_succ (𝔽 := 𝔽) (β := β) b0 b1 add (m := m) (F := F)]
+      exact hadd
           (sumOverHypercubeRecursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m) (fun x => F (Fin.cons b0 x)))
           (sumOverHypercubeRecursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m) (fun x => F (Fin.cons b1 x)))
           h0 h1

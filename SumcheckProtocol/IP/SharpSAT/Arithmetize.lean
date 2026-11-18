@@ -1,6 +1,6 @@
 import SumcheckProtocol.IP.SharpSAT.CNF
-import CompPoly.Multivariate.CMvPolynomial
-import CompPoly.Multivariate.CMvPolynomialEvalLemmas
+import CompPoly.Multivariate.Basic
+import CompPoly.Multivariate.Eval
 import CompPoly.Multivariate.Operations
 import CompPoly.Multivariate.Rename
 
@@ -43,8 +43,7 @@ lemma eval_X_eq {𝔽 : Type*} {n : ℕ} [CommSemiring 𝔽] [BEq 𝔽] [LawfulB
 lemma eval_sub' {𝔽 : Type*} {n : ℕ} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
     (vals : Fin n → 𝔽) (p q : CMvPolynomial n 𝔽) :
     (p - q).eval vals = p.eval vals - q.eval vals := by
-  simpa [CMvPolynomial.eval₂Hom_apply] using
-    (CMvPolynomial.eval₂Hom (RingHom.id 𝔽) vals).map_sub p q
+  simpa using (CMvPolynomial.evalHom vals).map_sub p q
 
 -- Arithmetize a single literal:
 --   xᵢ  ↦ Xᵢ
@@ -93,7 +92,7 @@ lemma eval_arithmetize {n : ℕ} (φ : CNF3 n) (x : Fin n → Bool) :
   | nil => simp [arithmetize, CNF3.eval, boolToField]
   | cons c φ ih =>
       simp only [arithmetize, List.foldr_cons] at *
-      rw [eval_mul, eval_arithClause, ih, CNF3.eval_cons, boolToField_and]
+      rw [CMvPolynomial.eval_mul, eval_arithClause, ih, CNF3.eval_cons, boolToField_and]
 
 /-- **Indicator-form arithmetization.** At any boolean assignment, the
 arithmetized formula evaluates to `1` if the formula is satisfied and `0`

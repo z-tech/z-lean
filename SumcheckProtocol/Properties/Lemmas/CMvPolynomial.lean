@@ -1,4 +1,4 @@
-import CompPoly.Multivariate.CMvPolynomial
+import CompPoly.Multivariate.Basic
 import CompPoly.Multivariate.MvPolyEquiv
 import Mathlib.Data.Finsupp.Notation
 
@@ -10,7 +10,7 @@ import SumcheckProtocol.Properties.Lemmas.ExtTreeMap
   ((0 : CPoly.CMvPolynomial n R).1 : CPoly.Unlawful n R) =
     (Std.ExtTreeMap.empty : CPoly.Unlawful n R) := by
   classical
-  simpa [CPoly.CMvPolynomial] using congrArg Subtype.val (CPoly.Lawful.zero_eq_empty (n := n) (R := R))
+  exact congrArg Subtype.val (CPoly.Lawful.zero_eq_empty (n := n) (R := R))
 
 @[simp] lemma CMvPolynomial_eval₂_zero
   {R S : Type _} {n : ℕ} [Semiring R] [CommSemiring S]

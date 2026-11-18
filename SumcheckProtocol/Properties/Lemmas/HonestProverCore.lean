@@ -85,4 +85,4 @@ lemma honest_combined_map_at_i_is_x0
   have :=
     honest_combined_map_current_is_x0
       (𝔽 := 𝔽) (n := n) (i := i) (challenges := challenges) (b := b)
-  simpa [honest_current_index_eq (n := n) i] using this
+  rwa [honest_current_index_eq (n := n) i] at this

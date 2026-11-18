@@ -1,4 +1,4 @@
-import CompPoly.Multivariate.CMvPolynomial
+import CompPoly.Multivariate.Basic
 import Mathlib.Algebra.Field.ZMod
 
 import SumcheckProtocol.Src.Transcript

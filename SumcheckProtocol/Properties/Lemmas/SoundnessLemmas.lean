@@ -52,7 +52,7 @@ lemma monomial_exponent_le_ind_degree {𝔽 : Type _} {n : ℕ} [Field 𝔽] [De
   have hcne : mc.2 ≠ (0 : 𝔽) := by
     intro hc0; exact (p.2 mc.1) (by simpa [hc0] using hget)
   let m' : Fin n →₀ ℕ := CPoly.CMvMonomial.toFinsupp mc.1
-  have hcoeffMv : MvPolynomial.coeff m' (CPoly.fromCMvPolynomial (R := 𝔽) p) = mc.2 := by
+  have hcoeffMv : (CPoly.fromCMvPolynomial (R := 𝔽) p).coeff m' = mc.2 := by
     simpa [m', CPoly.CMvPolynomial.coeff, hget] using CPoly.coeff_eq (n := n) (R := 𝔽) (m := m') p
   have hsupp : m' ∈ (CPoly.fromCMvPolynomial (R := 𝔽) p).support :=
     MvPolynomial.mem_support_iff.2 (by simpa [hcoeffMv] using hcne)
@@ -60,7 +60,7 @@ lemma monomial_exponent_le_ind_degree {𝔽 : Type _} {n : ℕ} [Field 𝔽] [De
   have hdegEq : MvPolynomial.degreeOf i (CPoly.fromCMvPolynomial (R := 𝔽) p)
       = CPoly.CMvPolynomial.degreeOf i p := by
     simpa using (congrArg (fun f => f i) (CPoly.degreeOf_equiv (p := p) (S := 𝔽))).symm
-  simpa [indDegreeK, extractExpVarI, m', hdegEq] using hmon
+  simpa [indDegreeK, extractExpVarI, m', CPoly.CMvMonomial.toFinsupp, Finsupp.coe_mk, hdegEq] using hmon
 
 -- folding c * substMonomial over a list of monomials preserves the degree bound,
 -- when each monomial's exponent at i is bounded by d and the substitution map is honest
@@ -123,7 +123,7 @@ theorem degree_eval2Poly_honest_combined_map_le_ind_degree_k {𝔽 : Type _} {n 
     eval2Poly_foldl_degree_le p r i b vs rfl d rfl p.1.toList (fun _ h => h) _ hinit
   have heq : CPoly.eval₂Poly (𝔽 := 𝔽) (n := n) c1 vs p =
       List.foldl step (c1 (𝔽 := 𝔽) (0 : 𝔽)) p.1.toList := by
-    simpa [step] using CPoly.eval₂Poly_eq_list_foldl (𝔽 := 𝔽) (n := n) (f := c1) (vs := vs) (p := p)
+    exact CPoly.eval₂Poly_eq_list_foldl (𝔽 := 𝔽) (n := n) (f := c1) (vs := vs) (p := p)
   simpa [vs, d, heq] using hfold
 
 -- the honest round polynomial has degree at most indDegreeK p i
@@ -359,7 +359,7 @@ lemma agreement_set_card_le {𝔽 : Type _} [Field 𝔽] [Fintype 𝔽] [Decidab
   apply hgh_ne
   exact CPoly.CMvPolynomial.eval_ext_univariate (d := d) (S := Finset.univ)
     (by simpa [differencePoly] using hdiffdeg)
-    (by simpa [nextClaim] using hgt)
+    (by exact hgt)
 
 -- the set of challenges where the adversary "disagrees but agrees at the challenge point"
 -- is a subset of the polynomial agreement set
@@ -428,11 +428,12 @@ theorem prob_single_round_accepts_and_disagree_le {𝔽 : Type _} {n : ℕ} [Fie
           -- so g and h don't depend on the challenge at position i
           have hg_eq (a : 𝔽) :
               (proverTranscript ⟨n' + 1, Nat.lt_succ_self _⟩ st P (Fin.insertNth i a rRest)).roundPolys i = g := by
-            simp [proverTranscript, g, hchal_eq a]
+            simp only [proverTranscript, g]
+            rw [hchal_eq a]
           have hh_eq (a : 𝔽) :
               honestRoundPoly st.domain (p := st.polynomial) (ch := Fin.insertNth i a rRest) i = h := by
             unfold honestRoundPoly
-            simpa [h, r0] using congrArg
+            simpa [h, r0, honestRoundPoly] using congrArg
               (fun cs => honestProverMessageAt st.domain (p := st.polynomial) (i := i) (challenges := cs))
               (hchal_eq a)
 
@@ -532,7 +533,8 @@ theorem prob_single_round_accepts_and_disagree_le_k
 
           have hg_eq (a : 𝔽) :
               (proverTranscript k' st P (Fin.insertNth i a rRest)).roundPolys i = g := by
-            simp [proverTranscript, g, hchal_eq a]
+            simp only [proverTranscript, g]
+            rw [hchal_eq a]
 
           have hh_eq (a : 𝔽) :
               honestRoundPolyAtK k' st.domain st.polynomial (Fin.insertNth i a rRest) i = h := by
@@ -699,8 +701,7 @@ lemma all_rounds_honest_of_not_bad
   (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n) ⟨n, Nat.lt_succ_self n⟩))
   (r : Fin n → 𝔽) :
   generateHonestClaims st.claim (fun i => P.respond st i (challengeSubset r i)) r (0 : Fin (n+1))
-    = st.claim := by
-  simp
+    = st.claim := rfl
 
 @[simp] lemma proverTranscript_claims_at_zero
   {𝔽 : Type _} {n : ℕ}
@@ -804,7 +805,7 @@ lemma eval_sum_over_hypercube_recursive
     (b0 := b0) (b1 := b1)
     (addβ := (· + ·)) (addγ := (· + ·))
     (g := fun q => CPoly.CMvPolynomial.eval z q)
-    (hg := fun a b => CPoly.eval_add z a b)
+    (hg := fun a b => CPoly.CMvPolynomial.eval_add z a b)
     (m := m)
     (F := F)
 
@@ -911,7 +912,7 @@ lemma claim_eq_honest_claim_of_accepts_and_all_rounds_honest
 
       -- claims at castSucc-zero is st.claim
       have hclaim0 : t.claims st.claim i0.castSucc = st.claim := by
-        simpa [t] using
+        simpa [t, i0] using
           (proverTranscript_claims_castSucc_zero
             (st := st) (P := P) (r := r))
 

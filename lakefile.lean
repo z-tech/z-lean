@@ -37,9 +37,7 @@ lean_lib «PCP» where
 
 lean_lib «Kilian» where
 
-require "leanprover-community" / mathlib @ git "v4.30.0-rc2"
+require "leanprover-community" / mathlib @ git "v4.35.0"
 -- Pinned to a specific rev (not `master`) so upstream churn doesn't break CI.
 -- Bump deliberately when picking up new CompPoly features.
--- Temporarily on the z-tech fork until cmvpoly-univariate-evalext-and-lawfulbeq
--- merges to Verified-zkEVM/CompPoly master; switch back to upstream then.
-require CompPoly from git "https://github.com/z-tech/CompPoly" @ "84e478d57f34effce0f46246068b96548975af08"
+require CompPoly from git "https://github.com/Verified-zkEVM/CompPoly" @ "v4.35.0"
