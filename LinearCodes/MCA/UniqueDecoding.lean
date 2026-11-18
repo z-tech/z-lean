@@ -526,8 +526,9 @@ theorem MCA_unique_decoding_small_gamma_bound
 theorem Generator.IsMDS.inducedCode_finrank_eq
     [Fintype S] {G : Generator F S ℓ} (h : G.IsMDS) :
     Module.finrank F G.inducedCode = ℓ := by
-  simpa [Generator.inducedCode, Module.finrank_fin_fun] using
+  have hfr : Module.finrank F G.inducedCode = Module.finrank F (Fin ℓ → F) :=
     LinearMap.finrank_range_of_inj (f := G.dotMap) h.dotMap_injective
+  rwa [Module.finrank_fin_fun] at hfr
 
 /-- An MDS generator's `dotMap` is a linear equivalence onto its image
 (the induced code), with the source domain `Fin ℓ → F` having full

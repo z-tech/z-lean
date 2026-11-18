@@ -3,7 +3,7 @@ import SumcheckProtocol.Properties.Lemmas.Fin
 import SumcheckProtocol.Properties.Lemmas.ExtTreeMap
 import SumcheckProtocol.Properties.Lemmas.Hypercube
 import SumcheckProtocol.Properties.Lemmas.List
-import CompPoly.Multivariate.CMvPolynomialEvalLemmas
+import CompPoly.Multivariate.Eval
 import SumcheckProtocol.Properties.Lemmas.Monomials
 
 namespace CPoly
@@ -193,10 +193,10 @@ lemma eval_pow_univariate
     dsimp [powUnivariate, c1]
     rw [pow_zero]
     show CMvPolynomial.eval (fun _ : Fin 1 => b) (CMvPolynomial.C 1) = 1
-    exact CPoly.eval_C _ _
+    exact CPoly.CMvPolynomial.eval_C _ _
 | Nat.succ e => by
     dsimp [powUnivariate]
-    rw [CPoly.eval_mul]
+    rw [CPoly.CMvPolynomial.eval_mul]
     rw [eval_pow_univariate (𝔽 := 𝔽) q b e]
     ring
 
@@ -228,7 +228,7 @@ lemma eval_pow_univariate
       (m := m)
       (F := F))
   intro a b
-  exact CPoly.eval_add vs a b
+  exact CPoly.CMvPolynomial.eval_add vs a b
 
 lemma eval_foldl_mul_pow_univariate
   {𝔽 : Type*} [CommRing 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
@@ -268,12 +268,9 @@ lemma eval_foldl_mul_pow_univariate
           (CPoly.CMvPolynomial.eval (fun _ : Fin 1 => b) A)
             *
           (CPoly.CMvPolynomial.eval (fun _ : Fin 1 => b)
-              (powUnivariate (vs i) (extractExpVarI m i))) := by
-        simpa using
-          (eval₂_mul_Mul
-            (n := 1) (R := 𝔽) (S := 𝔽)
-            (f := RingHom.id 𝔽) (vals := fun _ : Fin 1 => b)
-            (a := A) (b := powUnivariate (vs i) (extractExpVarI m i)))
+              (powUnivariate (vs i) (extractExpVarI m i))) :=
+        CPoly.CMvPolynomial.eval_mul (fun _ : Fin 1 => b) A
+          (powUnivariate (vs i) (extractExpVarI m i))
 
       -- Unfold foldl once on both sides
       simp [List.foldl]
@@ -345,7 +342,7 @@ lemma eval_subst_monomial
           (CPoly.Lawful.C (n := 1) (R := 𝔽) (1 : 𝔽))
         = (1 : 𝔽) := by
     show CPoly.CMvPolynomial.eval (fun _ : Fin 1 => b) (CPoly.CMvPolynomial.C (1 : 𝔽)) = 1
-    exact CPoly.eval_C _ 1
+    exact CPoly.CMvPolynomial.eval_C _ 1
 
   have hscalar :
       CPoly.CMvPolynomial.eval (fun _ : Fin 1 => b)
@@ -444,8 +441,8 @@ theorem eval₂_eval₂Poly_c1 {𝔽 : Type _} {n : ℕ}
 
     have hC : CPoly.CMvPolynomial.eval (fun _ : Fin 1 => b) (CPoly.Lawful.C (n := 1) mc.2) = mc.2 := by
       show CPoly.CMvPolynomial.eval (fun _ : Fin 1 => b) (CPoly.CMvPolynomial.C mc.2) = mc.2
-      exact CPoly.eval_C _ _
-    simp [step, g, pt, hs, c1, hC, CPoly.eval_add, CPoly.eval_mul, add_comm]
+      exact CPoly.CMvPolynomial.eval_C _ _
+    simp [step, g, pt, hs, c1, hC, CPoly.CMvPolynomial.eval_add, CPoly.CMvPolynomial.eval_mul, add_comm]
 
   -- push eval₂ through the list fold
   have hfold_general :

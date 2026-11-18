@@ -355,7 +355,8 @@ theorem isListCADomain_of_all_combines_agree
           if k' = k₂ then (1 : F) else 0 := by
         intro k₂
         have := congrFun (congrFun hMM k') k₂
-        simpa [Matrix.mul_apply, Matrix.one_apply, M] using this
+        rw [Matrix.mul_apply, Matrix.one_apply] at this
+        simpa [M] using this
       rw [Generator.combine_apply]
       have step1 :
           ∑ jᵣ : Fin ℓ, G (xs k') jᵣ *

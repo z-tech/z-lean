@@ -1,4 +1,4 @@
-import CompPoly.Multivariate.CMvPolynomial
+import CompPoly.Multivariate.Basic
 
 import SumcheckProtocol.Properties.Events.BadTranscript
 
@@ -19,8 +19,8 @@ lemma badTranscript_implies_lastBadRound_k
     Finset.univ.filter (fun i => t.roundPolys i ≠ honestRoundPolyAtK k st.domain st.polynomial r i)
   have bad_nonempty : bad.Nonempty := by
     rcases hBad with ⟨i0, hi0⟩
-    refine ⟨i0, ?_⟩
-    simpa [bad, BadRound, t] using hi0
+    refine ⟨i0, Finset.mem_filter.mpr ⟨Finset.mem_univ i0, ?_⟩⟩
+    simpa [t, BadRound, Set.mem_ofPred_eq] using hi0
   let i : Fin k.val := Finset.max' bad bad_nonempty
   have hi_neq :
       t.roundPolys i ≠ honestRoundPolyAtK k st.domain st.polynomial r i := by
@@ -57,8 +57,8 @@ lemma badTranscript_implies_lastBadRound
 
   have bad_nonempty : bad.Nonempty := by
     rcases hBad with ⟨i0, hi0⟩
-    refine ⟨i0, ?_⟩
-    simpa [bad, BadRound, t] using hi0
+    refine ⟨i0, Finset.mem_filter.mpr ⟨Finset.mem_univ i0, ?_⟩⟩
+    simpa [t, BadRound, Set.mem_ofPred_eq] using hi0
 
   -- choose the last bad round
   let i : Fin n := Finset.max' bad bad_nonempty

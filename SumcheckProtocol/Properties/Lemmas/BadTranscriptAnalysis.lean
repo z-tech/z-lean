@@ -57,7 +57,7 @@ lemma accepts_and_bad_implies_exists_round_disagree_but_agree
       have htmp :
           CPoly.CMvPolynomial.eval r st.polynomial =
             nextClaim (𝔽 := 𝔽) (roundChallenge := r i) (t.roundPolys i) := by
-        simpa [t, proverTranscript, generateHonestClaims, nextClaim, hsuc] using this
+        simpa [t, proverTranscript, Transcript.claims, generateHonestClaims, nextClaim, hsuc] using this
       simpa [eq_comm] using htmp
 
     have honest_last :
@@ -77,7 +77,7 @@ lemma accepts_and_bad_implies_exists_round_disagree_but_agree
               simpa using honest_last.symm
 
     refine ⟨hneq, ?_⟩
-    simpa [nextClaim] using hnc
+    simpa [nextClaim, t, proverTranscript] using hnc
 
   · -- not-last-round case
     have hlt : i.val.succ < n := Nat.lt_of_le_of_ne (Nat.succ_le_of_lt i.isLt) hlast

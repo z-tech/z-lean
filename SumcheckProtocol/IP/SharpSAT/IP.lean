@@ -73,7 +73,7 @@ lemma sumOverDomain_zeroOne_eq_boolSum {𝔽 : Type*} [Field 𝔽] {n : ℕ}
         intro x _
         congr
         funext i
-        cases i using Fin.cases <;> simp [Fin.cons, boolToField]
+        cases i using Fin.cases <;> simp [Fin.cons, boolToField] <;> rfl
       }
 
 -- Unwrap `honestClaim` at domain [0,1] into the Bool-hypercube sum.

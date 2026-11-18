@@ -124,11 +124,11 @@ theorem bad_pair_count_per_coord_le
     unfold seedProb at h
     rw [div_le_div_iff_of_pos_right hN_pos] at h
     -- h has set-comprehension `{x | P x}.card`. Convert to ncard.
-    convert h using 2
-    rw [Set.ncard_eq_toFinset_card']
-    congr 1
-    ext x
-    simp
+    have hcard : {x : S | ∑ j, G x j * colDiff us cstars i j = 0}.ncard
+        = (Finset.univ.filter fun x => ∑ j, G x j * colDiff us cstars i j = 0).card := by
+      rw [Set.ncard_eq_toFinset_card', Set.toFinset_setOf]
+    rw [hcard]
+    exact_mod_cast h
   -- Step 5: (B_set.filter ...).card ≤ ncard (as ℕ), via coe_filter ⊆ set.
   have h_coe_subset :
       ((B_set.filter

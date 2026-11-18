@@ -1,4 +1,4 @@
-import CompPoly.Multivariate.CMvPolynomial
+import CompPoly.Multivariate.Basic
 
 import SumcheckProtocol.Properties.Events.BadRound
 

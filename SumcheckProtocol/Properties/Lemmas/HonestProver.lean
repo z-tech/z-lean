@@ -44,7 +44,7 @@ lemma eval_honest_right_map_succ
       -- now simp can reduce the match on tv.succ and the Fin.mk proof field mismatch vanishes
       simp [honestRightMap, Fin.succ, c1]
       show CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a) (CPoly.CMvPolynomial.C (b ⟨tv, _⟩)) = b ⟨tv, _⟩
-      exact CPoly.eval_C _ _
+      exact CPoly.CMvPolynomial.eval_C _ _
 
 lemma eval_honest_right_map
   {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
@@ -97,7 +97,7 @@ lemma eval_addCases_honest_right_map
       -- and RHS is the corresponding r ⟨t, _⟩.
       simp [Fin.addCases, challengeSubset]
       show CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a) (CPoly.CMvPolynomial.C _) = _
-      exact CPoly.eval_C _ _
+      exact CPoly.CMvPolynomial.eval_C _ _
   | right t =>
       -- right branch: use your `eval_honest_right_map`
       -- RHS is `Fin.cases a b t`

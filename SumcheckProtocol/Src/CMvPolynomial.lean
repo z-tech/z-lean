@@ -1,4 +1,4 @@
-import CompPoly.Multivariate.CMvPolynomial
+import CompPoly.Multivariate.Basic
 import CompPoly.Multivariate.MvPolyEquiv
 
 -- this is a constant for a polynomial w/ one variable (arity must be specified)

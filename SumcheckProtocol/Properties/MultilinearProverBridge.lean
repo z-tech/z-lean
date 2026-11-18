@@ -964,7 +964,7 @@ private theorem degreeOf_polynomial_eval_C_le_sup {m : ℕ}
   rw [Polynomial.eval_eq_sum]
   unfold Polynomial.sum
   calc
-    MvPolynomial.degreeOf j (P.toFinsupp.sum fun e a => a * MvPolynomial.C w ^ e) ≤
+    MvPolynomial.degreeOf j (∑ e ∈ P.support, P.coeff e * MvPolynomial.C w ^ e) ≤
         P.support.sup (fun i => MvPolynomial.degreeOf j ((fun e => P.coeff e * MvPolynomial.C w ^ e) i)) := by
       simpa [Polynomial.support] using
         MvPolynomial.degreeOf_sum_le (R := 𝔽) j P.support
@@ -1034,11 +1034,13 @@ theorem multi_round_correctness {n : ℕ}
       · -- Round 0: use compute_correctness; the challenges-prefix at i=0 is empty.
         intro hi
         simp only [multilinearProverEvalForm_recurse challenges p (hp_ml ⟨0, Nat.succ_pos m⟩)]
-        show (computeS0S1_msb (toEvalTable (𝔽 := 𝔽) p) :: _)[0]
+        show computeS0S1_msb (toEvalTable (𝔽 := 𝔽) p)
           = ( honestProverMessageEvalsAt [(0 : 𝔽), 1] p ⟨0, Nat.succ_pos m⟩ _ 0,
               honestProverMessageEvalsAt [(0 : 𝔽), 1] p ⟨0, Nat.succ_pos m⟩ _ 1 )
-        simp only [List.getElem_cons_zero]
-        convert compute_correctness (𝔽 := 𝔽) p using 2
+        convert compute_correctness (𝔽 := 𝔽) p using 2 <;>
+          exact congrFun
+            (congrArg (honestProverMessageEvalsAt [(0 : 𝔽), 1] p ⟨0, Nat.succ_pos m⟩)
+              (funext fun x => x.elim0)) _
       · -- Round j.succ: apply IH on (substRound0 r₀ p), bridge with hSubstHonest.
         intro hi
         simp only [multilinearProverEvalForm_recurse challenges p (hp_ml ⟨0, Nat.succ_pos m⟩)]
@@ -1071,14 +1073,16 @@ theorem multi_round_correctness {n : ℕ}
               lt_of_lt_of_le k.isLt (Nat.le_of_lt j.isLt)⟩) (1 : 𝔽)
           refine Prod.ext ?_ ?_
           · convert hB0 using 2
-            funext k
-            refine Fin.cases ?_ (fun k' => ?_) k
-            · rw [Fin.cons_zero]; rfl
-            · rw [Fin.cons_succ]; rfl
+            · rfl
+            · funext k
+              refine Fin.cases ?_ (fun k' => ?_) k
+              · rw [Fin.cons_zero]; rfl
+              · rw [Fin.cons_succ]; rfl
           · convert hB1 using 2
-            funext k
-            refine Fin.cases ?_ (fun k' => ?_) k
-            · rw [Fin.cons_zero]; rfl
-            · rw [Fin.cons_succ]; rfl
+            · rfl
+            · funext k
+              refine Fin.cases ?_ (fun k' => ?_) k
+              · rw [Fin.cons_zero]; rfl
+              · rw [Fin.cons_succ]; rfl
 
 end SumcheckProtocol.MultilinearProver

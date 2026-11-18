@@ -24,8 +24,6 @@ section Capstones
 -- Provide Fact-of-primality instances at the section level so the type
 -- annotations on the examples below (which use ZMod p as a Field) elaborate
 -- before the tactic blocks open.
-attribute [local instance] Fact.mk
-
 instance fact_prime_5 : Fact (Nat.Prime 5) := ⟨by decide⟩
 instance fact_prime_7 : Fact (Nat.Prime 7) := ⟨by decide⟩
 instance fact_prime_11 : Fact (Nat.Prime 11) := ⟨by decide⟩

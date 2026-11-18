@@ -1,5 +1,5 @@
 import CompPoly.Multilinear.Basic
-import CompPoly.Multivariate.CMvPolynomial
+import CompPoly.Multivariate.Basic
 
 import SumcheckProtocol.Src.CMvPolynomial
 import SumcheckProtocol.Src.Hypercube

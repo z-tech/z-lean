@@ -1,5 +1,5 @@
 import InteractiveProtocol.Properties.Probability
-import CompPoly.Multivariate.CMvPolynomial
+import CompPoly.Multivariate.Basic
 
 -- probOverChallenges is just probEvent
 -- kept as alias for backwards compatibility during migration

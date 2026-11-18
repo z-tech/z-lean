@@ -177,8 +177,7 @@ theorem honest_accepts_on_challenges_k {𝔽 : Type _} {n : ℕ}
       simp only [Bool.and_eq_true, decide_eq_true_eq]
       constructor
       · exact honest_partial_transcript_sum_identity_k k st hclaim r i
-      · simpa [proverTranscript, sumcheckHonestProver] using
-          (honest_round_poly_atK_degree_le_ind_degree_k k st.domain st.polynomial r i)
+      · exact honest_round_poly_atK_degree_le_ind_degree_k k st.domain st.polynomial r i
     · apply decide_eq_true_eq.mpr
       have hsuc : i.succ = ⟨i.val.succ, Nat.succ_lt_succ i.isLt⟩ := Fin.ext rfl
       simp [proverTranscript, Transcript.claims, generateHonestClaims, hsuc]
@@ -202,10 +201,11 @@ theorem perfect_completeness_k {𝔽 : Type _} {n : ℕ}
     exact (AcceptsOnChallenges_unfold k st (sumcheckHonestProver k) r).mp (hE r)
   have hfilter :
       (Finset.univ.filter (fun r : Fin k.val → 𝔽 =>
-        AcceptsOnChallenges k st (sumcheckHonestProver k) r) : Finset (Fin k.val → 𝔽))
+        AcceptsEvent k st.domain st.polynomial st.claim
+          (proverTranscript k st (sumcheckHonestProver k) r)) : Finset (Fin k.val → 𝔽))
         = Finset.univ := by
     ext r
-    simp [AcceptsOnChallenges_unfold, hE' r]
+    simp [hE' r]
   simp [probOverChallenges, probEvent, allChallenges, hfilter]
 
 
@@ -251,7 +251,7 @@ theorem perfect_completeness
       · -- Claims consistency: claims i.succ = nextClaim (challenges i) (roundPolys i)
         -- For i : Fin n, i.succ = ⟨i.val + 1, ...⟩ which matches the succ case of generateHonestClaims
         have hsuc : i.succ = ⟨i.val.succ, Nat.succ_lt_succ i.isLt⟩ := Fin.ext rfl
-        simp only [generateHonestTranscript, generateHonestClaims, nextClaim, hsuc]
+        simp only [generateHonestTranscript, generateHonestClaims, nextClaim, hsuc, decide_eq_true_eq]
     · -- finalOk: final claim equals polynomial evaluation
       simp only [decide_eq_true_eq]
       -- Use the helper lemma that handles dependent types via induction
