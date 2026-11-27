@@ -7,3 +7,4 @@ import SumcheckProtocol.Tests.SharpSATTests
 import SumcheckProtocol.Tests.EvalFormTests
 import SumcheckProtocol.Tests.MultilinearProverTests
 import SumcheckProtocol.Tests.PartialRunTests
+import SumcheckProtocol.Tests.EvalFormVerifierTests

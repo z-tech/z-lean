@@ -8,3 +8,4 @@ import SumcheckProtocol.Src.EvalForm
 import SumcheckProtocol.Src.MultilinearProver
 import SumcheckProtocol.Src.RoundEvaluator
 import SumcheckProtocol.Src.SubstRound0
+import SumcheckProtocol.Src.EvalFormVerifier

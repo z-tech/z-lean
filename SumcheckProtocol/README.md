@@ -19,6 +19,12 @@ import SumcheckProtocol
   eval-table linear-time honest prover for the multilinear case;
   bridge to the symbolic spec proven at round 0
   ([`doc/stability.md`](doc/stability.md) tracks the inductive step).
+- **Evaluation-form verifier**
+  ([`Src/EvalFormVerifier.lean`](Src/EvalFormVerifier.lean)): round
+  messages as values at barycentric nodes, evaluated with CompPoly's
+  computable `BarycentricDomain.eval`; verdict proved equal to the
+  symbolic verifier for every received transcript
+  ([`doc/eval-form-verifier.md`](doc/eval-form-verifier.md)).
 - **Inner-product sumcheck**
   ([`SumcheckProtocol/IP/InnerProduct.lean`](IP/InnerProduct.lean)):
   `InnerProductStatement` claiming `c = Σ f(x)·g(x)` over a boolean
