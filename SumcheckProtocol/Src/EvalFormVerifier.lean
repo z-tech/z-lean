@@ -51,7 +51,8 @@ section
 variable {𝔽 : Type*} [Field 𝔽] [DecidableEq 𝔽]
 
 /-- Boundary parser: a list of exactly `d + 1` values, as a length-indexed
-tuple. The list is copied once into an array, so each lookup is O(1). -/
+tuple. Conversion to an array takes O(ys.length) time
+(O(d+1) for well-formed messages), with O(1) indexed lookups. -/
 def tupleOf? (d : ℕ) (ys : List 𝔽) : Option (Fin (d + 1) → 𝔽) :=
   let a := ys.toArray
   if h : a.size = d + 1 then
