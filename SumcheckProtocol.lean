@@ -2,6 +2,7 @@ import SumcheckProtocol.Src
 import SumcheckProtocol.Properties
 import SumcheckProtocol.Properties.MultilinearProver
 import SumcheckProtocol.Properties.MultilinearProverBridge
+import SumcheckProtocol.Properties.EvalFormVerifier
 import SumcheckProtocol.Tests
 import SumcheckProtocol.IP.InteractiveProtocol
 import SumcheckProtocol.IP.InnerProduct

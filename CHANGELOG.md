@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-11-27 — Computable evaluation-form verifier
+
+### Added
+
+- `SumcheckProtocol/Src/EvalFormVerifier.lean`: `isEvalVerifierAccepts`,
+  a verifier for round messages given as values at the nodes of a
+  CompPoly `BarycentricDomain`, evaluated by `BarycentricDomain.eval`.
+  Same interface as `isVerifierAccepts`: stop round `k`, domain list,
+  per-round bounds `indDegreeK p i`, final `residualSum` check.
+  Received lists of the wrong length are rejected.
+- `SumcheckProtocol/Properties/EvalFormVerifier.lean`:
+  `isEvalVerifierAccepts_eq_decode` (equal verdicts for every received
+  transcript), `isVerifierAccepts_eq_encode` (degree-bounded symbolic
+  transcripts), `isEvalVerifierAccepts_encode_of_accepts`, and
+  `honest_eval_accepts_on_challenges_k` (evaluation-form completeness).
+- `SumcheckProtocol/Tests/EvalFormVerifierTests.lean`: `ZMod 17`
+  regression tests (Example 1, Example 3 with bounds (2, 1, 1), partial
+  runs, degree 0, malformed and adversarial tuples, an over-degree
+  message).
+- `SumcheckProtocol/doc/eval-form-verifier.md`: results, assumptions and
+  the correspondence with the Agda development.
+
 ## 2026-05-17 — LinearCodes review fallout
 
 The cumulative result of a council-style review of `LinearCodes/`

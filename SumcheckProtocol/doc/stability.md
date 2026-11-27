@@ -48,6 +48,14 @@ Public names unlikely to change but locations / signatures may.
   [`Src/RoundEvaluator.lean`](../Src/RoundEvaluator.lean)). The
   `RoundPolyEvaluator` structure is stable; the operational `respond`
   still routes through symbolic `eval₂Poly` — performance work pending.
+- **Computable evaluation-form verifier**
+  ([`Src/EvalFormVerifier.lean`](../Src/EvalFormVerifier.lean) +
+  [`Properties/EvalFormVerifier.lean`](../Properties/EvalFormVerifier.lean)):
+  `isEvalVerifierAccepts`, using CompPoly's `BarycentricDomain.eval`, with
+  per-round degree bounds, arbitrary domain lists and partial runs.
+  Verdict equal to `isVerifierAccepts` on the decoded transcript for every
+  received transcript (`isEvalVerifierAccepts_eq_decode`). See
+  [`eval-form-verifier.md`](eval-form-verifier.md).
 - **Partial-run sumcheck** (P1 roadmap): a `k : Fin (n+1)` stop
   parameter is planned; the symbolic protocol will gain this as a
   generalization rather than a separate variant.
@@ -98,7 +106,9 @@ output, the next implementer should:
 3. (Optional) Prove `evalAt = (Lagrange.interpolate ...).eval challenge`
    if existing proofs are to be ported.
 
-The old code is recoverable from git history if anyone takes this on.
+The old code is recoverable from git history. Steps 1–3 are now done
+computably by `Src/EvalFormVerifier.lean` (listed above under "Recently
+landed"); the IP wrapper and native soundness lift were not restored.
 
 ## Future direction — degree d > 1
 
